@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { ThemeProvider } from '@/components/theme-provider';
 import { LandingPage } from '@/pages/LandingPage';
 import { AuthPage } from '@/pages/AuthPage';
 import { DashboardPage } from '@/pages/DashboardPage';
@@ -14,7 +15,13 @@ import { type ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Spinner className="w-8 h-8" /></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <Spinner className="w-8 h-8" />
+      </div>
+    );
+  }
   if (!session) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
@@ -36,14 +43,14 @@ function AppRoutes() {
   );
 }
 
-function App() {
+export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider defaultTheme="system" storageKey="digicon-theme">
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
-
-export default App;
