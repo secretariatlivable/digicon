@@ -512,3 +512,24 @@ svg[id*="badge"] {
   opacity: 0 !important;
 }
 
+
+/* UX/UI refinement: calmer hierarchy, clearer CTAs, stronger emotional moments */
+.text-gradient {
+  background: linear-gradient(90deg, #60a5fa 0%, #34d399 55%, #67e8f9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero-kicker {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  color: rgba(255,255,255,.78);
+}
+.hero-kicker::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #34d399;
+  box-shadow: 0 0 14px rgba(52,211,153,.7);
+}
