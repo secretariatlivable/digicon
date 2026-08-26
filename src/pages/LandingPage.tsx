@@ -70,25 +70,27 @@ export function LandingPage() {
         </div>
 
         <div className="relative max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-thin mb-8 animate-fade-in-down">
+          <div className="hero-kicker inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 animate-fade-in-down">
             <Leaf className="w-4 h-4 text-digicon-eco" />
-            <span className="text-sm text-white/70">Eco-friendly digital business cards</span>
+            <span className="text-sm font-medium">Your next connection starts here</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 animate-fade-in-up leading-tight tracking-tight">
-            {t('landing.hero.title')}
+            {lang === 'en' ? <>Make every <span className="text-gradient">hello</span> count.</> : <>Gawing <span className="text-gradient">makabuluhan</span> ang bawat hello.</>}
           </h1>
           <p className="text-lg md:text-xl text-white/60 mb-10 max-w-3xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            {t('landing.hero.subtitle')}
+            {lang === 'en'
+  ? 'One beautiful digital card for your identity, your relationships, and the opportunities waiting on the other side of every introduction.'
+  : 'Isang magandang digital card para sa iyong pagkakakilanlan, mga koneksyon, at mga oportunidad sa bawat pagpapakilala.'}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             <GlassButton size="lg" onClick={() => navigate(session ? '/dashboard' : '/auth?mode=signup')}>
-              {t('landing.hero.cta')}
+              {lang === 'en' ? 'Create my card' : 'Gumawa ng card ko'}
               <ArrowRight className="inline ml-2 w-5 h-5" />
             </GlassButton>
             <GlassButton variant="ghost" size="lg" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
-              {t('landing.hero.secondary')}
+              {lang === 'en' ? 'Explore DigiCon' : 'Tingnan ang DigiCon'}
             </GlassButton>
           </div>
 
@@ -166,8 +168,8 @@ export function LandingPage() {
 
       {/* Features grid */}
       <section id="features" className="px-4 lg:px-8 py-16 max-w-6xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">{t('landing.features.title')}</h2>
-        <p className="text-white/50 text-center mb-12 max-w-2xl mx-auto">Everything you need to network smarter, not harder.</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">{lang === 'en' ? 'Less friction. More connection.' : 'Mas kaunting abala. Mas maraming koneksyon.'}</h2>
+        <p className="text-white/50 text-center mb-12 max-w-2xl mx-auto">{lang === 'en' ? 'Everything important stays close, clear, and ready when the right moment arrives.' : 'Nasa iisang lugar ang mahahalagang bagay—simple, malinaw, at handa sa tamang pagkakataon.'}</p>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {features.map((feature, i) => (
@@ -254,10 +256,10 @@ export function LandingPage() {
         <GlassCard variant="chrome" className="p-12 text-center relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-digicon-primary/10 via-transparent to-digicon-eco/10" />
           <img src="/DigiCon_logo_transparent.jpg" alt="DigiCon logo - digital business card platform for SMEs and startups" className="w-16 h-16 rounded-full mx-auto mb-6 relative ring-1 ring-white/10" />
-          <h2 className="text-3xl font-bold text-white mb-4 relative">Ready to Go Digital?</h2>
-          <p className="text-white/60 mb-8 relative">Join thousands of Startups and SMEs saving money and the environment with DigiCon.</p>
+          <h2 className="text-3xl font-bold text-white mb-4 relative">Your next opportunity could start with one hello.</h2>
+          <p className="text-white/60 mb-8 relative">Create a card that feels like you, share it in seconds, and stay connected after the moment is over.</p>
           <GlassButton size="lg" onClick={() => navigate(session ? '/dashboard' : '/auth?mode=signup')} className="relative">
-            {t('landing.hero.cta')}
+            {lang === 'en' ? 'Create my card' : 'Gumawa ng card ko'}
             <ArrowRight className="inline ml-2 w-5 h-5" />
           </GlassButton>
         </GlassCard>
