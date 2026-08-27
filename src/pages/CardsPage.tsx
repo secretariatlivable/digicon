@@ -4,33 +4,32 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
-} from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+} from "react";
+import { QRCodeSVG } from "qrcode.react";
 import {
-  AlertCircle,
   Briefcase,
   Camera,
   Check,
   Copy,
   Download,
   Edit3,
+  ExternalLink,
   Mail,
-  MessageSquare,
-  Palette,
+  MapPin,
+  Phone,
   Plus,
+  QrCode,
   Share2,
   Trash2,
-  Type,
+  Upload,
   Wallet,
   X,
   Zap,
-} from 'lucide-react';
-import { useAuth } from '@/lib/auth';
-import { supabase, type BusinessCard } from '@/lib/supabase';
-import {
-  addToAppleWallet,
-  addToGoogleWallet,
-} from '@/lib/wallet';
+  Palette,
+} from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { supabase, type BusinessCard } from "@/lib/supabase";
+import { addToAppleWallet, addToGoogleWallet } from "@/lib/wallet";
 import {
   Badge,
   EmptyState,
@@ -40,14 +39,9 @@ import {
   GlassLabel,
   GlassSelect,
   Spinner,
-} from '@/components/ui/GlassCard';
-import { AppLayout } from '@/components/layout/AppLayout';
+} from "@/components/ui/GlassCard";
 
-type DesignTemplate =
-  | 'futuristic'
-  | 'professional'
-  | 'simple'
-  | 'custom';
+type DesignTemplate = "futuristic" | "professional" | "simple" | "custom";
 
 type CardForm = {
   full_name: string;
@@ -64,113 +58,77 @@ type CardForm = {
   photo_url: string;
 };
 
-const PUBLIC_ORIGIN = 'https://digicon.cards';
+const PUBLIC_ORIGIN =
+  (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined)?.trim().replace(/\/$/, "") ||
+  "https://digicon.cards";
 
 const COLORS = [
-  '#007AFF',
-  '#5856D6',
-  '#34C759',
-  '#FF9500',
-  '#FF3B30',
-  '#5AC8FA',
-  '#AF52DE',
-  '#10B981',
-  '#F59E0B',
-  '#6366F1',
+  "#007AFF",
+  "#5856D6",
+  "#34C759",
+  "#FF9500",
+  "#FF3B30",
+  "#5AC8FA",
+  "#AF52DE",
+  "#10B981",
+  "#F59E0B",
+  "#6366F1",
 ];
 
 const FONTS = [
-  'Inter',
-  'Poppins',
-  'SF Pro Display',
-  'Helvetica Neue',
-  'Arial',
-  'Georgia',
+  "Inter",
+  "Poppins",
+  "SF Pro Display",
+  "Helvetica Neue",
+  "Arial",
+  "Georgia",
 ];
 
 const DEFAULT_FORM: CardForm = {
-  full_name: '',
-  job_title: '',
-  company: '',
-  phone: '',
-  email: '',
-  website: '',
-  address: '',
-  card_color: '#007AFF',
-  accent_color: '#5856D6',
-  design_template: 'professional',
-  font_family: 'Inter',
-  photo_url: '',
+  full_name: "",
+  job_title: "",
+  company: "",
+  phone: "",
+  email: "",
+  website: "",
+  address: "",
+  card_color: "#007AFF",
+  accent_color: "#5856D6",
+  design_template: "professional",
+  font_family: "Inter",
+  photo_url: "",
 };
 
-const TEMPLATE_META = {
-  futuristic: { icon: Zap, label: 'Futuristic' },
-  professional: { icon: Briefcase, label: 'Professional' },
-  simple: { icon: MinusIcon, label: 'Simple' },
-  custom: { icon: Palette, label: 'Custom' },
-} satisfies Record<
+const TEMPLATE_META: Record<
   DesignTemplate,
-  { icon: typeof Zap; label: string }
->;
+  { label: string; icon: typeof Briefcase }
+> = {
+  futuristic: { label: "Futuristic", icon: Zap },
+  professional: { label: "Professional", icon: Briefcase },
+  simple: { label: "Simple", icon: Briefcase },
+  custom: { label: "Custom", icon: Palette },
+};
 
-function MinusIcon({
-  className,
-}: {
-  className?: string;
-}) {
-  return (
-    <span
-      aria-hidden="true"
-      className={className}
-    >
-      −
-    </span>
-  );
+function publicCardUrl(cardId: string) {
+  return `${PUBLIC_ORIGIN}/c/${encodeURIComponent(cardId)}`;
+}
+
+function normalizeWebsite(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return /^[a-z][a-z\d+\-.]*:/i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
 }
 
 function safeFileName(value: string) {
   return (
     value
       .trim()
-      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '')
-      .replace(/\s+/g, '_')
-      .slice(0, 80) || 'digicon-card'
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
+      .replace(/\s+/g, "_")
+      .slice(0, 80) || "digicon-card"
   );
-}
-
-function normalizeWebsite(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-  return /^[a-z][a-z\d+\-.]*:/i.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
-}
-
-function escapeVCard(value: string | null | undefined) {
-  return (value || '')
-    .replace(/\\/g, '\\\\')
-    .replace(/\n/g, '\\n')
-    .replace(/;/g, '\\;')
-    .replace(/,/g, '\\,');
-}
-
-function publicCardUrl(cardId: string) {
-  return `${PUBLIC_ORIGIN}/c/${encodeURIComponent(cardId)}`;
-}
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noopener';
-
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function CardPreview({
@@ -180,145 +138,90 @@ function CardPreview({
   card: CardForm | BusinessCard;
   large?: boolean;
 }) {
-  const template = (
-    'design_template' in card
-      ? card.design_template
-      : 'professional'
-  ) as DesignTemplate;
-
-  const photo =
-    ('photo_url' in card ? card.photo_url : '') || '';
-
-  const color = card.card_color || '#007AFF';
+  const color = card.card_color || "#007AFF";
   const accent = card.accent_color || color;
-  const font = card.font_family || 'Inter';
-  const name = card.full_name || 'Your Name';
-
-  const avatar = photo ? (
-    <img
-      src={photo}
-      alt={name}
-      className={`${
-        large ? 'w-20 h-20' : 'w-14 h-14'
-      } rounded-full object-cover ring-2 ring-white/40`}
-    />
-  ) : (
-    <div
-      className={`${
-        large ? 'w-20 h-20' : 'w-14 h-14'
-      } rounded-full bg-white/15 flex items-center justify-center`}
-    >
-      <span
-        className={`${
-          large ? 'text-3xl' : 'text-xl'
-        } font-bold text-white`}
-      >
-        {name.charAt(0).toUpperCase()}
-      </span>
-    </div>
-  );
-
-  const content = (
-    <div
-      className={`${
-        large ? 'p-8' : 'p-5'
-      } relative z-10`}
-    >
-      <div className="flex justify-end mb-4">
-        {avatar}
-      </div>
-
-      <h3
-        className={`${
-          large ? 'text-2xl' : 'text-lg'
-        } font-bold text-white`}
-        style={{ fontFamily: font }}
-      >
-        {name}
-      </h3>
-
-      {card.job_title && (
-        <p
-          className="text-white/80"
-          style={{ fontFamily: font }}
-        >
-          {card.job_title}
-        </p>
-      )}
-
-      {card.company && (
-        <p
-          className="text-white/60 text-sm"
-          style={{ fontFamily: font }}
-        >
-          {card.company}
-        </p>
-      )}
-    </div>
-  );
-
-  if (template === 'simple') {
-    return (
-      <div className="rounded-glass-2xl overflow-hidden bg-[#1C1C1E] border border-white/10">
-        {content}
-      </div>
-    );
-  }
+  const template = (card.design_template || "professional") as DesignTemplate;
+  const photo = card.photo_url || "";
+  const name = card.full_name || "Your Name";
 
   return (
     <div
-      className="relative rounded-glass-2xl overflow-hidden"
+      className="relative overflow-hidden rounded-[28px] border border-white/10 shadow-2xl"
       style={{
         background:
-          template === 'futuristic' ||
-          template === 'custom'
-            ? `linear-gradient(135deg, ${color}, ${accent})`
-            : `linear-gradient(135deg, ${color}, ${color}dd)`,
+          template === "simple"
+            ? "#1C1C1E"
+            : `linear-gradient(135deg, ${color}, ${
+                template === "futuristic" || template === "custom" ? accent : `${color}dd`
+              })`,
       }}
     >
-      {template === 'futuristic' && (
-        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,.2),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,.15),transparent_50%)]" />
-      )}
+      <div className={`${large ? "p-8" : "p-6"} relative z-10`}>
+        <div className="mb-8 flex justify-end">
+          {photo ? (
+            <img
+              src={photo}
+              alt={`${name} profile`}
+              className={`${large ? "h-24 w-24" : "h-16 w-16"} rounded-full object-cover ring-2 ring-white/40`}
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div
+              className={`${large ? "h-24 w-24 text-3xl" : "h-16 w-16 text-xl"} flex items-center justify-center rounded-full bg-white/15 font-bold text-white`}
+            >
+              {name.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
 
-      {template === 'custom' && (
-        <div
-          className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl opacity-30"
-          style={{ backgroundColor: accent }}
-        />
-      )}
+        <p className="mb-1 text-xs uppercase tracking-[0.2em] text-white/50">
+          DigiCon
+        </p>
+        <h3
+          className={`${large ? "text-3xl" : "text-xl"} font-bold text-white`}
+          style={{ fontFamily: card.font_family || "Inter" }}
+        >
+          {name}
+        </h3>
+        {card.job_title && <p className="mt-1 text-white/80">{card.job_title}</p>}
+        {card.company && <p className="text-sm text-white/60">{card.company}</p>}
 
-      {content}
+        <div className="mt-6 space-y-2 text-sm text-white/75">
+          {card.email && (
+            <p className="flex items-center gap-2"><Mail className="h-4 w-4" />{card.email}</p>
+          )}
+          {card.phone && (
+            <p className="flex items-center gap-2"><Phone className="h-4 w-4" />{card.phone}</p>
+          )}
+          {card.website && (
+            <p className="flex items-center gap-2 truncate"><ExternalLink className="h-4 w-4 shrink-0" />{card.website}</p>
+          )}
+          {card.address && (
+            <p className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0" />{card.address}</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 export function CardsPage() {
   const { session } = useAuth();
-
   const [cards, setCards] = useState<BusinessCard[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [showForm, setShowForm] = useState(false);
-  const [editingCard, setEditingCard] =
-    useState<BusinessCard | null>(null);
-  const [shareCard, setShareCard] =
-    useState<BusinessCard | null>(null);
-
-  const [form, setForm] =
-    useState<CardForm>(DEFAULT_FORM);
-
+  const [editingCard, setEditingCard] = useState<BusinessCard | null>(null);
+  const [shareCard, setShareCard] = useState<BusinessCard | null>(null);
+  const [form, setForm] = useState<CardForm>(DEFAULT_FORM);
   const [error, setError] = useState<string | null>(null);
-  const [walletError, setWalletError] =
-    useState<string | null>(null);
-  const [walletLoading, setWalletLoading] =
-    useState<'apple' | 'google' | null>(null);
-
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [walletLoading, setWalletLoading] = useState<"apple" | "google" | null>(null);
+  const [walletError, setWalletError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [deleting, setDeleting] =
-    useState<string | null>(null);
-
   const fileInput = useRef<HTMLInputElement>(null);
 
   const loadCards = async () => {
@@ -329,12 +232,11 @@ export function CardsPage() {
     }
 
     setLoading(true);
-
     const { data, error: dbError } = await supabase
-      .from('business_cards')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false });
+      .from("business_cards")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: false });
 
     if (dbError) {
       setError(dbError.message);
@@ -342,7 +244,6 @@ export function CardsPage() {
     } else {
       setCards((data as BusinessCard[]) || []);
     }
-
     setLoading(false);
   };
 
@@ -360,45 +261,33 @@ export function CardsPage() {
   const openEdit = (card: BusinessCard) => {
     setEditingCard(card);
     setForm({
-      full_name: card.full_name || '',
-      job_title: card.job_title || '',
-      company: card.company || '',
-      phone: card.phone || '',
-      email: card.email || '',
-      website: card.website || '',
-      address: card.address || '',
-      card_color: card.card_color || '#007AFF',
-      accent_color: card.accent_color || '#5856D6',
-      design_template:
-        (card.design_template as DesignTemplate) ||
-        'professional',
-      font_family: card.font_family || 'Inter',
-      photo_url: card.photo_url || '',
+      full_name: card.full_name || "",
+      job_title: card.job_title || "",
+      company: card.company || "",
+      phone: card.phone || "",
+      email: card.email || "",
+      website: card.website || "",
+      address: card.address || "",
+      card_color: card.card_color || "#007AFF",
+      accent_color: card.accent_color || "#5856D6",
+      design_template: (card.design_template as DesignTemplate) || "professional",
+      font_family: card.font_family || "Inter",
+      photo_url: card.photo_url || "",
     });
     setError(null);
     setShowForm(true);
   };
 
-  const uploadPhoto = async (
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
+  const uploadPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-
     if (!file || !session?.user?.id) return;
 
-    const allowed = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-    ];
-
-    if (!allowed.includes(file.type)) {
-      setError('Use a JPG, PNG, or WebP image.');
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("Use a JPG, PNG, or WebP image.");
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
-      setError('Photo must be 5 MB or smaller.');
+      setError("Photo must be 5 MB or smaller.");
       return;
     }
 
@@ -406,71 +295,42 @@ export function CardsPage() {
     setError(null);
 
     try {
-      const ext =
-        file.type === 'image/png'
-          ? 'png'
-          : file.type === 'image/webp'
-            ? 'webp'
-            : 'jpg';
+      const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const path = `${session.user.id}/${crypto.randomUUID()}.${ext}`;
 
-      const path =
-        `${session.user.id}/${crypto.randomUUID()}.${ext}`;
-
-      const { error: uploadError } =
-        await supabase.storage
-          .from('card-photos')
-          .upload(path, file, {
-            upsert: false,
-            contentType: file.type,
-            cacheControl: '31536000',
-          });
+      const { error: uploadError } = await supabase.storage
+        .from("card-photos")
+        .upload(path, file, {
+          upsert: false,
+          contentType: file.type,
+          cacheControl: "31536000",
+        });
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from('card-photos')
-        .getPublicUrl(path);
+      const { data } = supabase.storage.from("card-photos").getPublicUrl(path);
+      if (!data.publicUrl) throw new Error("Unable to create the photo URL.");
 
-      if (!data.publicUrl) {
-        throw new Error(
-          'Could not create a public photo URL.',
-        );
-      }
-
-      setForm((current) => ({
-        ...current,
-        photo_url: data.publicUrl,
-      }));
-    } catch (uploadError) {
-      console.error('Photo upload failed:', uploadError);
-      setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : 'Unable to upload photo.',
-      );
+      setForm((current) => ({ ...current, photo_url: data.publicUrl }));
+    } catch (cause) {
+      console.error("DigiCon photo upload failed:", cause);
+      setError(cause instanceof Error ? cause.message : "Unable to upload photo.");
     } finally {
       setUploading(false);
-
-      if (fileInput.current) {
-        fileInput.current.value = '';
-      }
+      if (fileInput.current) fileInput.current.value = "";
     }
   };
 
-  const saveCard = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const saveCard = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!session?.user?.id) {
-      setError(
-        'Your session has expired. Please sign in again.',
-      );
+      setError("Your session has expired. Please sign in again.");
       return;
     }
 
     if (!form.full_name.trim()) {
-      setError('Full name is required.');
+      setError("Full name is required.");
       return;
     }
 
@@ -479,311 +339,169 @@ export function CardsPage() {
 
     const payload = {
       full_name: form.full_name.trim(),
-      job_title: form.job_title.trim() || null,
-      company: form.company.trim() || null,
-      phone: form.phone.trim() || null,
-      email: form.email.trim() || null,
-      website: normalizeWebsite(form.website) || null,
-      address: form.address.trim() || null,
+      job_title: form.job_title.trim(),
+      company: form.company.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim(),
+      website: normalizeWebsite(form.website),
+      address: form.address.trim(),
+      photo_url: form.photo_url.trim(),
       card_color: form.card_color,
       accent_color: form.accent_color,
       design_template: form.design_template,
       font_family: form.font_family,
-      photo_url: form.photo_url || null,
+      is_active: true,
       updated_at: new Date().toISOString(),
     };
 
     try {
       if (editingCard) {
-        const { error: updateError } =
-          await supabase
-            .from('business_cards')
-            .update(payload)
-            .eq('id', editingCard.id)
-            .eq('user_id', session.user.id);
+        const { error: updateError } = await supabase
+          .from("business_cards")
+          .update(payload)
+          .eq("id", editingCard.id)
+          .eq("user_id", session.user.id);
 
         if (updateError) throw updateError;
       } else {
-        const { error: insertError } =
-          await supabase
-            .from('business_cards')
-            .insert({
-              ...payload,
-              user_id: session.user.id,
-              is_active: true,
-              share_count: 0,
-            });
+        const { data: created, error: insertError } = await supabase
+          .from("business_cards")
+          .insert({
+            ...payload,
+            user_id: session.user.id,
+            share_count: 0,
+          })
+          .select("*")
+          .single();
 
         if (insertError) throw insertError;
+        if (created) setShareCard(created as BusinessCard);
       }
 
       setShowForm(false);
       setEditingCard(null);
       await loadCards();
-    } catch (saveError) {
-      console.error('Card save failed:', saveError);
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : 'Unable to save the business card.',
-      );
+    } catch (cause) {
+      console.error("DigiCon card save failed:", cause);
+      setError(cause instanceof Error ? cause.message : "Unable to save the card.");
     } finally {
       setSaving(false);
     }
   };
 
-  const deleteCard = async (id: string) => {
+  const deleteCard = async (card: BusinessCard) => {
     if (!session?.user?.id || deleting) return;
+    if (!window.confirm(`Delete ${card.full_name || "this card"}? This cannot be undone.`)) return;
 
-    const card = cards.find((item) => item.id === id);
-
-    if (
-      !window.confirm(
-        `Delete ${card?.full_name || 'this card'}? This cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-
-    setDeleting(id);
+    setDeleting(card.id);
     setError(null);
 
     try {
-      const { error: deleteError } =
-        await supabase
-          .from('business_cards')
-          .delete()
-          .eq('id', id)
-          .eq('user_id', session.user.id);
+      const { error: deleteError } = await supabase
+        .from("business_cards")
+        .delete()
+        .eq("id", card.id)
+        .eq("user_id", session.user.id);
 
       if (deleteError) throw deleteError;
 
-      if (shareCard?.id === id) {
-        setShareCard(null);
-      }
-
+      if (shareCard?.id === card.id) setShareCard(null);
       await loadCards();
-    } catch (deleteError) {
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : 'Unable to delete the card.',
-      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to delete the card.");
     } finally {
       setDeleting(null);
     }
   };
 
-  const toggleActive = async (card: BusinessCard) => {
-    if (!session?.user?.id) return;
-
-    const { error: updateError } =
-      await supabase
-        .from('business_cards')
-        .update({
-          is_active: !card.is_active,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', card.id)
-        .eq('user_id', session.user.id);
-
-    if (updateError) {
-      setError(updateError.message);
-    } else {
-      await loadCards();
-    }
+  const copyShareUrl = async (card: BusinessCard) => {
+    const url = publicCardUrl(card.id);
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
   };
 
-  const shareUrl = shareCard
-    ? publicCardUrl(shareCard.id)
-    : '';
-
-  const copyLink = async () => {
-    if (!shareUrl) return;
+  const share = async (card: BusinessCard) => {
+    const url = publicCardUrl(card.id);
+    setShareCard(card);
 
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(url);
       setCopied(true);
-      window.setTimeout(
-        () => setCopied(false),
-        1800,
-      );
+      window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      setError('Unable to copy the card URL.');
+      // Clipboard permission is optional; the share modal still works.
     }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${card.full_name} | DigiCon`,
+          text: `Connect with ${card.full_name} on DigiCon.`,
+          url,
+        });
+      } catch {
+        // User cancellation is intentionally ignored.
+      }
+    }
+
+    /*
+     * Do not use a client-side increment for billing/security.
+     * share_count is analytics only and is updated here only for UX.
+     */
+    const nextCount = (card.share_count || 0) + 1;
+    await supabase
+      .from("business_cards")
+      .update({ share_count: nextCount })
+      .eq("id", card.id)
+      .eq("user_id", session?.user?.id || "");
   };
 
-  const downloadVCard = () => {
-    if (!shareCard) return;
+  const downloadVCard = (card: BusinessCard) => {
+    const esc = (value: string | null | undefined) =>
+      (value || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/\n/g, "\\n")
+        .replace(/;/g, "\\;")
+        .replace(/,/g, "\\,");
 
     const lines = [
-      'BEGIN:VCARD',
-      'VERSION:3.0',
-      `FN:${escapeVCard(shareCard.full_name)}`,
-      shareCard.job_title
-        ? `TITLE:${escapeVCard(shareCard.job_title)}`
-        : '',
-      shareCard.company
-        ? `ORG:${escapeVCard(shareCard.company)}`
-        : '',
-      shareCard.phone
-        ? `TEL;TYPE=CELL:${escapeVCard(shareCard.phone)}`
-        : '',
-      shareCard.email
-        ? `EMAIL;TYPE=INTERNET:${escapeVCard(shareCard.email)}`
-        : '',
-      shareCard.website
-        ? `URL:${escapeVCard(normalizeWebsite(shareCard.website))}`
-        : '',
-      shareCard.address
-        ? `ADR;TYPE=WORK:;;${escapeVCard(shareCard.address)};;;`
-        : '',
-      `item1.URL:${escapeVCard(shareUrl)}`,
-      'item1.X-ABLabel:DigiCon Digital Card',
-      'END:VCARD',
-    ]
-      .filter(Boolean)
-      .join('\r\n');
+      "BEGIN:VCARD",
+      "VERSION:3.0",
+      `FN:${esc(card.full_name)}`,
+      `TITLE:${esc(card.job_title)}`,
+      `ORG:${esc(card.company)}`,
+      card.phone ? `TEL;TYPE=CELL:${esc(card.phone)}` : "",
+      card.email ? `EMAIL:${esc(card.email)}` : "",
+      card.website ? `URL:${esc(normalizeWebsite(card.website))}` : "",
+      card.address ? `ADR;TYPE=WORK:;;${esc(card.address)}` : "",
+      `URL;TYPE=DIGICON:${publicCardUrl(card.id)}`,
+      "END:VCARD",
+    ].filter(Boolean);
 
-    downloadBlob(
-      new Blob([`${lines}\r\n`], {
-        type: 'text/vcard;charset=utf-8',
-      }),
-      `${safeFileName(shareCard.full_name)}.vcf`,
-    );
+    const blob = new Blob([lines.join("\r\n") + "\r\n"], {
+      type: "text/vcard;charset=utf-8",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeFileName(card.full_name)}.vcf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
-  const downloadQR = () => {
-    if (!shareCard) return;
-
-    const svg = document.getElementById(
-      'digicon-share-qr',
-    );
-
-    if (!(svg instanceof SVGElement)) {
-      setError('QR code is not ready.');
-      return;
-    }
-
-    const source =
-      new XMLSerializer().serializeToString(svg);
-
-    const blobUrl = URL.createObjectURL(
-      new Blob([source], {
-        type: 'image/svg+xml',
-      }),
-    );
-
-    const image = new Image();
-
-    image.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1600;
-      canvas.height = 1600;
-
-      const context = canvas.getContext('2d');
-
-      if (!context) {
-        URL.revokeObjectURL(blobUrl);
-        setError('Unable to render the QR image.');
-        return;
-      }
-
-      context.fillStyle = '#FFFFFF';
-      context.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
-
-      context.drawImage(
-        image,
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
-
-      canvas.toBlob((png) => {
-        URL.revokeObjectURL(blobUrl);
-
-        if (png) {
-          downloadBlob(
-            png,
-            `digicon-qr-${safeFileName(
-              shareCard.full_name,
-            )}.png`,
-          );
-        } else {
-          setError('Unable to create the QR image.');
-        }
-      }, 'image/png');
-    };
-
-    image.onerror = () => {
-      URL.revokeObjectURL(blobUrl);
-      setError('Unable to render the QR image.');
-    };
-
-    image.src = blobUrl;
-  };
-
-  const shareSMS = () => {
-    if (shareUrl) {
-      window.location.href =
-        `sms:?body=${encodeURIComponent(
-          `My DigiCon digital business card: ${shareUrl}`,
-        )}`;
-    }
-  };
-
-  const shareEmail = () => {
-    if (!shareCard || !shareUrl) return;
-
-    const subject =
-      `${shareCard.full_name} — DigiCon Digital Business Card`;
-
-    window.location.href =
-      `mailto:?subject=${encodeURIComponent(subject)}` +
-      `&body=${encodeURIComponent(
-        `Here is my digital business card:\n${shareUrl}`,
-      )}`;
-  };
-
-  const appleWallet = async () => {
-    if (!shareCard || walletLoading) return;
-
-    setWalletLoading('apple');
+  const useWallet = async (kind: "apple" | "google", card: BusinessCard) => {
     setWalletError(null);
+    setWalletLoading(kind);
 
     try {
-      await addToAppleWallet(shareCard.id);
-    } catch (walletException) {
-      setWalletError(
-        walletException instanceof Error
-          ? walletException.message
-          : 'Apple Wallet is unavailable.',
-      );
-    } finally {
-      setWalletLoading(null);
-    }
-  };
-
-  const googleWallet = async () => {
-    if (!shareCard || walletLoading) return;
-
-    setWalletLoading('google');
-    setWalletError(null);
-
-    try {
-      await addToGoogleWallet(shareCard.id);
-    } catch (walletException) {
-      setWalletError(
-        walletException instanceof Error
-          ? walletException.message
-          : 'Google Wallet is unavailable.',
-      );
+      if (kind === "apple") await addToAppleWallet(card.id);
+      else await addToGoogleWallet(card.id);
+    } catch (cause) {
+      setWalletError(cause instanceof Error ? cause.message : "Wallet export failed.");
     } finally {
       setWalletLoading(null);
     }
@@ -791,740 +509,268 @@ export function CardsPage() {
 
   if (loading) {
     return (
-      <AppLayout>
-        <div className="flex justify-center py-32">
-          <Spinner className="w-8 h-8" />
+      <main className="min-h-screen px-4 py-12">
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <Spinner className="h-8 w-8" />
         </div>
-      </AppLayout>
+      </main>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="flex items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white">
-            Digital Business Cards
-          </h1>
-          <p className="text-white/50 mt-1">
-            Create, share, and save your professional identity.
-          </p>
-        </div>
+    <main className="min-h-screen px-4 py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <Badge color="blue">Digital Identity</Badge>
+            <h1 className="mt-3 text-3xl font-bold text-white">My Digital Cards</h1>
+            <p className="mt-2 max-w-2xl text-white/50">
+              Create once, share everywhere. Every QR code below points to the exact saved card.
+            </p>
+          </div>
+          <GlassButton onClick={openCreate} size="lg">
+            <Plus className="mr-2 inline h-5 w-5" /> Create Card
+          </GlassButton>
+        </header>
 
-        <GlassButton onClick={openCreate}>
-          <Plus className="w-5 h-5 mr-2" />
-          Create Card
-        </GlassButton>
+        {error && !showForm && (
+          <div className="mb-6 rounded-2xl border border-digicon-error/30 bg-digicon-error/10 p-4 text-sm text-digicon-error">
+            {error}
+          </div>
+        )}
+
+        {cards.length === 0 ? (
+          <GlassCard variant="thick" className="p-4">
+            <EmptyState
+              icon={<QrCode className="h-8 w-8" />}
+              title="Create your first digital card"
+              description="Add only the details people need to connect with you. Your saved card gets its own permanent DigiCon URL."
+              action={<GlassButton onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Create Card</GlassButton>}
+            />
+          </GlassCard>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {cards.map((card) => {
+              const url = publicCardUrl(card.id);
+
+              return (
+                <GlassCard key={card.id} variant="regular" className="overflow-hidden">
+                  <div className="p-5">
+                    <CardPreview card={card} />
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <Badge color={card.is_active ? "green" : "gray"}>
+                        {card.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                      <Badge color="gray">{card.share_count || 0} shares</Badge>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <GlassButton size="sm" onClick={() => openEdit(card)}>
+                        <Edit3 className="mr-1.5 h-4 w-4" />Edit
+                      </GlassButton>
+                      <GlassButton size="sm" variant="secondary" onClick={() => share(card)}>
+                        <Share2 className="mr-1.5 h-4 w-4" />Share
+                      </GlassButton>
+                      <GlassButton
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                      >
+                        <ExternalLink className="mr-1.5 h-4 w-4" />Open
+                      </GlassButton>
+                      <GlassButton size="sm" variant="danger" onClick={() => deleteCard(card)} disabled={deleting === card.id}>
+                        {deleting === card.id ? <Spinner className="mr-1.5 h-4 w-4" /> : <Trash2 className="mr-1.5 h-4 w-4" />}
+                        Delete
+                      </GlassButton>
+                    </div>
+                  </div>
+                </GlassCard>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {error && (
-        <GlassCard
-          variant="regular"
-          className="p-4 mb-6 border border-digicon-error/30"
-        >
-          <div className="flex gap-3 items-start">
-            <AlertCircle className="w-5 h-5 text-digicon-error shrink-0" />
-            <p className="text-sm text-white/80 flex-1">
-              {error}
-            </p>
-            <button
-              type="button"
-              onClick={() => setError(null)}
-              aria-label="Dismiss error"
-            >
-              <X className="w-4 h-4 text-white/40" />
-            </button>
-          </div>
-        </GlassCard>
-      )}
-
-      {cards.length === 0 ? (
-        <GlassCard variant="regular" className="p-6">
-          <EmptyState
-            icon={<Share2 className="w-8 h-8" />}
-            title="No business cards yet"
-            description="Create your first card and get a permanent QR link at digicon.cards/c/{cardId}."
-            action={
-              <GlassButton onClick={openCreate}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Card
-              </GlassButton>
-            }
-          />
-        </GlassCard>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cards.map((card) => (
-            <GlassCard
-              key={card.id}
-              variant="regular"
-              hover
-              className="overflow-hidden"
-            >
-              <CardPreview card={card} />
-
-              <div className="p-4">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs text-white/40 flex items-center gap-1">
-                    <Share2 className="w-3 h-3" />
-                    {card.share_count || 0} shares
-                  </span>
-
-                  <Badge
-                    color={
-                      card.is_active
-                        ? 'green'
-                        : 'gray'
-                    }
-                  >
-                    {card.is_active
-                      ? 'Active'
-                      : 'Inactive'}
-                  </Badge>
+      {showForm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 p-4 backdrop-blur-md">
+          <div className="mx-auto max-w-5xl py-8">
+            <GlassCard variant="thick" className="overflow-hidden">
+              <div className="flex items-center justify-between border-b border-white/10 p-5">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-digicon-primary">DigiCon Card</p>
+                  <h2 className="mt-1 text-2xl font-bold text-white">
+                    {editingCard ? "Edit your card" : "Create your card"}
+                  </h2>
                 </div>
-
-                <div className="grid grid-cols-[1fr_auto_auto] gap-2">
-                  <GlassButton
-                    size="sm"
-                    onClick={() => {
-                      setShareCard(card);
-                      setWalletError(null);
-                    }}
-                  >
-                    <Share2 className="w-4 h-4 mr-1" />
-                    Share
-                  </GlassButton>
-
-                  <button
-                    type="button"
-                    onClick={() => openEdit(card)}
-                    className="p-2 rounded-glass-sm glass-thin text-white/70"
-                    aria-label={`Edit ${card.full_name}`}
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void deleteCard(card.id)
-                    }
-                    className="p-2 rounded-glass-sm glass-thin text-digicon-error/70"
-                    disabled={deleting === card.id}
-                    aria-label={`Delete ${card.full_name}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    void toggleActive(card)
-                  }
-                  className="w-full mt-2 text-xs text-white/40"
-                >
-                  {card.is_active
-                    ? 'Deactivate card'
-                    : 'Activate card'}
+                <button type="button" onClick={() => setShowForm(false)} className="rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white" aria-label="Close">
+                  <X className="h-5 w-5" />
                 </button>
               </div>
+
+              <form onSubmit={saveCard} className="grid gap-6 p-5 lg:grid-cols-[1fr_360px]">
+                <div className="space-y-6">
+                  {error && <div className="rounded-xl border border-digicon-error/30 bg-digicon-error/10 p-3 text-sm text-digicon-error">{error}</div>}
+
+                  <section>
+                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">Contact details</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <GlassLabel htmlFor="card-full-name">Full name *</GlassLabel>
+                        <GlassInput id="card-full-name" required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Juan Dela Cruz" />
+                      </div>
+                      <div>
+                        <GlassLabel htmlFor="card-job-title">Job title</GlassLabel>
+                        <GlassInput id="card-job-title" value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} placeholder="Founder & CEO" />
+                      </div>
+                      <div>
+                        <GlassLabel htmlFor="card-company">Company</GlassLabel>
+                        <GlassInput id="card-company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="DigiCon" />
+                      </div>
+                      <div>
+                        <GlassLabel htmlFor="card-email">Email</GlassLabel>
+                        <GlassInput id="card-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="hello@example.com" />
+                      </div>
+                      <div>
+                        <GlassLabel htmlFor="card-phone">Phone</GlassLabel>
+                        <GlassInput id="card-phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+63 917 123 4567" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <GlassLabel htmlFor="card-website">Website</GlassLabel>
+                        <GlassInput id="card-website" type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="yourcompany.com" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <GlassLabel htmlFor="card-address">Address</GlassLabel>
+                        <GlassInput id="card-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="City, Philippines" />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold uppercase tracking-wider text-white/60">Photo or logo</h3>
+                      {form.photo_url && <Badge color="green"><Check className="h-3 w-3" />Saved</Badge>}
+                    </div>
+
+                    <input ref={fileInput} className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} />
+
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                      <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                        {form.photo_url ? (
+                          <img src={form.photo_url} alt="Card photo preview" className="h-full w-full object-cover" />
+                        ) : (
+                          <Camera className="h-8 w-8 text-white/30" />
+                        )}
+                      </div>
+                      <div>
+                        <GlassButton type="button" variant="secondary" disabled={uploading} onClick={() => fileInput.current?.click()}>
+                          {uploading ? <Spinner className="mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
+                          {uploading ? "Uploading…" : "Choose photo or logo"}
+                        </GlassButton>
+                        <p className="mt-2 text-xs text-white/40">JPG, PNG or WebP · max 5 MB</p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">Style</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <GlassLabel htmlFor="card-template">Template</GlassLabel>
+                        <GlassSelect id="card-template" value={form.design_template} onChange={(e) => setForm({ ...form, design_template: e.target.value as DesignTemplate })}>
+                          {Object.entries(TEMPLATE_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
+                        </GlassSelect>
+                      </div>
+                      <div>
+                        <GlassLabel htmlFor="card-font">Font</GlassLabel>
+                        <GlassSelect id="card-font" value={form.font_family} onChange={(e) => setForm({ ...form, font_family: e.target.value })}>
+                          {FONTS.map((font) => <option key={font} value={font}>{font}</option>)}
+                        </GlassSelect>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                      <div>
+                        <GlassLabel>Primary color</GlassLabel>
+                        <div className="flex flex-wrap gap-2">
+                          {COLORS.map((color) => <button key={color} type="button" aria-label={`Primary color ${color}`} onClick={() => setForm({ ...form, card_color: color })} className={`h-9 w-9 rounded-full border-2 ${form.card_color === color ? "border-white" : "border-white/20"}`} style={{ backgroundColor: color }} />)}
+                        </div>
+                      </div>
+                      <div>
+                        <GlassLabel>Accent color</GlassLabel>
+                        <div className="flex flex-wrap gap-2">
+                          {COLORS.map((color) => <button key={color} type="button" aria-label={`Accent color ${color}`} onClick={() => setForm({ ...form, accent_color: color })} className={`h-9 w-9 rounded-full border-2 ${form.accent_color === color ? "border-white" : "border-white/20"}`} style={{ backgroundColor: color }} />)}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <div className="flex flex-col-reverse gap-3 border-t border-white/10 pt-5 sm:flex-row sm:justify-end">
+                    <GlassButton type="button" variant="ghost" onClick={() => setShowForm(false)} disabled={saving}>Cancel</GlassButton>
+                    <GlassButton type="submit" size="lg" disabled={saving || uploading}>
+                      {saving ? <Spinner className="mr-2 h-4 w-4" /> : <Check className="mr-2 h-4 w-4" />}
+                      {saving ? "Saving…" : editingCard ? "Save changes" : "Create card"}
+                    </GlassButton>
+                  </div>
+                </div>
+
+                <aside className="lg:sticky lg:top-6 lg:self-start">
+                  <p className="mb-3 text-xs uppercase tracking-widest text-white/40">Live preview</p>
+                  <CardPreview card={form} large />
+                </aside>
+              </form>
             </GlassCard>
-          ))}
-        </div>
-      )}
-
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm cursor-default"
-            aria-label="Close form"
-            onClick={() =>
-              !saving && setShowForm(false)
-            }
-          />
-
-          <GlassCard
-            variant="chrome"
-            className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">
-                {editingCard
-                  ? 'Edit Card'
-                  : 'Create Card'}
-              </h2>
-
-              <button
-                type="button"
-                onClick={() =>
-                  !saving && setShowForm(false)
-                }
-                aria-label="Close"
-              >
-                <X className="w-5 h-5 text-white/50" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={saveCard}
-              className="space-y-5"
-            >
-              <div>
-                <GlassLabel>
-                  <Camera className="inline w-4 h-4 mr-1" />
-                  Photo or Logo
-                </GlassLabel>
-
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full overflow-hidden glass-thin flex items-center justify-center">
-                    {form.photo_url ? (
-                      <img
-                        src={form.photo_url}
-                        alt="Card photo or logo"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Camera className="w-7 h-7 text-white/30" />
-                    )}
-                  </div>
-
-                  <input
-                    ref={fileInput}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={uploadPhoto}
-                    className="hidden"
-                  />
-
-                  <GlassButton
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      fileInput.current?.click()
-                    }
-                    disabled={uploading}
-                  >
-                    {uploading ? (
-                      <Spinner className="w-4 h-4" />
-                    ) : (
-                      'Upload photo/logo'
-                    )}
-                  </GlassButton>
-
-                  {form.photo_url && (
-                    <button
-                      type="button"
-                      className="text-xs text-white/40"
-                      onClick={() =>
-                        setForm((value) => ({
-                          ...value,
-                          photo_url: '',
-                        }))
-                      }
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-
-                <p className="text-xs text-white/30 mt-2">
-                  JPG, PNG, or WebP · maximum 5 MB.
-                  The uploaded URL is saved with the card.
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <GlassLabel>
-                    Full Name *
-                  </GlassLabel>
-                  <GlassInput
-                    value={form.full_name}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        full_name:
-                          event.target.value,
-                      })
-                    }
-                    autoComplete="name"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <GlassLabel>
-                    Job Title
-                  </GlassLabel>
-                  <GlassInput
-                    value={form.job_title}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        job_title:
-                          event.target.value,
-                      })
-                    }
-                    autoComplete="organization-title"
-                  />
-                </div>
-
-                <div>
-                  <GlassLabel>
-                    Company
-                  </GlassLabel>
-                  <GlassInput
-                    value={form.company}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        company:
-                          event.target.value,
-                      })
-                    }
-                    autoComplete="organization"
-                  />
-                </div>
-
-                <div>
-                  <GlassLabel>
-                    Phone
-                  </GlassLabel>
-                  <GlassInput
-                    value={form.phone}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        phone:
-                          event.target.value,
-                      })
-                    }
-                    autoComplete="tel"
-                    inputMode="tel"
-                  />
-                </div>
-
-                <div>
-                  <GlassLabel>
-                    Email
-                  </GlassLabel>
-                  <GlassInput
-                    type="email"
-                    value={form.email}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        email:
-                          event.target.value,
-                      })
-                    }
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div>
-                  <GlassLabel>
-                    Website
-                  </GlassLabel>
-                  <GlassInput
-                    value={form.website}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        website:
-                          event.target.value,
-                      })
-                    }
-                    autoComplete="url"
-                    inputMode="url"
-                    placeholder="example.com"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <GlassLabel>
-                  Address
-                </GlassLabel>
-                <GlassInput
-                  value={form.address}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      address:
-                        event.target.value,
-                    })
-                  }
-                  autoComplete="street-address"
-                />
-              </div>
-
-              <div>
-                <GlassLabel>
-                  <Type className="inline w-4 h-4 mr-1" />
-                  Font
-                </GlassLabel>
-
-                <GlassSelect
-                  value={form.font_family}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      font_family:
-                        event.target.value,
-                    })
-                  }
-                >
-                  {FONTS.map((font) => (
-                    <option
-                      key={font}
-                      value={font}
-                    >
-                      {font}
-                    </option>
-                  ))}
-                </GlassSelect>
-              </div>
-
-              <div>
-                <GlassLabel>
-                  Template
-                </GlassLabel>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {(
-                    Object.keys(
-                      TEMPLATE_META,
-                    ) as DesignTemplate[]
-                  ).map((key) => {
-                    const MetaIcon =
-                      TEMPLATE_META[key].icon;
-
-                    return (
-                      <button
-                        type="button"
-                        key={key}
-                        onClick={() =>
-                          setForm({
-                            ...form,
-                            design_template:
-                              key,
-                          })
-                        }
-                        className={`p-3 rounded-glass-md ${
-                          form.design_template ===
-                          key
-                            ? 'glass-regular ring-2 ring-digicon-primary'
-                            : 'glass-thin'
-                        }`}
-                      >
-                        <span className="flex justify-center mb-1">
-                          <MetaIcon className="w-5 h-5" />
-                        </span>
-                        <span className="text-xs text-white/80">
-                          {TEMPLATE_META[key]
-                            .label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <GlassLabel>
-                  Primary Color
-                </GlassLabel>
-
-                <div className="flex flex-wrap gap-2">
-                  {COLORS.map((color) => (
-                    <button
-                      type="button"
-                      key={color}
-                      onClick={() =>
-                        setForm({
-                          ...form,
-                          card_color: color,
-                        })
-                      }
-                      className={`w-9 h-9 rounded-full ${
-                        form.card_color ===
-                        color
-                          ? 'ring-2 ring-white scale-110'
-                          : ''
-                      }`}
-                      style={{
-                        backgroundColor:
-                          color,
-                      }}
-                      aria-label={`Primary color ${color}`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {(form.design_template ===
-                'futuristic' ||
-                form.design_template ===
-                  'custom') && (
-                <div>
-                  <GlassLabel>
-                    Accent Color
-                  </GlassLabel>
-
-                  <div className="flex flex-wrap gap-2">
-                    {COLORS.map((color) => (
-                      <button
-                        type="button"
-                        key={color}
-                        onClick={() =>
-                          setForm({
-                            ...form,
-                            accent_color:
-                              color,
-                          })
-                        }
-                        className={`w-9 h-9 rounded-full ${
-                          form.accent_color ===
-                          color
-                            ? 'ring-2 ring-white scale-110'
-                            : ''
-                        }`}
-                        style={{
-                          backgroundColor:
-                            color,
-                        }}
-                        aria-label={`Accent color ${color}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <GlassLabel>
-                  Preview
-                </GlassLabel>
-                <CardPreview
-                  card={form}
-                  large
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <GlassButton
-                  type="submit"
-                  className="flex-1"
-                  disabled={
-                    saving || uploading
-                  }
-                >
-                  {saving
-                    ? 'Saving…'
-                    : editingCard
-                      ? 'Save Changes'
-                      : 'Create Card'}
-                </GlassButton>
-
-                <GlassButton
-                  type="button"
-                  variant="ghost"
-                  onClick={() =>
-                    setShowForm(false)
-                  }
-                >
-                  Cancel
-                </GlassButton>
-              </div>
-            </form>
-          </GlassCard>
+          </div>
         </div>
       )}
 
       {shareCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm cursor-default"
-            aria-label="Close sharing dialog"
-            onClick={() =>
-              !walletLoading &&
-              setShareCard(null)
-            }
-          />
-
-          <GlassCard
-            variant="chrome"
-            className="relative w-full max-w-md max-h-[92vh] overflow-y-auto p-6"
-          >
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-xl font-bold text-white">
-                Share Card
-              </h2>
-
-              <button
-                type="button"
-                onClick={() =>
-                  !walletLoading &&
-                  setShareCard(null)
-                }
-                aria-label="Close"
-              >
-                <X className="w-5 h-5 text-white/50" />
-              </button>
-            </div>
-
-            <div className="text-center">
-              <div className="inline-block p-4 bg-white rounded-glass-lg">
-                <QRCodeSVG
-                  id="digicon-share-qr"
-                  value={shareUrl}
-                  size={220}
-                  level="H"
-                  includeMargin
-                />
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-md">
+          <GlassCard variant="thick" className="w-full max-w-lg p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <Badge color="green"><Check className="h-3 w-3" />Card saved</Badge>
+                <h2 className="mt-3 text-2xl font-bold text-white">Share {shareCard.full_name}</h2>
+                <p className="mt-1 text-sm text-white/50">This QR code resolves directly to this saved card.</p>
               </div>
-
-              <p className="text-xs text-white/40 mt-3 break-all">
-                Scan to open this exact card:
-                <br />
-                {shareUrl}
-              </p>
+              <button type="button" onClick={() => setShareCard(null)} className="rounded-full p-2 text-white/60 hover:bg-white/10" aria-label="Close share dialog"><X className="h-5 w-5" /></button>
             </div>
 
-            <div className="flex gap-2 mt-5">
-              <GlassInput
-                readOnly
-                value={shareUrl}
-                onFocus={(event) =>
-                  event.currentTarget.select()
-                }
-                aria-label="Digital card URL"
-              />
+            <div className="mt-6 flex justify-center rounded-3xl bg-white p-5">
+              <QRCodeSVG value={publicCardUrl(shareCard.id)} size={240} level="H" includeMargin />
+            </div>
 
-              <GlassButton
-                size="sm"
-                variant="secondary"
-                onClick={() =>
-                  void copyLink()
-                }
-                aria-label="Copy card URL"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
+              <code className="min-w-0 flex-1 truncate text-xs text-white/70">{publicCardUrl(shareCard.id)}</code>
+              <GlassButton size="sm" onClick={() => void copyShareUrl(shareCard)}>
+                {copied ? <Check className="mr-1.5 h-4 w-4" /> : <Copy className="mr-1.5 h-4 w-4" />}
+                {copied ? "Copied" : "Copy"}
               </GlassButton>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              <button
-                type="button"
-                onClick={downloadQR}
-                className="p-3 rounded-glass-md glass-thin text-white/70 text-xs"
-              >
-                <Download className="w-5 h-5 mx-auto mb-1" />
-                QR PNG
-              </button>
-
-              <button
-                type="button"
-                onClick={shareSMS}
-                className="p-3 rounded-glass-md glass-thin text-white/70 text-xs"
-              >
-                <MessageSquare className="w-5 h-5 mx-auto mb-1" />
-                SMS
-              </button>
-
-              <button
-                type="button"
-                onClick={shareEmail}
-                className="p-3 rounded-glass-md glass-thin text-white/70 text-xs"
-              >
-                <Mail className="w-5 h-5 mx-auto mb-1" />
-                Email
-              </button>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <GlassButton variant="secondary" onClick={() => window.open(publicCardUrl(shareCard.id), "_blank", "noopener,noreferrer")}>
+                <ExternalLink className="mr-2 h-4 w-4" />Open card
+              </GlassButton>
+              <GlassButton variant="ghost" onClick={() => downloadVCard(shareCard)}>
+                <Download className="mr-2 h-4 w-4" />Download vCard
+              </GlassButton>
             </div>
 
-            <button
-              type="button"
-              onClick={downloadVCard}
-              className="w-full mt-3 p-3 rounded-glass-md glass-thin text-sm text-white/70"
-            >
-              <Download className="w-4 h-4 inline mr-2" />
-              Save Contact (vCard)
-            </button>
-
-            <div className="mt-5">
-              <div className="flex items-center gap-2 mb-2">
-                <Wallet className="w-4 h-4 text-digicon-primary" />
-                <h3 className="text-sm font-semibold text-white">
-                  Save to Wallet
-                </h3>
-              </div>
-
-              <p className="text-xs text-white/40 mb-3">
-                Add this exact digital business
-                card to your mobile wallet.
-              </p>
-
-              {walletError && (
-                <div className="mb-3 p-3 rounded-glass-md bg-digicon-error/10 border border-digicon-error/20 text-xs text-white/70">
-                  {walletError}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    void appleWallet()
-                  }
-                  disabled={Boolean(
-                    walletLoading,
-                  )}
-                  className="p-3 rounded-glass-md glass-thin text-white/80 disabled:opacity-50"
-                >
-                  {walletLoading ===
-                  'apple' ? (
-                    <Spinner className="w-4 h-4 mx-auto mb-1" />
-                  ) : (
-                    <Wallet className="w-4 h-4 mx-auto mb-1" />
-                  )}
-                  <span className="text-xs">
-                    Apple Wallet
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    void googleWallet()
-                  }
-                  disabled={Boolean(
-                    walletLoading,
-                  )}
-                  className="p-3 rounded-glass-md glass-thin text-white/80 disabled:opacity-50"
-                >
-                  {walletLoading ===
-                  'google' ? (
-                    <Spinner className="w-4 h-4 mx-auto mb-1" />
-                  ) : (
-                    <Wallet className="w-4 h-4 mx-auto mb-1" />
-                  )}
-                  <span className="text-xs">
-                    Google Wallet
-                  </span>
-                </button>
-              </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void useWallet("apple", shareCard)}>
+                {walletLoading === "apple" ? <Spinner className="mr-2 h-4 w-4" /> : <Wallet className="mr-2 h-4 w-4" />}
+                Apple Wallet
+              </GlassButton>
+              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void useWallet("google", shareCard)}>
+                {walletLoading === "google" ? <Spinner className="mr-2 h-4 w-4" /> : <Wallet className="mr-2 h-4 w-4" />}
+                Google Wallet
+              </GlassButton>
             </div>
+
+            {walletError && <p className="mt-3 text-sm text-digicon-error">{walletError}</p>}
           </GlassCard>
         </div>
       )}
-    </AppLayout>
+    </main>
   );
 }
