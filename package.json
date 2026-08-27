@@ -1,15 +1,24 @@
 {
   "name": "digicon",
+  "description": "Digital Business Cards & CRM for SMEs and Startups - React + Vite + TypeScript + Tailwind",
+  "author": "ASilva Innovations",
+  "license": "Apache 2.0",
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "homepage": "https://digicon.ph",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/secretariatlivable/digicon.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.app.json && vite build",
+    "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "type-check": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
@@ -21,22 +30,49 @@
     "recharts": "^3.10.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
+    "@eslint/js": "^9.12.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.18",
-    "eslint": "^9.39.5",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
-    "eslint-plugin-react-refresh": "^0.4.11",
-    "globals": "^15.9.0",
-    "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.5.3",
-    "typescript-eslint": "^8.68.0",
-    "vite": "^5.4.21"
+    "@vitejs/plugin-basic-ssl": "^1.1.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.12.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.2",
+    "eslint-plugin-react": "^7.35.2",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.12",
+    "globals": "^15.11.0",
+    "postcss": "^8.4.47",
+    "postcss-import": "^16.1.0",
+    "postcss-nesting": "^12.1.5",
+    "prettier": "^3.3.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.8.1",
+    "vite": "^5.4.21",
+    "vite-plugin-compression": "^0.5.1"
   },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
   "engines": {
+    "node": ">=18.0.0",
     "npm": ">=9.0.0"
-  }
+  },
+  "keywords": [
+    "digital-business-cards",
+    "crm",
+    "contact-management",
+    "qr-code",
+    "nfc",
+    "sme",
+    "startup",
+    "philippines",
+    "react",
+    "vite",
+    "typescript"
+  ]
 }
