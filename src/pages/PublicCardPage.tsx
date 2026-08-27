@@ -1,24 +1,47 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { useParams } from 'react-router-dom';
 import {
-  Mail,
-  Phone,
-  Globe,
-  MapPin,
-  Save,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import {
+  AlertCircle,
+  Briefcase,
+  Camera,
   Check,
+  Copy,
   Download,
+  Edit3,
+  Mail,
+  MessageSquare,
+  Palette,
+  Plus,
+  Share2,
+  Trash2,
+  Type,
   Wallet,
+  X,
+  Zap,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
 import { supabase, type BusinessCard } from '@/lib/supabase';
 import {
+  addToAppleWallet,
+  addToGoogleWallet,
+} from '@/lib/wallet';
+import {
+  Badge,
+  EmptyState,
+  GlassButton,
   GlassCard,
   GlassInput,
   GlassLabel,
-  GlassButton,
+  GlassSelect,
   Spinner,
 } from '@/components/ui/GlassCard';
-import { addToAppleWallet, addToGoogleWallet } from '@/lib/wallet';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 type DesignTemplate =
   | 'futuristic'
@@ -26,49 +49,122 @@ type DesignTemplate =
   | 'simple'
   | 'custom';
 
-type FormData = {
+type CardForm = {
   full_name: string;
-  email: string;
-  phone: string;
-  company: string;
   job_title: string;
-  consent: boolean;
+  company: string;
+  phone: string;
+  email: string;
+  website: string;
+  address: string;
+  card_color: string;
+  accent_color: string;
+  design_template: DesignTemplate;
+  font_family: string;
+  photo_url: string;
 };
 
-const EMPTY_FORM: FormData = {
+const PUBLIC_ORIGIN = 'https://digicon.cards';
+
+const COLORS = [
+  '#007AFF',
+  '#5856D6',
+  '#34C759',
+  '#FF9500',
+  '#FF3B30',
+  '#5AC8FA',
+  '#AF52DE',
+  '#10B981',
+  '#F59E0B',
+  '#6366F1',
+];
+
+const FONTS = [
+  'Inter',
+  'Poppins',
+  'SF Pro Display',
+  'Helvetica Neue',
+  'Arial',
+  'Georgia',
+];
+
+const DEFAULT_FORM: CardForm = {
   full_name: '',
-  email: '',
-  phone: '',
-  company: '',
   job_title: '',
-  consent: false,
+  company: '',
+  phone: '',
+  email: '',
+  website: '',
+  address: '',
+  card_color: '#007AFF',
+  accent_color: '#5856D6',
+  design_template: 'professional',
+  font_family: 'Inter',
+  photo_url: '',
 };
 
-function escapeVCardValue(value: string): string {
-  return value
+const TEMPLATE_META = {
+  futuristic: { icon: Zap, label: 'Futuristic' },
+  professional: { icon: Briefcase, label: 'Professional' },
+  simple: { icon: MinusIcon, label: 'Simple' },
+  custom: { icon: Palette, label: 'Custom' },
+} satisfies Record<
+  DesignTemplate,
+  { icon: typeof Zap; label: string }
+>;
+
+function MinusIcon({
+  className,
+}: {
+  className?: string;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={className}
+    >
+      −
+    </span>
+  );
+}
+
+function safeFileName(value: string) {
+  return (
+    value
+      .trim()
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '')
+      .replace(/\s+/g, '_')
+      .slice(0, 80) || 'digicon-card'
+  );
+}
+
+function normalizeWebsite(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return /^[a-z][a-z\d+\-.]*:/i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+}
+
+function escapeVCard(value: string | null | undefined) {
+  return (value || '')
     .replace(/\\/g, '\\\\')
     .replace(/\n/g, '\\n')
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,');
 }
 
-function normalizeUrl(url: string): string {
-  if (!url) return '';
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+function publicCardUrl(cardId: string) {
+  return `${PUBLIC_ORIGIN}/c/${encodeURIComponent(cardId)}`;
 }
 
-function downloadFile(
-  content: BlobPart,
-  filename: string,
-  type: string,
-): void {
-  const blob = new Blob([content], { type });
+function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
 
   link.href = url;
   link.download = filename;
-  link.style.display = 'none';
+  link.rel = 'noopener';
 
   document.body.appendChild(link);
   link.click();
@@ -77,613 +173,1358 @@ function downloadFile(
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function PublicCardPage() {
-  const { cardId } = useParams<{ cardId: string }>();
+function CardPreview({
+  card,
+  large = false,
+}: {
+  card: CardForm | BusinessCard;
+  large?: boolean;
+}) {
+  const template = (
+    'design_template' in card
+      ? card.design_template
+      : 'professional'
+  ) as DesignTemplate;
 
-  const [card, setCard] = useState<BusinessCard | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [walletLoading, setWalletLoading] = useState<'apple' | 'google' | null>(null);
-  const [walletError, setWalletError] = useState('');
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
+  const photo =
+    ('photo_url' in card ? card.photo_url : '') || '';
 
-  useEffect(() => {
-    let cancelled = false;
+  const color = card.card_color || '#007AFF';
+  const accent = card.accent_color || color;
+  const font = card.font_family || 'Inter';
+  const name = card.full_name || 'Your Name';
 
-    const loadCard = async () => {
-      if (!cardId) {
-        setCard(null);
-        setLoading(false);
-        return;
-      }
+  const avatar = photo ? (
+    <img
+      src={photo}
+      alt={name}
+      className={`${
+        large ? 'w-20 h-20' : 'w-14 h-14'
+      } rounded-full object-cover ring-2 ring-white/40`}
+    />
+  ) : (
+    <div
+      className={`${
+        large ? 'w-20 h-20' : 'w-14 h-14'
+      } rounded-full bg-white/15 flex items-center justify-center`}
+    >
+      <span
+        className={`${
+          large ? 'text-3xl' : 'text-xl'
+        } font-bold text-white`}
+      >
+        {name.charAt(0).toUpperCase()}
+      </span>
+    </div>
+  );
 
-      setLoading(true);
-      setLoadError(false);
-
-      const { data, error } = await supabase
-        .from('business_cards')
-        .select('*')
-        .eq('id', cardId)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      if (error) {
-        console.error('Failed to load public business card:', error);
-        setCard(null);
-        setLoadError(true);
-      } else {
-        setCard((data as BusinessCard | null) ?? null);
-      }
-
-      setLoading(false);
-    };
-
-    void loadCard();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cardId]);
-
-  const updateForm = <K extends keyof FormData>(
-    field: K,
-    value: FormData[K],
-  ) => {
-    setFormData((current) => ({ ...current, [field]: value }));
-  };
-
-  const saveContact = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!card || !formData.consent || saving) return;
-
-    setSaving(true);
-
-    try {
-      const { error: contactError } = await supabase.from('contacts').insert({
-        user_id: card.user_id,
-        card_id: card.id,
-        full_name: formData.full_name.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        company: formData.company.trim(),
-        job_title: formData.job_title.trim(),
-        consent_given: true,
-        consent_date: new Date().toISOString(),
-        source: 'qr',
-        status: 'new',
-      });
-
-      if (contactError) throw contactError;
-
-      const { data: eco } = await supabase
-        .from('eco_stats')
-        .select('contacts_saved')
-        .eq('user_id', card.user_id)
-        .maybeSingle();
-
-      if (eco) {
-        await supabase
-          .from('eco_stats')
-          .update({
-            contacts_saved: (eco.contacts_saved ?? 0) + 1,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', card.user_id);
-      }
-
-      setSaved(true);
-      setShowContactForm(false);
-    } catch (error) {
-      console.error('Failed to save contact:', error);
-      window.alert('We could not save your contact details. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const downloadVCard = () => {
-    if (!card) return;
-
-    const fields = [
-      'BEGIN:VCARD',
-      'VERSION:3.0',
-      `FN:${escapeVCardValue(card.full_name)}`,
-      card.job_title ? `TITLE:${escapeVCardValue(card.job_title)}` : '',
-      card.company ? `ORG:${escapeVCardValue(card.company)}` : '',
-      card.phone ? `TEL:${escapeVCardValue(card.phone)}` : '',
-      card.email ? `EMAIL:${escapeVCardValue(card.email)}` : '',
-      card.website ? `URL:${escapeVCardValue(normalizeUrl(card.website))}` : '',
-      card.address ? `ADR:;;${escapeVCardValue(card.address)}` : '',
-      card.bio ? `NOTE:${escapeVCardValue(card.bio)}` : '',
-      'END:VCARD',
-    ].filter(Boolean);
-
-    const filename =
-      `${card.full_name.trim().replace(/\s+/g, '_').replace(/[^\w.-]/g, '') || 'digicon-contact'}.vcf`;
-
-    downloadFile(
-      `${fields.join('\r\n')}\r\n`,
-      filename,
-      'text/vcard;charset=utf-8',
-    );
-  };
-
-  const handleAppleWallet = async () => {
-    if (!card || walletLoading) return;
-
-    setWalletLoading('apple');
-    setWalletError('');
-
-    try {
-      await addToAppleWallet(card.id);
-    } catch (error) {
-      console.error(error);
-      setWalletError(
-        error instanceof Error
-          ? error.message
-          : 'Apple Wallet is currently unavailable.',
-      );
-    } finally {
-      setWalletLoading(null);
-    }
-  };
-
-  const handleGoogleWallet = async () => {
-    if (!card || walletLoading) return;
-
-    setWalletLoading('google');
-    setWalletError('');
-
-    try {
-      await addToGoogleWallet(card.id);
-    } catch (error) {
-      console.error(error);
-      setWalletError(
-        error instanceof Error
-          ? error.message
-          : 'Google Wallet is currently unavailable.',
-      );
-      setWalletLoading(null);
-    }
-  };
-
-  const renderCard = () => {
-    if (!card) return null;
-
-    const template =
-      (card.design_template as DesignTemplate) || 'professional';
-    const font = card.font_family || 'Inter';
-    const photo = card.photo_url || '';
-    const cardColor = card.card_color || '#1C1C1E';
-    const accent = card.accent_color || cardColor;
-
-    const contactLinks = (
-      <div className="bg-white/10 backdrop-blur p-6 space-y-3">
-        {card.email && (
-          <a
-            href={`mailto:${card.email}`}
-            className="flex items-center gap-3 text-white/90 hover:text-white transition-colors"
-          >
-            <Mail className="w-4 h-4 shrink-0" />
-            <span className="text-sm break-all">{card.email}</span>
-          </a>
-        )}
-
-        {card.phone && (
-          <a
-            href={`tel:${card.phone}`}
-            className="flex items-center gap-3 text-white/90 hover:text-white transition-colors"
-          >
-            <Phone className="w-4 h-4 shrink-0" />
-            <span className="text-sm">{card.phone}</span>
-          </a>
-        )}
-
-        {card.website && (
-          <a
-            href={normalizeUrl(card.website)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 text-white/90 hover:text-white transition-colors"
-          >
-            <Globe className="w-4 h-4 shrink-0" />
-            <span className="text-sm break-all">{card.website}</span>
-          </a>
-        )}
-
-        {card.address && (
-          <div className="flex items-start gap-3 text-white/90">
-            <MapPin className="w-4 h-4 shrink-0 mt-0.5" />
-            <span className="text-sm">{card.address}</span>
-          </div>
-        )}
+  const content = (
+    <div
+      className={`${
+        large ? 'p-8' : 'p-5'
+      } relative z-10`}
+    >
+      <div className="flex justify-end mb-4">
+        {avatar}
       </div>
-    );
 
-    const photoEl = photo ? (
-      <img
-        src={photo}
-        alt={`${card.full_name}'s profile`}
-        className="w-16 h-16 rounded-full object-cover ring-2 ring-white/40"
-      />
-    ) : (
-      <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-        <span className="text-2xl font-bold text-white">
-          {card.full_name.charAt(0).toUpperCase()}
-        </span>
-      </div>
-    );
+      <h3
+        className={`${
+          large ? 'text-2xl' : 'text-lg'
+        } font-bold text-white`}
+        style={{ fontFamily: font }}
+      >
+        {name}
+      </h3>
 
-    const header = (
-      <div className="relative p-8">
-        <div className="flex justify-end mb-4">{photoEl}</div>
-        <h1
-          className="text-2xl font-bold text-white tracking-tight"
+      {card.job_title && (
+        <p
+          className="text-white/80"
           style={{ fontFamily: font }}
         >
-          {card.full_name}
-        </h1>
-        {card.job_title && (
-          <p className="text-white/80" style={{ fontFamily: font }}>
-            {card.job_title}
-          </p>
-        )}
-        {card.company && (
-          <p className="text-white/60 text-sm" style={{ fontFamily: font }}>
-            {card.company}
-          </p>
-        )}
-      </div>
-    );
+          {card.job_title}
+        </p>
+      )}
 
-    if (template === 'simple') {
-      return (
-        <div className="rounded-glass-2xl overflow-hidden animate-scale-in bg-[#1C1C1E] border border-white/10">
-          <div className="p-8">
-            <div className="mb-4">{photoEl}</div>
-            <h1
-              className="text-2xl font-semibold text-white"
-              style={{ fontFamily: font }}
-            >
-              {card.full_name}
-            </h1>
-            {card.job_title && (
-              <p className="text-white/50" style={{ fontFamily: font }}>
-                {card.job_title}
-              </p>
-            )}
-            {card.company && (
-              <p className="text-white/40 text-sm" style={{ fontFamily: font }}>
-                {card.company}
-              </p>
-            )}
-          </div>
-          {contactLinks}
-        </div>
-      );
-    }
-
-    if (template === 'custom') {
-      return (
-        <div
-          className="relative rounded-glass-2xl overflow-hidden animate-scale-in"
-          style={{
-            background: `linear-gradient(160deg, ${cardColor}, ${accent})`,
-          }}
+      {card.company && (
+        <p
+          className="text-white/60 text-sm"
+          style={{ fontFamily: font }}
         >
-          <div
-            className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl opacity-40"
-            aria-hidden="true"
-            style={{ backgroundColor: accent }}
-          />
-          {header}
-          {contactLinks}
-        </div>
-      );
-    }
+          {card.company}
+        </p>
+      )}
+    </div>
+  );
 
-    if (template === 'futuristic') {
-      return (
-        <div
-          className="relative rounded-glass-2xl overflow-hidden animate-scale-in"
-          style={{
-            background: `linear-gradient(135deg, ${cardColor}, ${accent})`,
-          }}
-        >
-          <div
-            className="absolute inset-0 opacity-30"
-            aria-hidden="true"
-            style={{
-              backgroundImage:
-                'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.2) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 50%)',
-            }}
-          />
-          {header}
-          {contactLinks}
-        </div>
-      );
-    }
-
+  if (template === 'simple') {
     return (
-      <div
-        className="rounded-glass-2xl overflow-hidden animate-scale-in"
-        style={{
-          background: `linear-gradient(135deg, ${cardColor}, ${cardColor}cc)`,
-        }}
-      >
-        {header}
-        {contactLinks}
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner className="w-8 h-8" />
-      </div>
-    );
-  }
-
-  if (!card) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center">
-          <img
-            src="/DigiCon_logo_transparent.jpg"
-            alt="DigiCon logo"
-            className="w-12 h-12 rounded-full mx-auto mb-4 opacity-30"
-          />
-          <h1 className="text-xl font-bold text-white mb-2">
-            {loadError ? 'Unable to Load Card' : 'Card Not Found'}
-          </h1>
-          <p className="text-white/50">
-            {loadError
-              ? 'Something went wrong while loading this business card. Please try again.'
-              : 'This business card may have been deactivated or does not exist.'}
-          </p>
-        </div>
+      <div className="rounded-glass-2xl overflow-hidden bg-[#1C1C1E] border border-white/10">
+        {content}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative">
-      <section className="relative w-full overflow-hidden">
-        <img
-          src="/DigiCon_Banner.png"
-          alt="DigiCon digital business cards and CRM automation platform"
-          className="w-full h-auto block"
-        />
-      </section>
+    <div
+      className="relative rounded-glass-2xl overflow-hidden"
+      style={{
+        background:
+          template === 'futuristic' ||
+          template === 'custom'
+            ? `linear-gradient(135deg, ${color}, ${accent})`
+            : `linear-gradient(135deg, ${color}, ${color}dd)`,
+      }}
+    >
+      {template === 'futuristic' && (
+        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,.2),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,.15),transparent_50%)]" />
+      )}
 
-      <main className="min-h-screen flex items-center justify-center px-4 py-8 relative">
+      {template === 'custom' && (
         <div
-          className="absolute inset-0 overflow-hidden pointer-events-none"
-          aria-hidden="true"
-        >
-          <div
-            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px]"
-            style={{ backgroundColor: `${card.card_color || '#ffffff'}30` }}
-          />
+          className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl opacity-30"
+          style={{ backgroundColor: accent }}
+        />
+      )}
+
+      {content}
+    </div>
+  );
+}
+
+export function CardsPage() {
+  const { session } = useAuth();
+
+  const [cards, setCards] = useState<BusinessCard[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [showForm, setShowForm] = useState(false);
+  const [editingCard, setEditingCard] =
+    useState<BusinessCard | null>(null);
+  const [shareCard, setShareCard] =
+    useState<BusinessCard | null>(null);
+
+  const [form, setForm] =
+    useState<CardForm>(DEFAULT_FORM);
+
+  const [error, setError] = useState<string | null>(null);
+  const [walletError, setWalletError] =
+    useState<string | null>(null);
+  const [walletLoading, setWalletLoading] =
+    useState<'apple' | 'google' | null>(null);
+
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] =
+    useState<string | null>(null);
+
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const loadCards = async () => {
+    if (!session?.user?.id) {
+      setCards([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    const { data, error: dbError } = await supabase
+      .from('business_cards')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+
+    if (dbError) {
+      setError(dbError.message);
+      setCards([]);
+    } else {
+      setCards((data as BusinessCard[]) || []);
+    }
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    void loadCards();
+  }, [session?.user?.id]);
+
+  const openCreate = () => {
+    setEditingCard(null);
+    setForm({ ...DEFAULT_FORM });
+    setError(null);
+    setShowForm(true);
+  };
+
+  const openEdit = (card: BusinessCard) => {
+    setEditingCard(card);
+    setForm({
+      full_name: card.full_name || '',
+      job_title: card.job_title || '',
+      company: card.company || '',
+      phone: card.phone || '',
+      email: card.email || '',
+      website: card.website || '',
+      address: card.address || '',
+      card_color: card.card_color || '#007AFF',
+      accent_color: card.accent_color || '#5856D6',
+      design_template:
+        (card.design_template as DesignTemplate) ||
+        'professional',
+      font_family: card.font_family || 'Inter',
+      photo_url: card.photo_url || '',
+    });
+    setError(null);
+    setShowForm(true);
+  };
+
+  const uploadPhoto = async (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file || !session?.user?.id) return;
+
+    const allowed = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    ];
+
+    if (!allowed.includes(file.type)) {
+      setError('Use a JPG, PNG, or WebP image.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Photo must be 5 MB or smaller.');
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const ext =
+        file.type === 'image/png'
+          ? 'png'
+          : file.type === 'image/webp'
+            ? 'webp'
+            : 'jpg';
+
+      const path =
+        `${session.user.id}/${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from('card-photos')
+          .upload(path, file, {
+            upsert: false,
+            contentType: file.type,
+            cacheControl: '31536000',
+          });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('card-photos')
+        .getPublicUrl(path);
+
+      if (!data.publicUrl) {
+        throw new Error(
+          'Could not create a public photo URL.',
+        );
+      }
+
+      setForm((current) => ({
+        ...current,
+        photo_url: data.publicUrl,
+      }));
+    } catch (uploadError) {
+      console.error('Photo upload failed:', uploadError);
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : 'Unable to upload photo.',
+      );
+    } finally {
+      setUploading(false);
+
+      if (fileInput.current) {
+        fileInput.current.value = '';
+      }
+    }
+  };
+
+  const saveCard = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+
+    if (!session?.user?.id) {
+      setError(
+        'Your session has expired. Please sign in again.',
+      );
+      return;
+    }
+
+    if (!form.full_name.trim()) {
+      setError('Full name is required.');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    const payload = {
+      full_name: form.full_name.trim(),
+      job_title: form.job_title.trim() || null,
+      company: form.company.trim() || null,
+      phone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      website: normalizeWebsite(form.website) || null,
+      address: form.address.trim() || null,
+      card_color: form.card_color,
+      accent_color: form.accent_color,
+      design_template: form.design_template,
+      font_family: form.font_family,
+      photo_url: form.photo_url || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      if (editingCard) {
+        const { error: updateError } =
+          await supabase
+            .from('business_cards')
+            .update(payload)
+            .eq('id', editingCard.id)
+            .eq('user_id', session.user.id);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } =
+          await supabase
+            .from('business_cards')
+            .insert({
+              ...payload,
+              user_id: session.user.id,
+              is_active: true,
+              share_count: 0,
+            });
+
+        if (insertError) throw insertError;
+      }
+
+      setShowForm(false);
+      setEditingCard(null);
+      await loadCards();
+    } catch (saveError) {
+      console.error('Card save failed:', saveError);
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Unable to save the business card.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteCard = async (id: string) => {
+    if (!session?.user?.id || deleting) return;
+
+    const card = cards.find((item) => item.id === id);
+
+    if (
+      !window.confirm(
+        `Delete ${card?.full_name || 'this card'}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeleting(id);
+    setError(null);
+
+    try {
+      const { error: deleteError } =
+        await supabase
+          .from('business_cards')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', session.user.id);
+
+      if (deleteError) throw deleteError;
+
+      if (shareCard?.id === id) {
+        setShareCard(null);
+      }
+
+      await loadCards();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Unable to delete the card.',
+      );
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const toggleActive = async (card: BusinessCard) => {
+    if (!session?.user?.id) return;
+
+    const { error: updateError } =
+      await supabase
+        .from('business_cards')
+        .update({
+          is_active: !card.is_active,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', card.id)
+        .eq('user_id', session.user.id);
+
+    if (updateError) {
+      setError(updateError.message);
+    } else {
+      await loadCards();
+    }
+  };
+
+  const shareUrl = shareCard
+    ? publicCardUrl(shareCard.id)
+    : '';
+
+  const copyLink = async () => {
+    if (!shareUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      window.setTimeout(
+        () => setCopied(false),
+        1800,
+      );
+    } catch {
+      setError('Unable to copy the card URL.');
+    }
+  };
+
+  const downloadVCard = () => {
+    if (!shareCard) return;
+
+    const lines = [
+      'BEGIN:VCARD',
+      'VERSION:3.0',
+      `FN:${escapeVCard(shareCard.full_name)}`,
+      shareCard.job_title
+        ? `TITLE:${escapeVCard(shareCard.job_title)}`
+        : '',
+      shareCard.company
+        ? `ORG:${escapeVCard(shareCard.company)}`
+        : '',
+      shareCard.phone
+        ? `TEL;TYPE=CELL:${escapeVCard(shareCard.phone)}`
+        : '',
+      shareCard.email
+        ? `EMAIL;TYPE=INTERNET:${escapeVCard(shareCard.email)}`
+        : '',
+      shareCard.website
+        ? `URL:${escapeVCard(normalizeWebsite(shareCard.website))}`
+        : '',
+      shareCard.address
+        ? `ADR;TYPE=WORK:;;${escapeVCard(shareCard.address)};;;`
+        : '',
+      `item1.URL:${escapeVCard(shareUrl)}`,
+      'item1.X-ABLabel:DigiCon Digital Card',
+      'END:VCARD',
+    ]
+      .filter(Boolean)
+      .join('\r\n');
+
+    downloadBlob(
+      new Blob([`${lines}\r\n`], {
+        type: 'text/vcard;charset=utf-8',
+      }),
+      `${safeFileName(shareCard.full_name)}.vcf`,
+    );
+  };
+
+  const downloadQR = () => {
+    if (!shareCard) return;
+
+    const svg = document.getElementById(
+      'digicon-share-qr',
+    );
+
+    if (!(svg instanceof SVGElement)) {
+      setError('QR code is not ready.');
+      return;
+    }
+
+    const source =
+      new XMLSerializer().serializeToString(svg);
+
+    const blobUrl = URL.createObjectURL(
+      new Blob([source], {
+        type: 'image/svg+xml',
+      }),
+    );
+
+    const image = new Image();
+
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1600;
+      canvas.height = 1600;
+
+      const context = canvas.getContext('2d');
+
+      if (!context) {
+        URL.revokeObjectURL(blobUrl);
+        setError('Unable to render the QR image.');
+        return;
+      }
+
+      context.fillStyle = '#FFFFFF';
+      context.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      );
+
+      context.drawImage(
+        image,
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      );
+
+      canvas.toBlob((png) => {
+        URL.revokeObjectURL(blobUrl);
+
+        if (png) {
+          downloadBlob(
+            png,
+            `digicon-qr-${safeFileName(
+              shareCard.full_name,
+            )}.png`,
+          );
+        } else {
+          setError('Unable to create the QR image.');
+        }
+      }, 'image/png');
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      setError('Unable to render the QR image.');
+    };
+
+    image.src = blobUrl;
+  };
+
+  const shareSMS = () => {
+    if (shareUrl) {
+      window.location.href =
+        `sms:?body=${encodeURIComponent(
+          `My DigiCon digital business card: ${shareUrl}`,
+        )}`;
+    }
+  };
+
+  const shareEmail = () => {
+    if (!shareCard || !shareUrl) return;
+
+    const subject =
+      `${shareCard.full_name} — DigiCon Digital Business Card`;
+
+    window.location.href =
+      `mailto:?subject=${encodeURIComponent(subject)}` +
+      `&body=${encodeURIComponent(
+        `Here is my digital business card:\n${shareUrl}`,
+      )}`;
+  };
+
+  const appleWallet = async () => {
+    if (!shareCard || walletLoading) return;
+
+    setWalletLoading('apple');
+    setWalletError(null);
+
+    try {
+      await addToAppleWallet(shareCard.id);
+    } catch (walletException) {
+      setWalletError(
+        walletException instanceof Error
+          ? walletException.message
+          : 'Apple Wallet is unavailable.',
+      );
+    } finally {
+      setWalletLoading(null);
+    }
+  };
+
+  const googleWallet = async () => {
+    if (!shareCard || walletLoading) return;
+
+    setWalletLoading('google');
+    setWalletError(null);
+
+    try {
+      await addToGoogleWallet(shareCard.id);
+    } catch (walletException) {
+      setWalletError(
+        walletException instanceof Error
+          ? walletException.message
+          : 'Google Wallet is unavailable.',
+      );
+    } finally {
+      setWalletLoading(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center py-32">
+          <Spinner className="w-8 h-8" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="flex items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white">
+            Digital Business Cards
+          </h1>
+          <p className="text-white/50 mt-1">
+            Create, share, and save your professional identity.
+          </p>
         </div>
 
-        <div className="relative w-full max-w-md space-y-4">
-          {renderCard()}
+        <GlassButton onClick={openCreate}>
+          <Plus className="w-5 h-5 mr-2" />
+          Create Card
+        </GlassButton>
+      </div>
 
-          <div className="grid grid-cols-2 gap-2">
+      {error && (
+        <GlassCard
+          variant="regular"
+          className="p-4 mb-6 border border-digicon-error/30"
+        >
+          <div className="flex gap-3 items-start">
+            <AlertCircle className="w-5 h-5 text-digicon-error shrink-0" />
+            <p className="text-sm text-white/80 flex-1">
+              {error}
+            </p>
             <button
               type="button"
-              onClick={downloadVCard}
-              className="flex items-center justify-center gap-2 p-3 rounded-glass-md glass-thin text-white/70 hover:text-white transition-all"
+              onClick={() => setError(null)}
+              aria-label="Dismiss error"
             >
-              <Download className="w-4 h-4" />
-              <span className="text-sm">Save Contact</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowContactForm((visible) => !visible)}
-              className="flex items-center justify-center gap-2 p-3 rounded-glass-md glass-thin text-white/70 hover:text-white transition-all"
-              aria-expanded={showContactForm}
-              aria-controls="share-contact-form"
-            >
-              <Save className="w-4 h-4" />
-              <span className="text-sm">Share My Info</span>
+              <X className="w-4 h-4 text-white/40" />
             </button>
           </div>
+        </GlassCard>
+      )}
 
-          <div className="rounded-glass-md glass-thin p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Wallet className="w-4 h-4 text-white/70" />
-              <span className="text-sm font-medium text-white">
-                Save to Wallet
-              </span>
-            </div>
+      {cards.length === 0 ? (
+        <GlassCard variant="regular" className="p-6">
+          <EmptyState
+            icon={<Share2 className="w-8 h-8" />}
+            title="No business cards yet"
+            description="Create your first card and get a permanent QR link at digicon.cards/c/{cardId}."
+            action={
+              <GlassButton onClick={openCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Card
+              </GlassButton>
+            }
+          />
+        </GlassCard>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {cards.map((card) => (
+            <GlassCard
+              key={card.id}
+              variant="regular"
+              hover
+              className="overflow-hidden"
+            >
+              <CardPreview card={card} />
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleAppleWallet}
-                disabled={walletLoading !== null}
-                className="flex items-center justify-center gap-2 p-3 rounded-glass-sm bg-white/10 text-white/80 hover:bg-white/15 hover:text-white disabled:opacity-50 transition-all"
-              >
-                {walletLoading === 'apple' ? (
-                  <Spinner className="w-4 h-4" />
-                ) : (
-                  <Wallet className="w-4 h-4" />
-                )}
-                <span className="text-xs font-medium">
-                  Add to Apple Wallet
-                </span>
-              </button>
+              <div className="p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs text-white/40 flex items-center gap-1">
+                    <Share2 className="w-3 h-3" />
+                    {card.share_count || 0} shares
+                  </span>
 
-              <button
-                type="button"
-                onClick={handleGoogleWallet}
-                disabled={walletLoading !== null}
-                className="flex items-center justify-center gap-2 p-3 rounded-glass-sm bg-white/10 text-white/80 hover:bg-white/15 hover:text-white disabled:opacity-50 transition-all"
-              >
-                {walletLoading === 'google' ? (
-                  <Spinner className="w-4 h-4" />
-                ) : (
-                  <Wallet className="w-4 h-4" />
-                )}
-                <span className="text-xs font-medium">
-                  Add to Google Wallet
-                </span>
-              </button>
-            </div>
+                  <Badge
+                    color={
+                      card.is_active
+                        ? 'green'
+                        : 'gray'
+                    }
+                  >
+                    {card.is_active
+                      ? 'Active'
+                      : 'Inactive'}
+                  </Badge>
+                </div>
 
-            {walletError && (
-              <p className="text-xs text-red-300 mt-2" role="alert">
-                {walletError}
-              </p>
-            )}
-          </div>
+                <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+                  <GlassButton
+                    size="sm"
+                    onClick={() => {
+                      setShareCard(card);
+                      setWalletError(null);
+                    }}
+                  >
+                    <Share2 className="w-4 h-4 mr-1" />
+                    Share
+                  </GlassButton>
 
-          {showContactForm && !saved && (
-            <div id="share-contact-form">
-              <GlassCard
-                variant="chrome"
-                className="p-6 animate-fade-in-up"
-              >
-              <h2 className="text-lg font-semibold text-white mb-1">
-                Share Your Details
+                  <button
+                    type="button"
+                    onClick={() => openEdit(card)}
+                    className="p-2 rounded-glass-sm glass-thin text-white/70"
+                    aria-label={`Edit ${card.full_name}`}
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void deleteCard(card.id)
+                    }
+                    className="p-2 rounded-glass-sm glass-thin text-digicon-error/70"
+                    disabled={deleting === card.id}
+                    aria-label={`Delete ${card.full_name}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void toggleActive(card)
+                  }
+                  className="w-full mt-2 text-xs text-white/40"
+                >
+                  {card.is_active
+                    ? 'Deactivate card'
+                    : 'Activate card'}
+                </button>
+              </div>
+            </GlassCard>
+          ))}
+        </div>
+      )}
+
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm cursor-default"
+            aria-label="Close form"
+            onClick={() =>
+              !saving && setShowForm(false)
+            }
+          />
+
+          <GlassCard
+            variant="chrome"
+            className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white">
+                {editingCard
+                  ? 'Edit Card'
+                  : 'Create Card'}
               </h2>
-              <p className="text-sm text-white/50 mb-4">
-                Share your contact info with {card.full_name.split(' ')[0]}.
-              </p>
 
-              <form onSubmit={saveContact} className="space-y-3">
+              <button
+                type="button"
+                onClick={() =>
+                  !saving && setShowForm(false)
+                }
+                aria-label="Close"
+              >
+                <X className="w-5 h-5 text-white/50" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={saveCard}
+              className="space-y-5"
+            >
+              <div>
+                <GlassLabel>
+                  <Camera className="inline w-4 h-4 mr-1" />
+                  Photo or Logo
+                </GlassLabel>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden glass-thin flex items-center justify-center">
+                    {form.photo_url ? (
+                      <img
+                        src={form.photo_url}
+                        alt="Card photo or logo"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Camera className="w-7 h-7 text-white/30" />
+                    )}
+                  </div>
+
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={uploadPhoto}
+                    className="hidden"
+                  />
+
+                  <GlassButton
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() =>
+                      fileInput.current?.click()
+                    }
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <Spinner className="w-4 h-4" />
+                    ) : (
+                      'Upload photo/logo'
+                    )}
+                  </GlassButton>
+
+                  {form.photo_url && (
+                    <button
+                      type="button"
+                      className="text-xs text-white/40"
+                      onClick={() =>
+                        setForm((value) => ({
+                          ...value,
+                          photo_url: '',
+                        }))
+                      }
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-xs text-white/30 mt-2">
+                  JPG, PNG, or WebP · maximum 5 MB.
+                  The uploaded URL is saved with the card.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <GlassLabel>Your Name *</GlassLabel>
+                  <GlassLabel>
+                    Full Name *
+                  </GlassLabel>
                   <GlassInput
-                    value={formData.full_name}
+                    value={form.full_name}
                     onChange={(event) =>
-                      updateForm('full_name', event.target.value)
+                      setForm({
+                        ...form,
+                        full_name:
+                          event.target.value,
+                      })
                     }
                     autoComplete="name"
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <GlassLabel>Email</GlassLabel>
-                    <GlassInput
-                      type="email"
-                      value={formData.email}
-                      onChange={(event) =>
-                        updateForm('email', event.target.value)
-                      }
-                      autoComplete="email"
-                    />
-                  </div>
-                  <div>
-                    <GlassLabel>Phone</GlassLabel>
-                    <GlassInput
-                      value={formData.phone}
-                      onChange={(event) =>
-                        updateForm('phone', event.target.value)
-                      }
-                      autoComplete="tel"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <GlassLabel>Company</GlassLabel>
-                    <GlassInput
-                      value={formData.company}
-                      onChange={(event) =>
-                        updateForm('company', event.target.value)
-                      }
-                      autoComplete="organization"
-                    />
-                  </div>
-                  <div>
-                    <GlassLabel>Job Title</GlassLabel>
-                    <GlassInput
-                      value={formData.job_title}
-                      onChange={(event) =>
-                        updateForm('job_title', event.target.value)
-                      }
-                      autoComplete="organization-title"
-                    />
-                  </div>
-                </div>
-
-                <label className="flex items-start gap-3 cursor-pointer p-3 rounded-glass-sm glass-thin">
-                  <input
-                    type="checkbox"
-                    checked={formData.consent}
+                <div>
+                  <GlassLabel>
+                    Job Title
+                  </GlassLabel>
+                  <GlassInput
+                    value={form.job_title}
                     onChange={(event) =>
-                      updateForm('consent', event.target.checked)
+                      setForm({
+                        ...form,
+                        job_title:
+                          event.target.value,
+                      })
                     }
-                    className="w-5 h-5 rounded accent-digicon-primary mt-0.5 shrink-0"
-                    required
+                    autoComplete="organization-title"
                   />
-                  <span className="text-xs text-white/60">
-                    I consent to my contact information being stored and used by{' '}
-                    {card.full_name} in accordance with the Data Privacy Act
-                    of the Philippines.
-                  </span>
-                </label>
+                </div>
 
+                <div>
+                  <GlassLabel>
+                    Company
+                  </GlassLabel>
+                  <GlassInput
+                    value={form.company}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        company:
+                          event.target.value,
+                      })
+                    }
+                    autoComplete="organization"
+                  />
+                </div>
+
+                <div>
+                  <GlassLabel>
+                    Phone
+                  </GlassLabel>
+                  <GlassInput
+                    value={form.phone}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        phone:
+                          event.target.value,
+                      })
+                    }
+                    autoComplete="tel"
+                    inputMode="tel"
+                  />
+                </div>
+
+                <div>
+                  <GlassLabel>
+                    Email
+                  </GlassLabel>
+                  <GlassInput
+                    type="email"
+                    value={form.email}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        email:
+                          event.target.value,
+                      })
+                    }
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div>
+                  <GlassLabel>
+                    Website
+                  </GlassLabel>
+                  <GlassInput
+                    value={form.website}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        website:
+                          event.target.value,
+                      })
+                    }
+                    autoComplete="url"
+                    inputMode="url"
+                    placeholder="example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <GlassLabel>
+                  Address
+                </GlassLabel>
+                <GlassInput
+                  value={form.address}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      address:
+                        event.target.value,
+                    })
+                  }
+                  autoComplete="street-address"
+                />
+              </div>
+
+              <div>
+                <GlassLabel>
+                  <Type className="inline w-4 h-4 mr-1" />
+                  Font
+                </GlassLabel>
+
+                <GlassSelect
+                  value={form.font_family}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      font_family:
+                        event.target.value,
+                    })
+                  }
+                >
+                  {FONTS.map((font) => (
+                    <option
+                      key={font}
+                      value={font}
+                    >
+                      {font}
+                    </option>
+                  ))}
+                </GlassSelect>
+              </div>
+
+              <div>
+                <GlassLabel>
+                  Template
+                </GlassLabel>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(
+                    Object.keys(
+                      TEMPLATE_META,
+                    ) as DesignTemplate[]
+                  ).map((key) => {
+                    const MetaIcon =
+                      TEMPLATE_META[key].icon;
+
+                    return (
+                      <button
+                        type="button"
+                        key={key}
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            design_template:
+                              key,
+                          })
+                        }
+                        className={`p-3 rounded-glass-md ${
+                          form.design_template ===
+                          key
+                            ? 'glass-regular ring-2 ring-digicon-primary'
+                            : 'glass-thin'
+                        }`}
+                      >
+                        <span className="flex justify-center mb-1">
+                          <MetaIcon className="w-5 h-5" />
+                        </span>
+                        <span className="text-xs text-white/80">
+                          {TEMPLATE_META[key]
+                            .label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <GlassLabel>
+                  Primary Color
+                </GlassLabel>
+
+                <div className="flex flex-wrap gap-2">
+                  {COLORS.map((color) => (
+                    <button
+                      type="button"
+                      key={color}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          card_color: color,
+                        })
+                      }
+                      className={`w-9 h-9 rounded-full ${
+                        form.card_color ===
+                        color
+                          ? 'ring-2 ring-white scale-110'
+                          : ''
+                      }`}
+                      style={{
+                        backgroundColor:
+                          color,
+                      }}
+                      aria-label={`Primary color ${color}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {(form.design_template ===
+                'futuristic' ||
+                form.design_template ===
+                  'custom') && (
+                <div>
+                  <GlassLabel>
+                    Accent Color
+                  </GlassLabel>
+
+                  <div className="flex flex-wrap gap-2">
+                    {COLORS.map((color) => (
+                      <button
+                        type="button"
+                        key={color}
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            accent_color:
+                              color,
+                          })
+                        }
+                        className={`w-9 h-9 rounded-full ${
+                          form.accent_color ===
+                          color
+                            ? 'ring-2 ring-white scale-110'
+                            : ''
+                        }`}
+                        style={{
+                          backgroundColor:
+                            color,
+                        }}
+                        aria-label={`Accent color ${color}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <GlassLabel>
+                  Preview
+                </GlassLabel>
+                <CardPreview
+                  card={form}
+                  large
+                />
+              </div>
+
+              <div className="flex gap-3">
                 <GlassButton
                   type="submit"
-                  className="w-full"
-                  disabled={!formData.consent || saving}
+                  className="flex-1"
+                  disabled={
+                    saving || uploading
+                  }
                 >
-                  {saving ? (
-                    <Spinner className="inline mr-2 w-4 h-4" />
-                  ) : (
-                    <Save className="inline mr-2 w-4 h-4" />
-                  )}
-                  {saving ? 'Sharing...' : 'Share My Contact'}
+                  {saving
+                    ? 'Saving…'
+                    : editingCard
+                      ? 'Save Changes'
+                      : 'Create Card'}
                 </GlassButton>
-              </form>
-              </GlassCard>
-            </div>
-          )}
 
-          {saved && (
-            <GlassCard
-              variant="chrome"
-              className="p-8 text-center animate-scale-in"
-            >
-              <div className="w-16 h-16 rounded-glass-xl glass-chrome flex items-center justify-center mx-auto mb-4">
-                <Check className="w-8 h-8 text-digicon-eco" />
+                <GlassButton
+                  type="button"
+                  variant="ghost"
+                  onClick={() =>
+                    setShowForm(false)
+                  }
+                >
+                  Cancel
+                </GlassButton>
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">
-                Contact Shared!
-              </h2>
-              <p className="text-white/50 text-sm">
-                Your details have been sent to {card.full_name}.
-              </p>
-            </GlassCard>
-          )}
-
-          <div className="text-center">
-            <span className="inline-flex items-center gap-2 text-white/30 text-xs">
-              <img
-                src="/DigiCon_logo_transparent.jpg"
-                alt="DigiCon logo"
-                className="w-4 h-4 rounded-full"
-              />
-              Powered by DigiCon
-            </span>
-          </div>
+            </form>
+          </GlassCard>
         </div>
-      </main>
-    </div>
+      )}
+
+      {shareCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm cursor-default"
+            aria-label="Close sharing dialog"
+            onClick={() =>
+              !walletLoading &&
+              setShareCard(null)
+            }
+          />
+
+          <GlassCard
+            variant="chrome"
+            className="relative w-full max-w-md max-h-[92vh] overflow-y-auto p-6"
+          >
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-xl font-bold text-white">
+                Share Card
+              </h2>
+
+              <button
+                type="button"
+                onClick={() =>
+                  !walletLoading &&
+                  setShareCard(null)
+                }
+                aria-label="Close"
+              >
+                <X className="w-5 h-5 text-white/50" />
+              </button>
+            </div>
+
+            <div className="text-center">
+              <div className="inline-block p-4 bg-white rounded-glass-lg">
+                <QRCodeSVG
+                  id="digicon-share-qr"
+                  value={shareUrl}
+                  size={220}
+                  level="H"
+                  includeMargin
+                />
+              </div>
+
+              <p className="text-xs text-white/40 mt-3 break-all">
+                Scan to open this exact card:
+                <br />
+                {shareUrl}
+              </p>
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <GlassInput
+                readOnly
+                value={shareUrl}
+                onFocus={(event) =>
+                  event.currentTarget.select()
+                }
+                aria-label="Digital card URL"
+              />
+
+              <GlassButton
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  void copyLink()
+                }
+                aria-label="Copy card URL"
+              >
+                {copied ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </GlassButton>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              <button
+                type="button"
+                onClick={downloadQR}
+                className="p-3 rounded-glass-md glass-thin text-white/70 text-xs"
+              >
+                <Download className="w-5 h-5 mx-auto mb-1" />
+                QR PNG
+              </button>
+
+              <button
+                type="button"
+                onClick={shareSMS}
+                className="p-3 rounded-glass-md glass-thin text-white/70 text-xs"
+              >
+                <MessageSquare className="w-5 h-5 mx-auto mb-1" />
+                SMS
+              </button>
+
+              <button
+                type="button"
+                onClick={shareEmail}
+                className="p-3 rounded-glass-md glass-thin text-white/70 text-xs"
+              >
+                <Mail className="w-5 h-5 mx-auto mb-1" />
+                Email
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={downloadVCard}
+              className="w-full mt-3 p-3 rounded-glass-md glass-thin text-sm text-white/70"
+            >
+              <Download className="w-4 h-4 inline mr-2" />
+              Save Contact (vCard)
+            </button>
+
+            <div className="mt-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="w-4 h-4 text-digicon-primary" />
+                <h3 className="text-sm font-semibold text-white">
+                  Save to Wallet
+                </h3>
+              </div>
+
+              <p className="text-xs text-white/40 mb-3">
+                Add this exact digital business
+                card to your mobile wallet.
+              </p>
+
+              {walletError && (
+                <div className="mb-3 p-3 rounded-glass-md bg-digicon-error/10 border border-digicon-error/20 text-xs text-white/70">
+                  {walletError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    void appleWallet()
+                  }
+                  disabled={Boolean(
+                    walletLoading,
+                  )}
+                  className="p-3 rounded-glass-md glass-thin text-white/80 disabled:opacity-50"
+                >
+                  {walletLoading ===
+                  'apple' ? (
+                    <Spinner className="w-4 h-4 mx-auto mb-1" />
+                  ) : (
+                    <Wallet className="w-4 h-4 mx-auto mb-1" />
+                  )}
+                  <span className="text-xs">
+                    Apple Wallet
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void googleWallet()
+                  }
+                  disabled={Boolean(
+                    walletLoading,
+                  )}
+                  className="p-3 rounded-glass-md glass-thin text-white/80 disabled:opacity-50"
+                >
+                  {walletLoading ===
+                  'google' ? (
+                    <Spinner className="w-4 h-4 mx-auto mb-1" />
+                  ) : (
+                    <Wallet className="w-4 h-4 mx-auto mb-1" />
+                  )}
+                  <span className="text-xs">
+                    Google Wallet
+                  </span>
+                </button>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+    </AppLayout>
   );
 }
