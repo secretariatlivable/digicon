@@ -9,3 +9,6 @@ verify_jwt = true
 
 [functions.google-wallet-pass]
 verify_jwt = true
+
+[functions.paypal-create-subscription]
+verify_jwt = true
