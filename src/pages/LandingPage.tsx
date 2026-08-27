@@ -17,6 +17,7 @@ import { translate, type TranslationKey } from '@/lib/i18n';
 import { GlassButton, GlassCard } from '@/components/ui/GlassCard';
 import { LandingNav } from '@/components/layout/AppLayout';
 import { DigiConLogo } from '@/components/brand/DigiConLogo';
+import { PayPalSubscriptionButton } from '@/components/PayPalSubscriptionButton';
 
 export function LandingPage() {
   const { session } = useAuth();
@@ -77,6 +78,7 @@ export function LandingPage() {
         'English & Filipino',
       ],
       highlight: false,
+      paypalPlanId: import.meta.env.VITE_PAYPAL_STARTER_PLAN_ID as string | undefined,
     },
     {
       nameKey: 'landing.pricing.growth' as TranslationKey,
@@ -92,6 +94,7 @@ export function LandingPage() {
         'Priority Support',
       ],
       highlight: true,
+      paypalPlanId: import.meta.env.VITE_PAYPAL_GROWTH_PLAN_ID as string | undefined,
     },
     {
       nameKey: 'landing.pricing.enterprise' as TranslationKey,
@@ -106,6 +109,7 @@ export function LandingPage() {
         'SLA Guarantee',
       ],
       highlight: false,
+      paypalPlanId: import.meta.env.VITE_PAYPAL_ENTERPRISE_PLAN_ID as string | undefined,
     },
   ];
 
@@ -546,19 +550,28 @@ export function LandingPage() {
                 ))}
               </ul>
 
-              <GlassButton
-                variant={plan.highlight ? 'primary' : 'secondary'}
-                className="w-full"
-                onClick={handlePrimaryCTA}
-              >
-                {lang === 'en'
-                  ? plan.highlight
-                    ? 'Start growing'
-                    : 'Choose plan'
-                  : plan.highlight
-                    ? 'Magsimulang lumago'
-                    : 'Piliin ang plan'}
-              </GlassButton>
+              <div className="space-y-3">
+                <PayPalSubscriptionButton
+                  planId={plan.paypalPlanId}
+                  label={`Subscribe to ${t(plan.nameKey)} with PayPal`}
+                  onApproved={(subscriptionId) => {
+                    console.info('DigiCon PayPal subscription approved:', subscriptionId);
+                    navigate('/dashboard');
+                  }}
+                  onError={(error) => {
+                    console.error('DigiCon PayPal subscription error:', error);
+                  }}
+                />
+
+                <GlassButton
+                  variant="ghost"
+                  className="w-full"
+                  onClick={handlePrimaryCTA}
+                >
+                  {lang === 'en' ? 'Continue to DigiCon' : 'Magpatuloy sa DigiCon'}
+                  <ArrowRight className="inline ml-2 w-4 h-4" />
+                </GlassButton>
+              </div>
             </GlassCard>
           ))}
         </div>
