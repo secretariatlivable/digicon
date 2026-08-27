@@ -1,0 +1,41 @@
+# DigiCon — Netlify production deployment configuration
+# Vite + React + TypeScript SPA
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Netlify should use the repository's Node 22-compatible runtime.
+[build.environment]
+  NODE_VERSION = "22"
+
+# React Router / SPA fallback.
+# Static files and real Netlify Functions are excluded from the fallback.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+# Long-term caching for Vite-generated static assets.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# PWA manifest should be revalidated.
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Security headers for the application.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
