@@ -8,7 +8,7 @@ import {
 
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ThemeProvider } from '@/components/theme-provider';
-import AppLayout from '@/components/AppLayout';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 import { LandingPage } from '@/pages/LandingPage';
 import { AuthPage } from '@/pages/AuthPage';
@@ -22,10 +22,6 @@ import { PublicCardPage } from '@/pages/PublicCardPage';
 
 import { Spinner } from '@/components/ui/GlassCard';
 
-/**
- * Loading screen displayed while Supabase authentication
- * state is being resolved.
- */
 function LoadingScreen() {
   return (
     <div
@@ -40,137 +36,91 @@ function LoadingScreen() {
   );
 }
 
-/**
- * Protects authenticated application routes.
- *
- * Users without an active session are redirected to /auth.
- */
-function ProtectedRoute({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  if (!session) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (loading) return <LoadingScreen />;
+  if (!session) return <Navigate to="/auth" replace />;
 
   return <>{children}</>;
 }
 
-/**
- * Authenticated application shell.
- *
- * AppLayout is intentionally applied only to authenticated
- * application pages so that the public landing page,
- * authentication page, and public digital cards can have
- * their own layouts.
- */
-function ProtectedLayout() {
-  return (
-    <ProtectedRoute>
-      <AppLayout />
-    </ProtectedRoute>
-  );
-}
-
-/**
- * Application routes.
- */
 function AppRoutes() {
   return (
     <Routes>
-      {/* =====================================================
-          Public Marketing / Landing
-          ===================================================== */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/c/:cardId" element={<PublicCardPage />} />
+
       <Route
-        path="/"
-        element={<LandingPage />}
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <DashboardPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cards"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <CardsPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/contacts"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ContactsPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <AnalyticsPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/eco"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <EcoPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SettingsPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
       />
 
-      {/* =====================================================
-          Authentication
-          ===================================================== */}
-      <Route
-        path="/auth"
-        element={<AuthPage />}
-      />
-
-      {/* =====================================================
-          Public Digital Business Card
-          ===================================================== */}
-      <Route
-        path="/c/:cardId"
-        element={<PublicCardPage />}
-      />
-
-      {/* =====================================================
-          Authenticated Application
-          ===================================================== */}
-      <Route element={<ProtectedLayout />}>
-        <Route
-          path="/dashboard"
-          element={<DashboardPage />}
-        />
-
-        <Route
-          path="/cards"
-          element={<CardsPage />}
-        />
-
-        <Route
-          path="/contacts"
-          element={<ContactsPage />}
-        />
-
-        <Route
-          path="/analytics"
-          element={<AnalyticsPage />}
-        />
-
-        <Route
-          path="/eco"
-          element={<EcoPage />}
-        />
-
-        <Route
-          path="/settings"
-          element={<SettingsPage />}
-        />
-      </Route>
-
-      {/* =====================================================
-          Unknown Routes
-          ===================================================== */}
-      <Route
-        path="*"
-        element={<Navigate to="/" replace />}
-      />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-/**
- * DigiCon application root.
- *
- * Provider order:
- *
- * ThemeProvider
- *   └── AuthProvider
- *         └── BrowserRouter
- *               └── AppRoutes
- */
 export default function App() {
   return (
-    <ThemeProvider
-      defaultTheme="system"
-      storageKey="digicon-theme"
-    >
+    <ThemeProvider defaultTheme="system" storageKey="digicon-theme">
       <AuthProvider>
         <BrowserRouter>
           <AppRoutes />
