@@ -1,66 +1,86 @@
 /**
- * DigiCon PayPal subscription plans.
- *
- * These IDs are PayPal Plan IDs, not client secrets.
- * The amounts are configured in PayPal; the UI mirrors the DigiCon
- * Pricing Section.
+ * Single source of truth for DigiCon pricing and PayPal plan identifiers.
  */
 
-export type DigiConPlanId = "starter" | "growth" | "enterprise";
+export type DigiConPlanId = "startup" | "starter" | "growth" | "enterprise";
 
 export interface DigiConPayPalPlan {
   id: DigiConPlanId;
   name: string;
   priceLabel: string;
-  planId: string;
+  paypalPlanId: string | null;
   description: string;
   features: readonly string[];
   highlight?: boolean;
+  selfServe: boolean;
 }
 
-export const DIGICON_PAYPAL_PLANS: Record<DigiConPlanId, DigiConPayPalPlan> = {
+export const DIGICON_PAYPAL_PLANS: Readonly<
+  Record<DigiConPlanId, DigiConPayPalPlan>
+> = {
+  startup: {
+    id: "startup",
+    name: "Startup",
+    priceLabel: "Free",
+    paypalPlanId: null,
+    description:
+      "Get started with two digital cards and essential sharing tools.",
+    features: [
+      "2 Digital Business Cards",
+      "QR Code Sharing",
+      "Shareable Card URL",
+      "Contact Capture",
+      "Basic Analytics",
+    ],
+    selfServe: false,
+  },
+
   starter: {
     id: "starter",
     name: "Starter",
     priceLabel: "₱199 / month",
-    planId: "P-6MP428311N661121LNKIFXAA",
+    paypalPlanId: "P-6MP428311N661121LNKIFXAA",
     description:
-      "Perfect for solo entrepreneurs and small teams under 10 people.",
+      "Essential digital networking for individuals and small businesses.",
     features: [
-      "1 Digital Card",
-      "Up to 25 Contacts",
+      "3 Digital Cards",
+      "Up to 100 Contacts",
       "QR Code Sharing",
       "Basic Analytics",
-      "English & Filipino",
+      "Photo or Company Logo",
+      "Eco Impact Tracking",
     ],
+    selfServe: true,
   },
 
   growth: {
     id: "growth",
     name: "Growth",
     priceLabel: "₱499 / month",
-    planId: "P-8BE95305CD2758215NKIF2ZI",
+    paypalPlanId: "P-8BE95305CD2758215NKIF2ZI",
     description:
-      "For scaling SMEs that need CRM automation and advanced analytics.",
+      "Advanced networking and CRM tools for growing SMEs and teams.",
     features: [
       "Unlimited Cards",
       "Unlimited Contacts",
-      "Intuitive CRM Sync",
+      "CRM Sync",
       "Advanced Analytics",
-      "Team Access (5 seats)",
+      "Team Access",
       "Eco Gamification",
+      "Wallet Downloads",
       "Priority Support",
     ],
     highlight: true,
+    selfServe: true,
   },
 
   enterprise: {
     id: "enterprise",
     name: "Enterprise",
     priceLabel: "Custom",
-    planId: "P-0M743656FN385102CNKIGEJI",
+    paypalPlanId: "P-0M743656FN385102CNKIGEJI",
     description:
-      "Tailored solutions for large organizations with custom integrations.",
+      "Tailored solutions for organizations with advanced integrations and support.",
     features: [
       "Everything in Growth",
       "Unlimited Team Seats",
@@ -69,6 +89,7 @@ export const DIGICON_PAYPAL_PLANS: Record<DigiConPlanId, DigiConPayPalPlan> = {
       "Dedicated Manager",
       "SLA Guarantee",
     ],
+    selfServe: true,
   },
 };
 
