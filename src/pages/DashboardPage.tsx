@@ -7,7 +7,7 @@ import {
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
 import { supabase, type BusinessCard, type Contact, type EcoStats, type Badge } from '@/lib/supabase';
-import { GlassCard, GlassButton, Spinner, EmptyState } from '@/components/ui/Glass';
+import { GlassCard, GlassButton, Spinner, EmptyState } from '@/components/ui/GlassCard';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 export function DashboardPage() {
