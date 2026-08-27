@@ -1,26 +1,25 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 import {
   BrowserRouter,
   Navigate,
   Route,
   Routes,
-} from 'react-router-dom';
+} from "react-router-dom";
 
-import { AuthProvider, useAuth } from '@/lib/auth';
-import { ThemeProvider } from '@/components/theme-provider';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AppLayout } from "@/components/layout/AppLayout";
 
-import { LandingPage } from '@/pages/LandingPage';
-import { AuthPage } from '@/pages/AuthPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { CardsPage } from '@/pages/CardsPage';
-import { ContactsPage } from '@/pages/ContactsPage';
-import { AnalyticsPage } from '@/pages/AnalyticsPage';
-import { EcoPage } from '@/pages/EcoPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { PublicCardPage } from '@/pages/PublicCardPage';
-
-import { Spinner } from '@/components/ui/GlassCard';
+import { LandingPage } from "@/pages/LandingPage";
+import { AuthPage } from "@/pages/AuthPage";
+import { DashboardPage } from "@/pages/DashboardPage";
+import { CardsPage } from "@/pages/CardsPage";
+import { ContactsPage } from "@/pages/ContactsPage";
+import { AnalyticsPage } from "@/pages/AnalyticsPage";
+import { EcoPage } from "@/pages/EcoPage";
+import { SettingsPage } from "@/pages/SettingsPage";
+import { PublicCardPage } from "@/pages/PublicCardPage";
+import { Spinner } from "@/components/ui/GlassCard";
 
 function LoadingScreen() {
   return (
@@ -30,7 +29,7 @@ function LoadingScreen() {
       aria-live="polite"
       aria-label="Loading DigiCon"
     >
-      <Spinner className="w-8 h-8" />
+      <Spinner className="h-8 w-8" />
       <span className="sr-only">Loading DigiCon...</span>
     </div>
   );
@@ -45,6 +44,18 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function ProtectedPage({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <ProtectedRoute>
+      <AppLayout>{children}</AppLayout>
+    </ProtectedRoute>
+  );
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -55,61 +66,54 @@ function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
-            <AppLayout>
-              <DashboardPage />
-            </AppLayout>
-          </ProtectedRoute>
+          <ProtectedPage>
+            <DashboardPage />
+          </ProtectedPage>
         }
       />
+
       <Route
         path="/cards"
         element={
-          <ProtectedRoute>
-            <AppLayout>
-              <CardsPage />
-            </AppLayout>
-          </ProtectedRoute>
+          <ProtectedPage>
+            <CardsPage />
+          </ProtectedPage>
         }
       />
+
       <Route
         path="/contacts"
         element={
-          <ProtectedRoute>
-            <AppLayout>
-              <ContactsPage />
-            </AppLayout>
-          </ProtectedRoute>
+          <ProtectedPage>
+            <ContactsPage />
+          </ProtectedPage>
         }
       />
+
       <Route
         path="/analytics"
         element={
-          <ProtectedRoute>
-            <AppLayout>
-              <AnalyticsPage />
-            </AppLayout>
-          </ProtectedRoute>
+          <ProtectedPage>
+            <AnalyticsPage />
+          </ProtectedPage>
         }
       />
+
       <Route
         path="/eco"
         element={
-          <ProtectedRoute>
-            <AppLayout>
-              <EcoPage />
-            </AppLayout>
-          </ProtectedRoute>
+          <ProtectedPage>
+            <EcoPage />
+          </ProtectedPage>
         }
       />
+
       <Route
         path="/settings"
         element={
-          <ProtectedRoute>
-            <AppLayout>
-              <SettingsPage />
-            </AppLayout>
-          </ProtectedRoute>
+          <ProtectedPage>
+            <SettingsPage />
+          </ProtectedPage>
         }
       />
 
