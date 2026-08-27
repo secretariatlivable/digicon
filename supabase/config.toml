@@ -1,12 +1,11 @@
-# Supabase Edge Functions configuration for DigiCon Wallet passes.
-# Wallet pass endpoints are intentionally public because public business cards
-# must be addable without requiring the viewer to sign in to DigiCon.
+# DigiCon Supabase Edge Function configuration.
 #
-# The functions themselves validate the card_id and only issue passes for
-# active cards. Keep signing credentials in Supabase project secrets.
+# Wallet exports are owner actions, so both endpoints require a valid
+# Supabase access token. Public card viewing remains handled by RLS/RPC and
+# does not use these wallet functions.
 
 [functions.apple-wallet-pass]
-verify_jwt = false
+verify_jwt = true
 
 [functions.google-wallet-pass]
-verify_jwt = false
+verify_jwt = true
