@@ -132,7 +132,7 @@ digicon/
 ├── vercel.json             # Vercel deployment config
 └── vite.config.ts
 
-##Available Scripts
+##  Available Scripts
 
 Table
 Script	Description
@@ -142,9 +142,10 @@ npm run preview	Preview production build locally
 npm run lint	Run ESLint
 npm run lint:fix	Run ESLint with auto-fix
 npm run typecheck	Run TypeScript compiler without emitting
-Database Schema
+
+## Database Schema
 DigiCon uses the following Supabase tables:
-profiles
+# profiles
 Table
 Column	Type	Notes
 id	uuid	PK, references auth.users
@@ -154,7 +155,8 @@ company_name	text
 language	text	en or fil
 region	text	
 role	text	owner, admin, member
-business_cards
+
+# business_cards
 Table
 Column	Type	Notes
 id	uuid	PK
@@ -169,7 +171,8 @@ design_template	text	futuristic, professional, simple, custom
 font_family	text	
 is_active	boolean	
 share_count	int	
-contacts
+
+# contacts
 Table
 Column	Type	Notes
 id	uuid	PK
@@ -179,7 +182,8 @@ status	text	new, follow_up, converted, archived
 source	text	qr, link, sms, manual
 consent_given	boolean	GDPR / Data Privacy Act
 synced_to_crm	boolean	
-eco_stats
+
+# eco_stats
 Table
 Column	Type	Notes
 user_id	uuid	PK
@@ -188,22 +192,20 @@ contacts_saved	int
 paper_saved_sqm	float	
 trees_saved	float	
 carbon_reduced_kg	float	
-badges & user_badges
+
+# badges & user_badges
 Gamification badge definitions and user-earned badge linking.
-Security
+
+## Security
 DigiCon implements several security best practices:
+
 Environment-based secrets: No hardcoded API keys. All credentials are loaded from .env.
 Row Level Security (RLS): Supabase tables use RLS policies to ensure users only access their own data.
 Content Security: vercel.json includes security headers (X-Frame-Options, X-Content-Type-Options, HSTS).
 Input Validation: Form inputs use native HTML5 validation + minimum length requirements.
-Consent Management: Contact capture requires explicit consent for GDPR/Data Privacy Act compliance.
-Rotating Leaked Secrets
-If you accidentally commit a secret:
-Rotate the secret immediately at the provider dashboard.
-Purge from history using BFG Repo-Cleaner or git-filter-repo.
-Force-push the cleaned history: git push --force-with-lease.
-Notify your team to update their local clones.
-Deployment
+
+
+# Deployment
 Vercel (Recommended)
 Push to GitHub.
 Import into Vercel.
@@ -212,6 +214,7 @@ Deploy — vercel.json is pre-configured for SPA routing and caching.
 Manual Build
 bash
 npm run build
+
 # Deploy the `dist/` folder to any static host
 Contributing
 We welcome contributions! Please follow these guidelines:
@@ -219,32 +222,14 @@ Fork the repository.
 Create a branch: git checkout -b feature/your-feature-name.
 Commit with clear messages.
 Open a Pull Request with a detailed description.
-Code Standards
+
+# Code Standards
 TypeScript strict mode enabled.
 ESLint + React Hooks rules enforced.
 Prefer functional components with hooks.
 Use the Glass UI components from @/components/ui/Glass.
 Follow existing i18n patterns for all user-facing text.
-License
+
+## License
 plain
-Copyright 2026 Secretariat Livable
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-DigiCon is licensed under the Apache License 2.0. See LICENSE for the full text.
-Acknowledgments
-Built for Philippine SMEs and startups.
-Eco impact calculations based on EPA paper waste statistics.
-Design inspired by Apple's Liquid Glass and iOS design language.
-<p align="center">
-  <sub>Made with 💚 for the Philippines · © 2026 ASilva Innovations</sub>
-</p>
+Copyright 2026 ASilva Innovations
