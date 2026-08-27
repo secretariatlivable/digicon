@@ -562,8 +562,8 @@ export function LandingPage() {
                     onClick={handlePrimaryCTA}
                   >
                     {lang === "en"
-                      ? "GET STARTED NOW"
-                      : "MAGSIMULA NGAYON"}
+                      ? "Choose Plan"
+                      : "Ito na Yon"}
                     <ArrowRight className="ml-2 inline h-4 w-4" />
                   </GlassButton>
                 </div>
