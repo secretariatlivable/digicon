@@ -12,6 +12,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { PublicCardPage } from '@/pages/PublicCardPage';
 import { Spinner } from '@/components/ui/GlassCard';
 import { type ReactNode } from 'react';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -32,12 +33,12 @@ function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/c/:cardId" element={<PublicCardPage />} />
-      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/cards" element={<ProtectedRoute><CardsPage /></ProtectedRoute>} />
-      <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
-      <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-      <Route path="/eco" element={<ProtectedRoute><EcoPage /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/cards" element={<ProtectedRoute><AppLayout><CardsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/contacts" element={<ProtectedRoute><AppLayout><ContactsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/analytics" element={<ProtectedRoute><AppLayout><AnalyticsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/eco" element={<ProtectedRoute><AppLayout><EcoPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
