@@ -549,11 +549,11 @@ export function PublicCardPage() {
           </div>
 
           {showContactForm && !saved && (
-            <GlassCard
-              id="share-contact-form"
-              variant="chrome"
-              className="p-6 animate-fade-in-up"
-            >
+            <div id="share-contact-form">
+              <GlassCard
+                variant="chrome"
+                className="p-6 animate-fade-in-up"
+              >
               <h2 className="text-lg font-semibold text-white mb-1">
                 Share Your Details
               </h2>
@@ -651,7 +651,8 @@ export function PublicCardPage() {
                   {saving ? 'Sharing...' : 'Share My Contact'}
                 </GlassButton>
               </form>
-            </GlassCard>
+              </GlassCard>
+            </div>
           )}
 
           {saved && (
