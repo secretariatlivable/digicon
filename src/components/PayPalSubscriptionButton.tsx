@@ -1,148 +1,336 @@
-import { useCallback, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AlertCircle, Check, Loader2, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  PayPalSubscriptionButton as PayPalSubscriptionButtonV6,
-  type OnApproveDataSubscriptions,
-  type OnErrorData,
-} from "@paypal/react-paypal-js/sdk-v6";
-
 import { supabase } from "@/lib/supabase";
-import { getDigiConPlan, type DigiConPlanId } from "@/config/paypalPlans";
+import {
+  getDigiConPayPalPlan,
+  type DigiConPlanId,
+} from "@/config/paypalPlans";
 
-interface PayPalSubscriptionButtonProps {
-  planId: Exclude<DigiConPlanId, "enterprise">;
-  className?: string;
-  onApproved?: (subscriptionId: string) => void | Promise<void>;
-  onError?: (error: Error) => void;
+const PAYPAL_SDK_ID = "digicon-paypal-subscriptions-sdk";
+const PAYPAL_CLIENT_ID = (import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined)?.trim();
+const PAYPAL_ENVIRONMENT =
+  ((import.meta.env.VITE_PAYPAL_ENVIRONMENT as string | undefined)?.trim() ||
+    "production") === "sandbox"
+    ? "sandbox"
+    : "production";
+
+type PayPalSubscriptionData = {
+  subscriptionID?: string;
+};
+
+type PayPalActions = {
+  subscription: {
+    create: (options: { plan_id: string; quantity?: number }) => Promise<string>;
+  };
+};
+
+type PayPalButtonsInstance = {
+  render: (container: HTMLElement) => Promise<void>;
+  close?: () => void;
+};
+
+type PayPalButtonsOptions = {
+  style?: {
+    shape?: "rect";
+    color?: "gold" | "blue" | "black" | "silver" | "white";
+    layout?: "vertical" | "horizontal";
+    label?: "subscribe";
+    height?: number;
+  };
+  createSubscription: (
+    data: unknown,
+    actions: PayPalActions,
+  ) => Promise<string>;
+  onApprove: (data: PayPalSubscriptionData) => void | Promise<void>;
+  onError: (error: unknown) => void;
+  onCancel?: () => void;
+};
+
+type PayPalNamespace = {
+  Buttons: (options: PayPalButtonsOptions) => PayPalButtonsInstance;
+};
+
+declare global {
+  interface Window {
+    paypal?: PayPalNamespace;
+  }
 }
 
-/**
- * Creates the PayPal subscription through a Supabase Edge Function.
- * No PayPal secret is ever exposed to the browser.
- */
+function loadPayPalSdk(): Promise<void> {
+  if (window.paypal) return Promise.resolve();
+
+  const existing = document.getElementById(PAYPAL_SDK_ID);
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(
+        () => reject(new Error("Timed out loading PayPal.")),
+        15000,
+      );
+      existing.addEventListener(
+        "load",
+        () => {
+          window.clearTimeout(timeout);
+          resolve();
+        },
+        { once: true },
+      );
+      existing.addEventListener(
+        "error",
+        () => {
+          window.clearTimeout(timeout);
+          reject(new Error("Unable to load PayPal Checkout.")); 
+        },
+        { once: true },
+      );
+    });
+  }
+
+  if (!PAYPAL_CLIENT_ID) {
+    return Promise.reject(
+      new Error(
+        "PayPal is not configured. Add VITE_PAYPAL_CLIENT_ID to the deployment environment.",
+      ),
+    );
+  }
+
+  const script = document.createElement("script");
+  script.id = PAYPAL_SDK_ID;
+  script.src =
+    `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
+      PAYPAL_CLIENT_ID,
+    )}&vault=true&intent=subscription&currency=PHP`;
+  script.async = true;
+  script.dataset.sdkIntegrationSource = "digicon";
+
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(
+      () => reject(new Error("Timed out loading PayPal.")),
+      15000,
+    );
+
+    script.onload = () => {
+      window.clearTimeout(timeout);
+      if (!window.paypal) {
+        reject(new Error("PayPal loaded without its Checkout API."));
+        return;
+      }
+      resolve();
+    };
+
+    script.onerror = () => {
+      window.clearTimeout(timeout);
+      reject(new Error("Unable to load PayPal Checkout."));
+    };
+
+    document.head.appendChild(script);
+  });
+}
+
+export interface PayPalSubscriptionButtonProps {
+  planId: DigiConPlanId;
+  className?: string;
+  onApproved?: (subscriptionId: string) => void | Promise<void>;
+}
+
 export function PayPalSubscriptionButton({
   planId,
   className = "",
   onApproved,
-  onError,
 }: PayPalSubscriptionButtonProps) {
   const navigate = useNavigate();
-  const [message, setMessage] = useState<string | null>(null);
-  const plan = getDigiConPlan(planId);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [approved, setApproved] = useState(false);
 
-  const createSubscription = useCallback(async () => {
-    setMessage(null);
+  const plan = getDigiConPayPalPlan(planId);
 
-    if (!plan.paypalPlanId) {
-      const error = new Error(
-        `PayPal ${plan.name} is not configured. Set VITE_PAYPAL_${planId.toUpperCase()}_PLAN_ID.`,
-      );
-      setMessage(error.message);
-      onError?.(error);
-      throw error;
-    }
+  useEffect(() => {
+    let cancelled = false;
+    let buttons: PayPalButtonsInstance | undefined;
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      const returnTo = `${window.location.pathname}${window.location.search}#pricing`;
-      navigate(
-        `/auth?mode=signup&returnTo=${encodeURIComponent(returnTo)}`,
-      );
-      throw new Error(
-        "Please sign in or create an account before subscribing.",
-      );
-    }
-
-    const { data, error } = await supabase.functions.invoke(
-      "paypal-create-subscription",
-      {
-        body: {
-          planId: plan.paypalPlanId,
-          digiconPlanId: planId,
-          returnUrl: `${window.location.origin}/settings?billing=success`,
-          cancelUrl: `${window.location.origin}/#pricing`,
-        },
-      },
-    );
-
-    if (error) {
-      throw new Error(
-        error.message || "Unable to create the PayPal subscription.",
-      );
-    }
-
-    if (
-      typeof data?.subscriptionId !== "string" ||
-      !data.subscriptionId.trim()
-    ) {
-      throw new Error(
-        "PayPal did not return a valid subscription ID. Please try again.",
-      );
-    }
-
-    return { subscriptionId: data.subscriptionId };
-  }, [navigate, onError, plan.name, plan.paypalPlanId, planId]);
-
-  const handleApprove = useCallback(
-    async (data: OnApproveDataSubscriptions) => {
-      if (!data.subscriptionId) {
-        const error = new Error(
-          "PayPal approved the subscription but did not return an ID.",
-        );
-        setMessage(error.message);
-        onError?.(error);
-        return;
-      }
-
-      setMessage("Subscription approved. Finalizing your DigiCon account...");
+    const mount = async () => {
+      setLoading(true);
+      setError(null);
 
       try {
-        await onApproved?.(data.subscriptionId);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          if (!cancelled) setLoading(false);
+          return;
+        }
+
+        await loadPayPalSdk();
+
+        if (cancelled || !containerRef.current || !window.paypal) return;
+
+        containerRef.current.replaceChildren();
+
+        buttons = window.paypal.Buttons({
+          style: {
+            shape: "rect",
+            color: planId === "growth" ? "blue" : "gold",
+            layout: "vertical",
+            label: "subscribe",
+            height: 48,
+          },
+
+          createSubscription: async (_data, actions) => {
+            if (!plan.planId) {
+              throw new Error(`${plan.name} does not have a PayPal Plan ID.`);
+            }
+
+            return actions.subscription.create({
+              plan_id: plan.planId,
+              quantity: 1,
+            });
+          },
+
+          onApprove: async (data) => {
+            if (!data.subscriptionID) {
+              throw new Error(
+                "PayPal approved the subscription but did not return a subscription ID.",
+              );
+            }
+
+            setProcessing(true);
+            setError(null);
+
+            try {
+              /*
+               * The subscription ID is intentionally not treated as proof of
+               * payment. A verified PayPal webhook must grant/maintain
+               * DigiCon entitlements server-side.
+               */
+              await onApproved?.(data.subscriptionID);
+              if (!cancelled) setApproved(true);
+            } catch (cause) {
+              const message =
+                cause instanceof Error
+                  ? cause.message
+                  : "Subscription approval could not be completed.";
+              if (!cancelled) setError(message);
+            } finally {
+              if (!cancelled) setProcessing(false);
+            }
+          },
+
+          onCancel: () => {
+            if (!cancelled) {
+              setProcessing(false);
+              setError("Subscription checkout was cancelled.");
+            }
+          },
+
+          onError: (cause) => {
+            console.error("PayPal subscription error:", cause);
+            if (!cancelled) {
+              setProcessing(false);
+              setError("PayPal could not start the subscription. Please try again.");
+            }
+          },
+        });
+
+        await buttons.render(containerRef.current);
       } catch (cause) {
-        const error =
-          cause instanceof Error
-            ? cause
-            : new Error("Subscription approval handling failed.");
-
-        setMessage(error.message);
-        onError?.(error);
+        if (!cancelled) {
+          const message =
+            cause instanceof Error
+              ? cause.message
+              : "Unable to initialize PayPal.";
+          setError(message);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    },
-    [onApproved, onError],
-  );
+    };
 
-  const handleError = useCallback(
-    (data: OnErrorData) => {
-      const error = new Error(
-        data?.message || "PayPal could not start the subscription.",
-      );
-      setMessage(error.message);
-      onError?.(error);
-    },
-    [onError],
-  );
+    void mount();
+
+    return () => {
+      cancelled = true;
+      buttons?.close?.();
+      if (containerRef.current) containerRef.current.replaceChildren();
+    };
+  }, [onApproved, plan.name, plan.planId, planId]);
+
+  if (approved) {
+    return (
+      <div
+        className={`rounded-2xl border border-digicon-eco/30 bg-digicon-eco/10 p-4 ${className}`}
+        role="status"
+        aria-live="polite"
+      >
+        <div className="flex items-start gap-3">
+          <Check className="mt-0.5 h-5 w-5 shrink-0 text-digicon-eco" />
+          <div>
+            <p className="font-semibold text-white">
+              Subscription approved
+            </p>
+            <p className="mt-1 text-sm text-white/60">
+              Your PayPal subscription was submitted successfully. DigiCon
+              will activate the plan after the billing webhook is verified.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/settings")}
+              className="mt-3 text-sm font-medium text-digicon-eco underline underline-offset-4"
+            >
+              Open billing settings
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
-      <PayPalSubscriptionButtonV6
-        createSubscription={createSubscription}
-        onApprove={handleApprove}
-        onError={handleError}
-        presentationMode="auto"
+      {!PAYPAL_CLIENT_ID && (
+        <div className="rounded-xl border border-digicon-warning/30 bg-digicon-warning/10 p-3 text-sm text-digicon-warning">
+          PayPal is not configured for this deployment.
+        </div>
+      )}
+
+      <div
+        ref={containerRef}
+        aria-busy={loading || processing}
+        className={loading ? "min-h-[48px]" : undefined}
       />
 
-      {message && (
-        <p
-          className="mt-2 text-xs text-white/60"
-          role="status"
-          aria-live="polite"
-        >
-          {message}
-        </p>
+      {loading && PAYPAL_CLIENT_ID && (
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading secure PayPal checkout…
+        </div>
       )}
+
+      {processing && (
+        <div className="mt-2 flex items-center gap-2 text-xs text-white/50">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Finalizing your subscription…
+        </div>
+      )}
+
+      {error && (
+        <div
+          className="mt-2 flex items-start gap-2 rounded-xl border border-digicon-error/30 bg-digicon-error/10 p-3 text-xs text-digicon-error"
+          role="alert"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-white/40">
+        <ShieldCheck className="h-3.5 w-3.5" />
+        Secure subscription checkout by PayPal
+      </div>
     </div>
   );
 }
