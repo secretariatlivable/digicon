@@ -539,15 +539,14 @@ export function LandingPage() {
 
               <div className="space-y-3">
                 <PayPalSubscriptionButton
-                  planId={plan.id}
-                  onApproved={(subscriptionId) => {
-                    console.info('DigiCon PayPal subscription approved:', subscriptionId);
-                    navigate('/dashboard');
-                  }}
-           onError={(error: unknown) => {
-                    console.error('DigiCon PayPal subscription error:', error);
-                  }}
-                />
+  planId={plan.id}
+  onApproved={(subscriptionId: string) => {
+    console.log('PayPal subscription approved:', subscriptionId);
+  }}
+  onError={(error) => {
+    console.error('PayPal subscription error:', error);
+  }}
+/>
 
                 <GlassButton
                   variant="ghost"
