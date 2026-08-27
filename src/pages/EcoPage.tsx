@@ -3,7 +3,7 @@ import { Award, Leaf, TreePine, Factory, Sparkles, TrendingUp, Users, Network, R
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
 import { supabase, type EcoStats, type Badge } from '@/lib/supabase';
-import { GlassCard, GlassButton, Spinner } from '@/components/ui/Glass';
+import { GlassCard, GlassButton, Spinner } from '@/components/ui/GlassCard';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 const badgeIcons: Record<string, typeof Award> = {
