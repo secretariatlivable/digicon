@@ -10,7 +10,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayout } from "@/components/layout/AppLayout";
 
-import LandingPage from "@/pages/LandingPage";
+import { LandingPage} from "@/pages/LandingPage";
 import { AuthPage } from "@/pages/AuthPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { CardsPage } from "@/pages/CardsPage";
