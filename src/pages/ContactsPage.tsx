@@ -6,7 +6,7 @@ import {
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
 import { supabase, type Contact } from '@/lib/supabase';
-import { GlassCard, GlassButton, GlassInput, GlassLabel, GlassTextarea, GlassSelect, Spinner, EmptyState, Badge } from '@/components/ui/Glass';
+import { GlassCard, GlassButton, GlassInput, GlassLabel, GlassTextarea, GlassSelect, Spinner, EmptyState, Badge } from '@/components/ui/GlassCard';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 const statusColors: Record<string, string> = {
