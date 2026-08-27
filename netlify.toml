@@ -7,7 +7,7 @@
 
 # Netlify should use the repository's Node 22-compatible runtime.
 [build.environment]
-  NODE_VERSION = "22"
+  NODE_VERSION = "24.x"
 
 # React Router / SPA fallback.
 # Static files and real Netlify Functions are excluded from the fallback.
