@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Building2, AlertCircle } from 'lucide-react';
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
-import { GlassButton, GlassInput, GlassLabel, GlassCard } from '@/components/ui/Glass';
+import { GlassButton, GlassInput, GlassLabel, GlassCard } from '@/components/ui/GlassCard';
 import { DigiConLogo } from '@/components/brand/DigiConLogo';
 
 export function AuthPage() {
