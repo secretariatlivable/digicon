@@ -218,11 +218,13 @@ export function PublicCardPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
-          <GlassCard
-            variant="thick"
-            className="overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${card.card_color || "#007AFF"}, ${card.accent_color || "#5856D6"})` }}
+          <div
+            className="overflow-hidden rounded-[inherit]"
+            style={{
+              background: `linear-gradient(135deg, ${card.card_color || "#007AFF"}, ${card.accent_color || "#5856D6"})`,
+            }}
           >
+            <GlassCard variant="thick" className="overflow-hidden bg-transparent">
             <div className="p-7 sm:p-10">
               <div className="flex justify-end">
                 {card.photo_url ? (
@@ -251,7 +253,8 @@ export function PublicCardPage() {
                 <GlassButton variant="ghost" onClick={() => void shareCard()}><Share2 className="mr-2 h-4 w-4" />Share card</GlassButton>
               </div>
             </div>
-          </GlassCard>
+            </GlassCard>
+          </div>
 
           <GlassCard variant="regular" className="p-6">
             <div className="flex justify-center rounded-3xl bg-white p-5">
