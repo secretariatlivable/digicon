@@ -5,7 +5,7 @@
   command = "npm run build"
   publish = "dist"
 
-# Netlify should use the repository's Node 22-compatible runtime.
+# Netlify should use the repository's Node 24.x-compatible runtime.
 [build.environment]
   NODE_VERSION = "24.x"
 
