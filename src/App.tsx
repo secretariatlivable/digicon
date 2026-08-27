@@ -10,7 +10,7 @@ import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { EcoPage } from '@/pages/EcoPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { PublicCardPage } from '@/pages/PublicCardPage';
-import { Spinner } from '@/components/ui/Glass';
+import { Spinner } from '@/components/ui/GlassCard';
 import { type ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
