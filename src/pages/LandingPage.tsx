@@ -314,7 +314,7 @@ export function LandingPage() {
 
             <ul className="space-y-2">
               {[
-                'HubSpot CRM sync',
+                'Intuitive CRM sync',
                 'CSV/Excel export',
                 'Lead analytics',
                 'Team collaboration',
@@ -356,7 +356,7 @@ export function LandingPage() {
 
           <div className="relative p-8 md:p-10 flex flex-col justify-center overflow-hidden">
             <img
-              src="/Cover_2.png"
+              src="/Background.png"
               alt=""
               aria-hidden="true"
               className="absolute inset-0 w-full h-full object-cover opacity-10"
@@ -570,7 +570,7 @@ export function LandingPage() {
                   className="w-full"
                   onClick={handlePrimaryCTA}
                 >
-                  {lang === 'en' ? 'Continue to DigiCon' : 'Magpatuloy sa DigiCon'}
+                  {lang === 'en' ? 'MAGSIMULA NGAYON' : 'GET STARTED NOW'}
                   <ArrowRight className="inline ml-2 w-4 h-4" />
                 </GlassButton>
               </div>
