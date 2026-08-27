@@ -1,126 +1,263 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { supabase, type Profile } from '@/lib/supabase';
-import type { Language } from '@/lib/i18n';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+
+import { supabase, type Profile } from "@/lib/supabase";
+import type { Language } from "@/lib/i18n";
+
+export type DigiConPlan =
+  | "startup"
+  | "starter"
+  | "growth"
+  | "enterprise";
+
+type AuthSession = {
+  user: {
+    id: string;
+    email: string;
+  };
+};
 
 type AuthContextType = {
-  session: { user: { id: string; email: string } } | null;
+  session: AuthSession | null;
   profile: Profile | null;
+  plan: DigiConPlan;
+  isActiveSubscription: boolean;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, fullName: string, companyName: string) => Promise<{ error: string | null }>;
+  signIn: (
+    email: string,
+    password: string,
+  ) => Promise<{ error: string | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string,
+    companyName: string,
+  ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function toSession(
+  value: {
+    user: { id: string; email?: string | undefined };
+  } | null,
+): AuthSession | null {
+  if (!value) return null;
+
+  return {
+    user: {
+      id: value.user.id,
+      email: value.user.email || "",
+    },
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<AuthContextType['session']>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [plan, setPlan] = useState<DigiConPlan>("startup");
+  const [isActiveSubscription, setIsActiveSubscription] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const loadAccount = async (userId: string) => {
+    const [profileResult, subscriptionResult] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle(),
+
+      supabase
+        .from("subscriptions")
+        .select("plan,status")
+        .eq("user_id", userId)
+        .eq("status", "ACTIVE")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    setProfile(profileResult.data as Profile | null);
+
+    const activeSubscription = subscriptionResult.data;
+    if (
+      activeSubscription &&
+      ["starter", "growth", "enterprise"].includes(
+        activeSubscription.plan,
+      )
+    ) {
+      setPlan(activeSubscription.plan as DigiConPlan);
+      setIsActiveSubscription(true);
+    } else {
+      setPlan("startup");
+      setIsActiveSubscription(false);
+    }
+  };
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s as AuthContextType['session']);
-      if (!s) setLoading(false);
-    });
+    let mounted = true;
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, s) => {
-      setSession(s as AuthContextType['session']);
-      if (event === 'SIGNED_OUT') {
+    const initialize = async () => {
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+
+      if (!mounted) return;
+
+      const nextSession = toSession(currentSession);
+      setSession(nextSession);
+
+      if (nextSession) {
+        await loadAccount(nextSession.user.id);
+      } else {
         setProfile(null);
-        setLoading(false);
+        setPlan("startup");
+        setIsActiveSubscription(false);
       }
+
+      if (mounted) setLoading(false);
+    };
+
+    void initialize();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (!mounted) return;
+
+      const nextSession = toSession(currentSession);
+      setSession(nextSession);
+
+      if (event === "SIGNED_OUT" || !nextSession) {
+        setProfile(null);
+        setPlan("startup");
+        setIsActiveSubscription(false);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      void loadAccount(nextSession.user.id).finally(() => {
+        if (mounted) setLoading(false);
+      });
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
-    if (!session?.user?.id) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (!cancelled) {
-        setProfile(data as Profile | null);
-        setLoading(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [session?.user?.id]);
-
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
     return { error: error?.message || null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, companyName: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return { error: error.message };
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+    companyName: string,
+  ) => {
+    const { error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: {
+          full_name: fullName.trim(),
+          company_name: companyName.trim(),
+        },
+      },
+    });
 
-    if (data.user) {
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        email,
-        full_name: fullName,
-        company_name: companyName,
-      });
-      await supabase.from('eco_stats').insert({ user_id: data.user.id });
+    if (error) {
+      return { error: error.message };
     }
 
     return { error: null };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      throw error;
+    }
+
     setSession(null);
+    setProfile(null);
+    setPlan("startup");
+    setIsActiveSubscription(false);
   };
 
   const refreshProfile = async () => {
-    if (!session?.user?.id) return;
-    const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-    setProfile(data as Profile | null);
+    if (!session?.user.id) return;
+    await loadAccount(session.user.id);
   };
 
   return (
-    <AuthContext.Provider value={{ session, profile, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        profile,
+        plan,
+        isActiveSubscription,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+
+  return context;
 }
 
-export function useLanguage(): [Language, (l: Language) => void] {
+export function useLanguage(): [Language, (language: Language) => void] {
   const { profile, refreshProfile } = useAuth();
-  const [localLang, setLocalLang] = useState<Language>('en');
+  const [localLanguage, setLocalLanguage] =
+    useState<Language>("en");
 
   useEffect(() => {
-    if (profile?.language) setLocalLang(profile.language as Language);
+    if (profile?.language) {
+      setLocalLanguage(profile.language as Language);
+    }
   }, [profile?.language]);
 
-  const setLang = (l: Language) => {
-    setLocalLang(l);
-    if (profile) {
-      supabase.from('profiles').update({ language: l }).eq('id', profile.id).then(() => refreshProfile());
-    }
+  const setLanguage = (language: Language) => {
+    setLocalLanguage(language);
+
+    if (!profile) return;
+
+    void supabase
+      .from("profiles")
+      .update({ language })
+      .eq("id", profile.id)
+      .then(() => refreshProfile());
   };
 
-  return [localLang, setLang];
+  return [localLanguage, setLanguage];
 }
