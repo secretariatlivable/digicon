@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
-import { GlassButton, GlassCard } from '@/components/ui/Glass';
+import { GlassButton, GlassCard } from '@/components/ui/GlassCard';
 import { LandingNav } from '@/components/layout/AppLayout';
 import { DigiConLogo } from '@/components/brand/DigiConLogo';
 
