@@ -16,6 +16,7 @@ import {
   Edit3,
   Mail,
   MessageSquare,
+  Minus,
   Palette,
   Plus,
   Share2,
@@ -106,27 +107,12 @@ const DEFAULT_FORM: CardForm = {
 const TEMPLATE_META = {
   futuristic: { icon: Zap, label: 'Futuristic' },
   professional: { icon: Briefcase, label: 'Professional' },
-  simple: { icon: MinusIcon, label: 'Simple' },
+  simple: { icon: Minus, label: 'Simple' },
   custom: { icon: Palette, label: 'Custom' },
 } satisfies Record<
   DesignTemplate,
   { icon: typeof Zap; label: string }
 >;
-
-function MinusIcon({
-  className,
-}: {
-  className?: string;
-}) {
-  return (
-    <span
-      aria-hidden="true"
-      className={className}
-    >
-      −
-    </span>
-  );
-}
 
 function safeFileName(value: string) {
   return (
