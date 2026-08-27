@@ -15,7 +15,7 @@ export function DashboardPage() {
   const [lang] = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [cards, setCards] = useState<BusinessCard[]>([]);
+  
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [ecoStats, setEcoStats] = useState<EcoStats | null>(null);
   const [badges, setBadges] = useState<(Badge & { earned: boolean })[]>([]);
@@ -23,22 +23,24 @@ export function DashboardPage() {
   const t = (k: TranslationKey) => translate(k, lang);
 
   useEffect(() => {
-    if (!session?.user?.id) return;
-    loadData();
+    void loadData();
   }, [session?.user?.id]);
 
   const loadData = async () => {
+    if (!session?.user?.id) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    const [cardsRes, contactsRes, ecoRes, badgesRes, userBadgesRes] = await Promise.all([
-      supabase.from('business_cards').select('*').eq('user_id', session!.user.id).order('created_at', { ascending: false }),
+    const [contactsRes, ecoRes, badgesRes, userBadgesRes] = await Promise.all([
       supabase.from('contacts').select('*').eq('user_id', session!.user.id).order('created_at', { ascending: false }).limit(5),
       supabase.from('eco_stats').select('*').eq('user_id', session!.user.id).maybeSingle(),
       supabase.from('badges').select('*'),
       supabase.from('user_badges').select('badge_id').eq('user_id', session!.user.id),
     ]);
 
-    setCards((cardsRes.data as BusinessCard[]) || []);
-    setContacts((contactsRes.data as Contact[]) || []);
+        setContacts((contactsRes.data as Contact[]) || []);
     setEcoStats(ecoRes.data as EcoStats | null);
 
     const earnedIds = new Set((userBadgesRes.data || []).map((ub: { badge_id: string }) => ub.badge_id));
@@ -76,8 +78,8 @@ export function DashboardPage() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat, i) => (
-          <GlassCard key={i} variant="regular" hover className="p-5 animate-fade-in-up" >
+        {stats.map((stat) => (
+          <GlassCard key={stat.label} variant="regular" hover className="p-5 animate-fade-in-up" >
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-glass-md glass-thin flex items-center justify-center">
                 <stat.icon className={`w-5 h-5 ${stat.color}`} />
@@ -162,7 +164,7 @@ export function DashboardPage() {
             </GlassCard>
           ) : (
             <div className="space-y-3">
-              {contacts.map((contact, i) => (
+              {contacts.map((contact) => (
                 <GlassCard key={contact.id} variant="thin" className="p-4 flex items-center gap-4 animate-fade-in-up" >
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-digicon-primary to-digicon-secondary flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                     {contact.full_name.charAt(0).toUpperCase()}
@@ -197,7 +199,7 @@ export function DashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-3">
-                {badges.filter(b => b.earned).map((badge, i) => (
+                {badges.filter(b => b.earned).map((badge) => (
                   <div key={badge.id} className="text-center group">
                     <div className="w-12 h-12 rounded-glass-md glass-chrome flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
                       <Award className="w-6 h-6 text-digicon-warning" />
@@ -216,5 +218,4 @@ export function DashboardPage() {
     </AppLayout>
   );
 }
-
 

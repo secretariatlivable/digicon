@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area, Legend
+  PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import {
   TrendingUp, Users, Leaf, TreePine, Factory, Target,
@@ -10,7 +10,7 @@ import {
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
 import { supabase, type Contact, type EcoStats } from '@/lib/supabase';
-import { GlassCard, GlassButton, Spinner } from '@/components/ui/GlassCard';
+import { GlassCard, Spinner } from '@/components/ui/GlassCard';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 export function AnalyticsPage() {
@@ -22,17 +22,42 @@ export function AnalyticsPage() {
 
   const t = (k: TranslationKey) => translate(k, lang);
 
-  useEffect(() => { loadData(); }, [session?.user?.id]);
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const result = await loadData();
+      if (!cancelled && result) {
+        setContacts(result.contacts);
+        setEcoStats(result.ecoStats);
+        setLoading(false);
+      } else if (!cancelled) {
+        setLoading(false);
+      }
+    };
+    void run();
+    return () => { cancelled = true; };
+  }, [session?.user?.id]);
 
   const loadData = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) return null;
+
     const [contactsRes, ecoRes] = await Promise.all([
-      supabase.from('contacts').select('*').eq('user_id', session.user.id).order('created_at', { ascending: true }),
-      supabase.from('eco_stats').select('*').eq('user_id', session.user.id).maybeSingle(),
+      supabase
+        .from('contacts')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('eco_stats')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .maybeSingle(),
     ]);
-    setContacts((contactsRes.data as Contact[]) || []);
-    setEcoStats(ecoRes.data as EcoStats | null);
-    setLoading(false);
+
+    return {
+      contacts: (contactsRes.data as Contact[]) || [],
+      ecoStats: (ecoRes.data as EcoStats | null) ?? null,
+    };
   };
 
   // Leads over time (last 7 days)

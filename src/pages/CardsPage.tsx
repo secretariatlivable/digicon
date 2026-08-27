@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -125,7 +126,7 @@ function safeFileName(value: string) {
   return (
     value
       .trim()
-      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
+      .replace(/[<>:"/\\|?*]/g, "")
       .replace(/\s+/g, "_")
       .slice(0, 80) || "digicon-card"
   );
@@ -224,7 +225,7 @@ export function CardsPage() {
   const [copied, setCopied] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const loadCards = async () => {
+  const loadCards = useCallback(async () => {
     if (!session?.user?.id) {
       setCards([]);
       setLoading(false);
@@ -245,11 +246,11 @@ export function CardsPage() {
       setCards((data as BusinessCard[]) || []);
     }
     setLoading(false);
-  };
+  }, [session?.user?.id]);
 
   useEffect(() => {
     void loadCards();
-  }, [session?.user?.id]);
+  }, [loadCards]);
 
   const openCreate = () => {
     setEditingCard(null);
@@ -493,7 +494,7 @@ export function CardsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const useWallet = async (kind: "apple" | "google", card: BusinessCard) => {
+  const handleWallet = async (kind: "apple" | "google", card: BusinessCard) => {
     setWalletError(null);
     setWalletLoading(kind);
 
@@ -757,11 +758,11 @@ export function CardsPage() {
             </div>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void useWallet("apple", shareCard)}>
+              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void handleWallet("apple", shareCard)}>
                 {walletLoading === "apple" ? <Spinner className="mr-2 h-4 w-4" /> : <Wallet className="mr-2 h-4 w-4" />}
                 Apple Wallet
               </GlassButton>
-              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void useWallet("google", shareCard)}>
+              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void handleWallet("google", shareCard)}>
                 {walletLoading === "google" ? <Spinner className="mr-2 h-4 w-4" /> : <Wallet className="mr-2 h-4 w-4" />}
                 Google Wallet
               </GlassButton>

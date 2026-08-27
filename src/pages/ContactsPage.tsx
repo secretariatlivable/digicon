@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import {
   Users, Plus, Search, Download, RefreshCw, Trash2, Edit3, X,
-  Check, Filter, Mail, Phone, Building2
+  Check, Mail, Phone, Building2
 } from 'lucide-react';
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
@@ -34,21 +34,34 @@ export function ContactsPage() {
     full_name: '', email: '', phone: '', company: '', job_title: '', notes: '', status: 'new', consent_given: false,
   });
 
-  useEffect(() => { loadContacts(); }, [session?.user?.id]);
+  useEffect(() => {
+    void loadContacts();
+  }, [session?.user?.id]);
 
   const loadContacts = async () => {
-    if (!session?.user?.id) return;
-    const { data } = await supabase.from('contacts').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+    if (!session?.user?.id) {
+      setContacts([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+
     setContacts((data as Contact[]) || []);
     setLoading(false);
   };
 
   const filteredContacts = useMemo(() => {
     return contacts.filter(c => {
+      const normalizedSearch = search.toLowerCase();
       const matchesSearch = !search ||
-        c.full_name.toLowerCase().includes(search.toLowerCase()) ||
-        c.email.toLowerCase().includes(search.toLowerCase()) ||
-        c.company.toLowerCase().includes(search.toLowerCase());
+        c.full_name.toLowerCase().includes(normalizedSearch) ||
+        c.email.toLowerCase().includes(normalizedSearch) ||
+        (c.company ?? '').toLowerCase().includes(normalizedSearch);
       const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -63,9 +76,14 @@ export function ContactsPage() {
   const openEdit = (contact: Contact) => {
     setEditingContact(contact);
     setFormData({
-      full_name: contact.full_name, email: contact.email, phone: contact.phone,
-      company: contact.company, job_title: contact.job_title, notes: contact.notes,
-      status: contact.status, consent_given: contact.consent_given,
+      full_name: contact.full_name ?? '',
+      email: contact.email ?? '',
+      phone: contact.phone ?? '',
+      company: contact.company ?? '',
+      job_title: contact.job_title ?? '',
+      notes: contact.notes ?? '',
+      status: contact.status,
+      consent_given: contact.consent_given,
     });
     setShowForm(true);
   };
@@ -186,7 +204,7 @@ export function ContactsPage() {
         </GlassCard>
       ) : (
         <div className="space-y-3">
-          {filteredContacts.map((contact, i) => (
+          {filteredContacts.map((contact) => (
             <GlassCard key={contact.id} variant="thin" className="p-4 animate-fade-in-up" >
               <div className="flex items-start gap-4">
                 <div className="w-11 h-11 rounded-full bg-gradient-to-br from-digicon-primary to-digicon-secondary flex items-center justify-center text-white font-semibold flex-shrink-0">
