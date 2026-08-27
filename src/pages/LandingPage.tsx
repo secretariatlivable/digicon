@@ -544,7 +544,7 @@ export function LandingPage() {
                     console.info('DigiCon PayPal subscription approved:', subscriptionId);
                     navigate('/dashboard');
                   }}
-                  onError={(error) => {
+           onError={(error: unknown) => {
                     console.error('DigiCon PayPal subscription error:', error);
                   }}
                 />
