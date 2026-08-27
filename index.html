@@ -1,23 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-DS6NL2Y1D2"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-DS6NL2Y1D2');
-</script>
     <!-- =========================================================
          Document
          ========================================================= -->
     <meta charset="UTF-8" />
 
-    <title>
-      DigiCon | Digital Business Cards & CRM for SMEs and Startups
-    </title>
+    <title>DigiCon | Digital Business Cards & CRM for SMEs and Startups</title>
 
     <meta
       name="description"
@@ -37,10 +26,7 @@
       content="index, follow, max-image-preview:large"
     />
 
-    <meta
-      name="googlebot"
-      content="index, follow"
-    />
+    <meta name="googlebot" content="index, follow" />
 
     <!-- =========================================================
          Viewport
@@ -54,47 +40,26 @@
          Theme / Browser UI
          ========================================================= -->
     <meta name="theme-color" content="#000000" />
-
-    <meta
-      name="color-scheme"
-      content="dark light"
-    />
-
-    <meta
-      name="application-name"
-      content="DigiCon"
-    />
-
-    <meta
-      name="mobile-web-app-capable"
-      content="yes"
-    />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="application-name" content="DigiCon" />
+    <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- =========================================================
          Apple / iOS PWA
          ========================================================= -->
-    <meta
-      name="apple-mobile-web-app-capable"
-      content="yes"
-    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
 
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
 
-    <meta
-      name="apple-mobile-web-app-title"
-      content="DigiCon"
-    />
+    <meta name="apple-mobile-web-app-title" content="DigiCon" />
 
     <!-- =========================================================
          Microsoft / Windows
          ========================================================= -->
-    <meta
-      name="msapplication-TileColor"
-      content="#000000"
-    />
+    <meta name="msapplication-TileColor" content="#000000" />
 
     <meta
       name="msapplication-TileImage"
@@ -118,31 +83,21 @@
     <!-- =========================================================
          Progressive Web App
          ========================================================= -->
-    <link
-      rel="manifest"
-      href="/manifest.json"
-    />
+    <link rel="manifest" href="/manifest.json" />
 
     <!-- =========================================================
          Canonical URL
          ========================================================= -->
     <link
       rel="canonical"
-      href="https://www.digicon.asilvainnovations.com"
+      href="https://digicon.asilvainnovations.com/"
     />
 
     <!-- =========================================================
          Open Graph / Facebook / LinkedIn
          ========================================================= -->
-    <meta
-      property="og:type"
-      content="website"
-    />
-
-    <meta
-      property="og:site_name"
-      content="DigiCon"
-    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DigiCon" />
 
     <meta
       property="og:title"
@@ -159,10 +114,7 @@
       content="https://digicon.asilvainnovations.com/"
     />
 
-    <meta
-      property="og:locale"
-      content="en_PH"
-    />
+    <meta property="og:locale" content="en_PH" />
 
     <meta
       property="og:image"
@@ -174,18 +126,12 @@
       content="DigiCon digital business cards and CRM platform"
     />
 
-    <meta
-      property="og:image:type"
-      content="image/png"
-    />
+    <meta property="og:image:type" content="image/png" />
 
     <!-- =========================================================
          Twitter / X
          ========================================================= -->
-    <meta
-      name="twitter:card"
-      content="summary_large_image"
-    />
+    <meta name="twitter:card" content="summary_large_image" />
 
     <meta
       name="twitter:title"
@@ -213,6 +159,12 @@
     <link
       rel="preconnect"
       href="https://fonts.googleapis.com"
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
     />
 
     <link
@@ -261,7 +213,8 @@
         }
       }
     </script>
-     <!-- =========================================================
+
+    <!-- =========================================================
          Google Analytics
          ========================================================= -->
     <script
@@ -276,8 +229,8 @@
         window.dataLayer.push(arguments);
       }
 
-      gtag('js', new Date());
-      gtag('config', 'G-Y4LYMNP8YH');
+      gtag("js", new Date());
+      gtag("config", "G-Y4LYMNP8YH");
     </script>
 
     <!-- =========================================================
@@ -309,10 +262,21 @@
     </noscript>
 
     <!-- =========================================================
-         React Application
+         React Application Root
          ========================================================= -->
     <div id="root"></div>
 
+    <!-- =========================================================
+         React / Vite Entry Point
+         
+         main.tsx is responsible for bootstrapping React.
+         main.tsx/App.tsx should import:
+         
+         - AppLayout
+         - LandingPage
+         - application routing
+         - global CSS
+         ========================================================= -->
     <script
       type="module"
       src="/src/main.tsx"
