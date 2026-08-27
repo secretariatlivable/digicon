@@ -18,6 +18,7 @@ import {
   GlassButton,
   Spinner,
 } from '@/components/ui/GlassCard';
+import { addToAppleWallet, addToGoogleWallet } from '@/lib/wallet';
 
 type DesignTemplate =
   | 'futuristic'
@@ -73,7 +74,7 @@ function downloadFile(
   link.click();
   link.remove();
 
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function PublicCardPage() {
@@ -84,6 +85,8 @@ export function PublicCardPage() {
   const [loadError, setLoadError] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [walletLoading, setWalletLoading] = useState<'apple' | 'google' | null>(null);
+  const [walletError, setWalletError] = useState('');
   const [showContactForm, setShowContactForm] = useState(false);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
 
@@ -93,7 +96,6 @@ export function PublicCardPage() {
     const loadCard = async () => {
       if (!cardId) {
         setCard(null);
-        setLoadError(false);
         setLoading(false);
         return;
       }
@@ -132,10 +134,7 @@ export function PublicCardPage() {
     field: K,
     value: FormData[K],
   ) => {
-    setFormData((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setFormData((current) => ({ ...current, [field]: value }));
   };
 
   const saveContact = async (event: FormEvent<HTMLFormElement>) => {
@@ -160,42 +159,29 @@ export function PublicCardPage() {
         status: 'new',
       });
 
-      if (contactError) {
-        throw contactError;
-      }
+      if (contactError) throw contactError;
 
-      const { data: eco, error: ecoReadError } = await supabase
+      const { data: eco } = await supabase
         .from('eco_stats')
         .select('contacts_saved')
         .eq('user_id', card.user_id)
         .maybeSingle();
 
-      if (ecoReadError) {
-        console.warn('Contact saved, but eco stats could not be read:', ecoReadError);
-      } else if (eco) {
-        const { error: ecoUpdateError } = await supabase
+      if (eco) {
+        await supabase
           .from('eco_stats')
           .update({
             contacts_saved: (eco.contacts_saved ?? 0) + 1,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', card.user_id);
-
-        if (ecoUpdateError) {
-          console.warn(
-            'Contact saved, but eco stats could not be updated:',
-            ecoUpdateError,
-          );
-        }
       }
 
       setSaved(true);
       setShowContactForm(false);
     } catch (error) {
       console.error('Failed to save contact:', error);
-      window.alert(
-        'We could not save your contact details. Please try again.',
-      );
+      window.alert('We could not save your contact details. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -208,26 +194,18 @@ export function PublicCardPage() {
       'BEGIN:VCARD',
       'VERSION:3.0',
       `FN:${escapeVCardValue(card.full_name)}`,
-      card.job_title
-        ? `TITLE:${escapeVCardValue(card.job_title)}`
-        : '',
+      card.job_title ? `TITLE:${escapeVCardValue(card.job_title)}` : '',
       card.company ? `ORG:${escapeVCardValue(card.company)}` : '',
       card.phone ? `TEL:${escapeVCardValue(card.phone)}` : '',
       card.email ? `EMAIL:${escapeVCardValue(card.email)}` : '',
-      card.website
-        ? `URL:${escapeVCardValue(normalizeUrl(card.website))}`
-        : '',
-      card.address
-        ? `ADR:;;${escapeVCardValue(card.address)}`
-        : '',
+      card.website ? `URL:${escapeVCardValue(normalizeUrl(card.website))}` : '',
+      card.address ? `ADR:;;${escapeVCardValue(card.address)}` : '',
       card.bio ? `NOTE:${escapeVCardValue(card.bio)}` : '',
       'END:VCARD',
     ].filter(Boolean);
 
-    const filename = `${card.full_name
-      .trim()
-      .replace(/\s+/g, '_')
-      .replace(/[^\w.-]/g, '') || 'digicon-contact'}.vcf`;
+    const filename =
+      `${card.full_name.trim().replace(/\s+/g, '_').replace(/[^\w.-]/g, '') || 'digicon-contact'}.vcf`;
 
     downloadFile(
       `${fields.join('\r\n')}\r\n`,
@@ -236,115 +214,43 @@ export function PublicCardPage() {
     );
   };
 
-  /**
-   * Apple Wallet requires a cryptographically signed .pkpass bundle.
-   * The browser cannot generate a valid signed pass by simply serializing
-   * JSON, so this action downloads the card data as a JSON payload instead.
-   */
-  const downloadAppleWallet = () => {
-    if (!card) return;
+  const handleAppleWallet = async () => {
+    if (!card || walletLoading) return;
 
-    const passData = {
-      formatVersion: 1,
-      passType: 'generic',
-      organizationName: card.company || 'DigiCon',
-      description: `${card.full_name} - Digital Business Card`,
-      serialNumber: card.id,
-      backgroundColor: 'rgb(0,0,0)',
-      foregroundColor: 'rgb(255,255,255)',
-      labelColor: 'rgb(255,255,255)',
-      primaryFields: [
-        {
-          key: 'name',
-          label: 'Name',
-          value: card.full_name,
-        },
-        {
-          key: 'title',
-          label: 'Title',
-          value: card.job_title,
-        },
-      ],
-      secondaryFields: [
-        {
-          key: 'company',
-          label: 'Company',
-          value: card.company,
-        },
-        {
-          key: 'phone',
-          label: 'Phone',
-          value: card.phone,
-        },
-        {
-          key: 'email',
-          label: 'Email',
-          value: card.email,
-        },
-      ],
-      auxiliaryFields: card.website
-        ? [
-            {
-              key: 'website',
-              label: 'Website',
-              value: card.website,
-            },
-          ]
-        : [],
-    };
+    setWalletLoading('apple');
+    setWalletError('');
 
-    downloadFile(
-      JSON.stringify(passData, null, 2),
-      `${card.full_name.replace(/\s+/g, '_') || 'digicon-card'}.apple-wallet.json`,
-      'application/json;charset=utf-8',
-    );
+    try {
+      await addToAppleWallet(card.id);
+    } catch (error) {
+      console.error(error);
+      setWalletError(
+        error instanceof Error
+          ? error.message
+          : 'Apple Wallet is currently unavailable.',
+      );
+    } finally {
+      setWalletLoading(null);
+    }
   };
 
-  /**
-   * A valid Google Wallet pass must be created through Google's Wallet API.
-   * This browser-side JSON is therefore an export payload, not a Wallet pass.
-   */
-  const downloadGoogleWallet = () => {
-    if (!card) return;
+  const handleGoogleWallet = async () => {
+    if (!card || walletLoading) return;
 
-    const walletData = {
-      id: card.id,
-      classId: 'digicon-card',
-      title: card.full_name,
-      subtitle: card.job_title,
-      textModulesData: [
-        {
-          header: 'Company',
-          body: card.company,
-        },
-        {
-          header: 'Phone',
-          body: card.phone,
-        },
-        {
-          header: 'Email',
-          body: card.email,
-        },
-        {
-          header: 'Website',
-          body: card.website,
-        },
-      ],
-      linksModuleData: {
-        uris: [
-          {
-            uri: window.location.href,
-            description: 'View Digital Card',
-          },
-        ],
-      },
-    };
+    setWalletLoading('google');
+    setWalletError('');
 
-    downloadFile(
-      JSON.stringify(walletData, null, 2),
-      `${card.full_name.replace(/\s+/g, '_') || 'digicon-card'}.google-wallet.json`,
-      'application/json;charset=utf-8',
-    );
+    try {
+      await addToGoogleWallet(card.id);
+    } catch (error) {
+      console.error(error);
+      setWalletError(
+        error instanceof Error
+          ? error.message
+          : 'Google Wallet is currently unavailable.',
+      );
+      setWalletLoading(null);
+    }
   };
 
   const renderCard = () => {
@@ -407,99 +313,57 @@ export function PublicCardPage() {
         className="w-16 h-16 rounded-full object-cover ring-2 ring-white/40"
       />
     ) : (
-      <div
-        className="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center"
-        aria-hidden="true"
-      >
+      <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
         <span className="text-2xl font-bold text-white">
           {card.full_name.charAt(0).toUpperCase()}
         </span>
       </div>
     );
 
-    if (template === 'futuristic') {
-      return (
-        <div
-          className="relative rounded-glass-2xl overflow-hidden animate-scale-in"
-          style={{
-            background: `linear-gradient(135deg, ${cardColor}, ${accent})`,
-          }}
+    const header = (
+      <div className="relative p-8">
+        <div className="flex justify-end mb-4">{photoEl}</div>
+        <h1
+          className="text-2xl font-bold text-white tracking-tight"
+          style={{ fontFamily: font }}
         >
-          <div
-            className="absolute inset-0 opacity-30"
-            aria-hidden="true"
-            style={{
-              backgroundImage:
-                'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.2) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 50%)',
-            }}
-          />
-
-          <div className="relative p-8">
-            <div className="flex justify-end mb-4">{photoEl}</div>
-
-            <h1
-              className="text-2xl font-bold text-white tracking-tight"
-              style={{ fontFamily: font }}
-            >
-              {card.full_name}
-            </h1>
-
-            {card.job_title && (
-              <p
-                className="text-white/90"
-                style={{ fontFamily: font }}
-              >
-                {card.job_title}
-              </p>
-            )}
-
-            {card.company && (
-              <p
-                className="text-white/60 text-sm"
-                style={{ fontFamily: font }}
-              >
-                {card.company}
-              </p>
-            )}
-          </div>
-
-          {contactLinks}
-        </div>
-      );
-    }
+          {card.full_name}
+        </h1>
+        {card.job_title && (
+          <p className="text-white/80" style={{ fontFamily: font }}>
+            {card.job_title}
+          </p>
+        )}
+        {card.company && (
+          <p className="text-white/60 text-sm" style={{ fontFamily: font }}>
+            {card.company}
+          </p>
+        )}
+      </div>
+    );
 
     if (template === 'simple') {
       return (
         <div className="rounded-glass-2xl overflow-hidden animate-scale-in bg-[#1C1C1E] border border-white/10">
           <div className="p-8">
             <div className="mb-4">{photoEl}</div>
-
             <h1
               className="text-2xl font-semibold text-white"
               style={{ fontFamily: font }}
             >
               {card.full_name}
             </h1>
-
             {card.job_title && (
-              <p
-                className="text-white/50"
-                style={{ fontFamily: font }}
-              >
+              <p className="text-white/50" style={{ fontFamily: font }}>
                 {card.job_title}
               </p>
             )}
-
             {card.company && (
-              <p
-                className="text-white/40 text-sm"
-                style={{ fontFamily: font }}
-              >
+              <p className="text-white/40 text-sm" style={{ fontFamily: font }}>
                 {card.company}
               </p>
             )}
           </div>
-
           {contactLinks}
         </div>
       );
@@ -518,36 +382,29 @@ export function PublicCardPage() {
             aria-hidden="true"
             style={{ backgroundColor: accent }}
           />
+          {header}
+          {contactLinks}
+        </div>
+      );
+    }
 
-          <div className="relative p-8">
-            <div className="mb-4">{photoEl}</div>
-
-            <h1
-              className="text-2xl font-bold text-white"
-              style={{ fontFamily: font }}
-            >
-              {card.full_name}
-            </h1>
-
-            {card.job_title && (
-              <p
-                className="text-white/80"
-                style={{ fontFamily: font }}
-              >
-                {card.job_title}
-              </p>
-            )}
-
-            {card.company && (
-              <p
-                className="text-white/60 text-sm"
-                style={{ fontFamily: font }}
-              >
-                {card.company}
-              </p>
-            )}
-          </div>
-
+    if (template === 'futuristic') {
+      return (
+        <div
+          className="relative rounded-glass-2xl overflow-hidden animate-scale-in"
+          style={{
+            background: `linear-gradient(135deg, ${cardColor}, ${accent})`,
+          }}
+        >
+          <div
+            className="absolute inset-0 opacity-30"
+            aria-hidden="true"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.2) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 50%)',
+            }}
+          />
+          {header}
           {contactLinks}
         </div>
       );
@@ -560,35 +417,7 @@ export function PublicCardPage() {
           background: `linear-gradient(135deg, ${cardColor}, ${cardColor}cc)`,
         }}
       >
-        <div className="p-8">
-          <div className="flex justify-end mb-4">{photoEl}</div>
-
-          <h1
-            className="text-2xl font-bold text-white"
-            style={{ fontFamily: font }}
-          >
-            {card.full_name}
-          </h1>
-
-          {card.job_title && (
-            <p
-              className="text-white/80"
-              style={{ fontFamily: font }}
-            >
-              {card.job_title}
-            </p>
-          )}
-
-          {card.company && (
-            <p
-              className="text-white/60 text-sm"
-              style={{ fontFamily: font }}
-            >
-              {card.company}
-            </p>
-          )}
-        </div>
-
+        {header}
         {contactLinks}
       </div>
     );
@@ -611,11 +440,9 @@ export function PublicCardPage() {
             alt="DigiCon logo"
             className="w-12 h-12 rounded-full mx-auto mb-4 opacity-30"
           />
-
           <h1 className="text-xl font-bold text-white mb-2">
             {loadError ? 'Unable to Load Card' : 'Card Not Found'}
           </h1>
-
           <p className="text-white/50">
             {loadError
               ? 'Something went wrong while loading this business card. Please try again.'
@@ -628,7 +455,6 @@ export function PublicCardPage() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Full-width banner */}
       <section className="relative w-full overflow-hidden">
         <img
           src="/DigiCon_Banner.png"
@@ -644,22 +470,18 @@ export function PublicCardPage() {
         >
           <div
             className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px]"
-            style={{
-              backgroundColor: `${card.card_color || '#ffffff'}30`,
-            }}
+            style={{ backgroundColor: `${card.card_color || '#ffffff'}30` }}
           />
         </div>
 
         <div className="relative w-full max-w-md space-y-4">
           {renderCard()}
 
-          {/* Action buttons */}
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={downloadVCard}
               className="flex items-center justify-center gap-2 p-3 rounded-glass-md glass-thin text-white/70 hover:text-white transition-all"
-              aria-label="Save contact"
             >
               <Download className="w-4 h-4" />
               <span className="text-sm">Save Contact</span>
@@ -677,30 +499,55 @@ export function PublicCardPage() {
             </button>
           </div>
 
-          {/* Wallet export payloads */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={downloadAppleWallet}
-              className="flex items-center justify-center gap-2 p-3 rounded-glass-md glass-thin text-white/70 hover:text-white transition-all"
-              title="Download Apple Wallet-compatible pass data"
-            >
-              <Wallet className="w-4 h-4" />
-              <span className="text-xs">Apple Wallet Data</span>
-            </button>
+          <div className="rounded-glass-md glass-thin p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Wallet className="w-4 h-4 text-white/70" />
+              <span className="text-sm font-medium text-white">
+                Save to Wallet
+              </span>
+            </div>
 
-            <button
-              type="button"
-              onClick={downloadGoogleWallet}
-              className="flex items-center justify-center gap-2 p-3 rounded-glass-md glass-thin text-white/70 hover:text-white transition-all"
-              title="Download Google Wallet-compatible pass data"
-            >
-              <Wallet className="w-4 h-4" />
-              <span className="text-xs">Google Wallet Data</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleAppleWallet}
+                disabled={walletLoading !== null}
+                className="flex items-center justify-center gap-2 p-3 rounded-glass-sm bg-white/10 text-white/80 hover:bg-white/15 hover:text-white disabled:opacity-50 transition-all"
+              >
+                {walletLoading === 'apple' ? (
+                  <Spinner className="w-4 h-4" />
+                ) : (
+                  <Wallet className="w-4 h-4" />
+                )}
+                <span className="text-xs font-medium">
+                  Add to Apple Wallet
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGoogleWallet}
+                disabled={walletLoading !== null}
+                className="flex items-center justify-center gap-2 p-3 rounded-glass-sm bg-white/10 text-white/80 hover:bg-white/15 hover:text-white disabled:opacity-50 transition-all"
+              >
+                {walletLoading === 'google' ? (
+                  <Spinner className="w-4 h-4" />
+                ) : (
+                  <Wallet className="w-4 h-4" />
+                )}
+                <span className="text-xs font-medium">
+                  Add to Google Wallet
+                </span>
+              </button>
+            </div>
+
+            {walletError && (
+              <p className="text-xs text-red-300 mt-2" role="alert">
+                {walletError}
+              </p>
+            )}
           </div>
 
-          {/* Save contact form */}
           {showContactForm && !saved && (
             <GlassCard
               id="share-contact-form"
@@ -710,7 +557,6 @@ export function PublicCardPage() {
               <h2 className="text-lg font-semibold text-white mb-1">
                 Share Your Details
               </h2>
-
               <p className="text-sm text-white/50 mb-4">
                 Share your contact info with {card.full_name.split(' ')[0]}.
               </p>
@@ -740,7 +586,6 @@ export function PublicCardPage() {
                       autoComplete="email"
                     />
                   </div>
-
                   <div>
                     <GlassLabel>Phone</GlassLabel>
                     <GlassInput
@@ -764,7 +609,6 @@ export function PublicCardPage() {
                       autoComplete="organization"
                     />
                   </div>
-
                   <div>
                     <GlassLabel>Job Title</GlassLabel>
                     <GlassInput
@@ -787,11 +631,10 @@ export function PublicCardPage() {
                     className="w-5 h-5 rounded accent-digicon-primary mt-0.5 shrink-0"
                     required
                   />
-
                   <span className="text-xs text-white/60">
-                    I consent to my contact information being stored and used
-                    by {card.full_name} in accordance with the Data Privacy
-                    Act of the Philippines.
+                    I consent to my contact information being stored and used by{' '}
+                    {card.full_name} in accordance with the Data Privacy Act
+                    of the Philippines.
                   </span>
                 </label>
 
@@ -819,11 +662,9 @@ export function PublicCardPage() {
               <div className="w-16 h-16 rounded-glass-xl glass-chrome flex items-center justify-center mx-auto mb-4">
                 <Check className="w-8 h-8 text-digicon-eco" />
               </div>
-
               <h2 className="text-xl font-bold text-white mb-2">
                 Contact Shared!
               </h2>
-
               <p className="text-white/50 text-sm">
                 Your details have been sent to {card.full_name}.
               </p>
