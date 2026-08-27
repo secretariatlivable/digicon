@@ -1,80 +1,64 @@
 /**
- * DigiCon PayPal subscription plan configuration.
+ * DigiCon PayPal subscription plans.
  *
- * Pricing mirrors the Landing Page:
- * Starter ₱199/month
- * Growth  ₱499/month
- * Enterprise Custom (sales-assisted; not a PayPal self-service subscription)
+ * These IDs are PayPal Plan IDs, not client secrets.
+ * The amounts are configured in PayPal; the UI mirrors the DigiCon
+ * Pricing Section.
  */
 
 export type DigiConPlanId = "starter" | "growth" | "enterprise";
 
-export interface DigiConSubscriptionPlan {
+export interface DigiConPayPalPlan {
   id: DigiConPlanId;
   name: string;
-  pricePHP: number | null;
-  interval: "MONTH";
-  paypalPlanId?: string;
+  priceLabel: string;
+  planId: string;
   description: string;
   features: readonly string[];
   highlight?: boolean;
-  subscription: boolean;
 }
 
-const getPlanId = (value: string | undefined): string | undefined =>
-  value?.trim() || undefined;
-
-export const DIGICON_PAYPAL_PLANS: Readonly<
-  Record<DigiConPlanId, DigiConSubscriptionPlan>
-> = {
+export const DIGICON_PAYPAL_PLANS: Record<DigiConPlanId, DigiConPayPalPlan> = {
   starter: {
     id: "starter",
     name: "Starter",
-    pricePHP: 199,
-    interval: "MONTH",
-    paypalPlanId: getPlanId(
-      import.meta.env.VITE_PAYPAL_STARTER_PLAN_ID as string | undefined,
-    ),
+    priceLabel: "₱199 / month",
+    planId: "P-6MP428311N661121LNKIFXAA",
     description:
       "Perfect for solo entrepreneurs and small teams under 10 people.",
     features: [
-      "3 Digital Cards",
-      "Up to 100 Contacts",
+      "1 Digital Card",
+      "Up to 25 Contacts",
       "QR Code Sharing",
       "Basic Analytics",
       "English & Filipino",
     ],
-    subscription: true,
   },
 
   growth: {
     id: "growth",
     name: "Growth",
-    pricePHP: 499,
-    interval: "MONTH",
-    paypalPlanId: getPlanId(
-      import.meta.env.VITE_PAYPAL_GROWTH_PLAN_ID as string | undefined,
-    ),
+    priceLabel: "₱499 / month",
+    planId: "P-8BE95305CD2758215NKIF2ZI",
     description:
       "For scaling SMEs that need CRM automation and advanced analytics.",
     features: [
       "Unlimited Cards",
       "Unlimited Contacts",
-      "HubSpot CRM Sync",
+      "Intuitive CRM Sync",
       "Advanced Analytics",
       "Team Access (5 seats)",
       "Eco Gamification",
       "Priority Support",
     ],
     highlight: true,
-    subscription: true,
   },
 
   enterprise: {
     id: "enterprise",
     name: "Enterprise",
-    pricePHP: null,
-    interval: "MONTH",
+    priceLabel: "Custom",
+    planId: "P-0M743656FN385102CNKIGEJI",
     description:
       "Tailored solutions for large organizations with custom integrations.",
     features: [
@@ -85,10 +69,11 @@ export const DIGICON_PAYPAL_PLANS: Readonly<
       "Dedicated Manager",
       "SLA Guarantee",
     ],
-    subscription: false,
   },
 };
 
-export const getDigiConPlan = (
+export function getDigiConPayPalPlan(
   planId: DigiConPlanId,
-): DigiConSubscriptionPlan => DIGICON_PAYPAL_PLANS[planId];
+): DigiConPayPalPlan {
+  return DIGICON_PAYPAL_PLANS[planId];
+}
