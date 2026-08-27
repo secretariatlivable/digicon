@@ -18,6 +18,8 @@ import { GlassButton, GlassCard } from '@/components/ui/GlassCard';
 import { LandingNav } from '@/components/layout/AppLayout';
 import { DigiConLogo } from '@/components/brand/DigiConLogo';
 import { PayPalSubscriptionButton } from '@/components/PayPalSubscriptionButton';
+import { DigiConPayPalProvider } from '@components/DigiConPayPalProvider';
+import { ThemeProvider } from '@components/theme-provider';
 
 export function LandingPage() {
   const { session } = useAuth();
@@ -71,8 +73,8 @@ export function LandingPage() {
       priceKey: 'landing.pricing.starterPrice' as TranslationKey,
       descKey: 'landing.pricing.starterDesc' as TranslationKey,
       features: [
-        '3 Digital Cards',
-        'Up to 100 Contacts',
+        '1 Digital Cards',
+        'Up to 25 Contacts',
         'QR Code Sharing',
         'Basic Analytics',
         'English & Filipino',
@@ -87,7 +89,7 @@ export function LandingPage() {
       features: [
         'Unlimited Cards',
         'Unlimited Contacts',
-        'HubSpot CRM Sync',
+        'Intuitive CRM Sync',
         'Advanced Analytics',
         'Team Access (5 seats)',
         'Eco Gamification',
@@ -623,7 +625,7 @@ export function LandingPage() {
           <div className="flex items-center gap-2">
             <DigiConLogo size="sm" />
             <span className="text-white/30 text-sm ml-2">
-              © 2026. Made for You.
+              © 2026. Digicon
             </span>
           </div>
 
