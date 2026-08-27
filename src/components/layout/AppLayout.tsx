@@ -7,7 +7,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
-import { GlassButton } from '@/components/ui/Glass';
+import { GlassButton } from '@/components/ui/GlassCard';
 import { DigiConLogo } from '@/components/brand/DigiConLogo';
 
 export function AppLayout({ children }: { children: ReactNode }) {
