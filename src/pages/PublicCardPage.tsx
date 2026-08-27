@@ -17,7 +17,7 @@ import {
   GlassLabel,
   GlassButton,
   Spinner,
-} from '@/components/ui/Glass';
+} from '@/components/ui/GlassCard';
 
 type DesignTemplate =
   | 'futuristic'
