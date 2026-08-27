@@ -1,55 +1,40 @@
 /**
- * DigiCon Supabase Client
- * 
- * SECURITY: This file NO LONGER contains any hardcoded credentials.
- * All configuration is loaded from environment variables at runtime.
- * 
- * Required env vars (VITE_ prefix required for Vite client-side exposure):
- *   - VITE_SUPABASE_URL
- *   - VITE_SUPABASE_ANON_KEY
- * 
- * Never commit .env files to Git. See .env.example for the template.
+ * DigiCon Supabase client.
+ *
+ * Browser-safe configuration only:
+ *   VITE_SUPABASE_URL
+ *   VITE_SUPABASE_ANON_KEY
+ *
+ * Never place service-role keys, PayPal secrets, Apple signing keys, or
+ * Google service-account private keys in VITE_* variables.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
-/* ------------------------------------------------------------------ */
-/*  Runtime environment validation                                      */
-/* ------------------------------------------------------------------ */
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-function getEnvVar(key: string): string {
-  const value = import.meta.env[key];
-  if (!value || value.trim() === '') {
-    throw new Error(
-      `[DigiCon Config] Missing required environment variable: ${key}\n` +
-      `Ensure you have copied .env.example to .env and filled in your Supabase credentials.\n` +
-      `For Vite, variables must be prefixed with VITE_ to be exposed to the client bundle.`
-    );
-  }
-  return value.trim();
-}
+export const supabaseConfigError =
+  !supabaseUrl || !supabaseAnonKey
+    ? "DigiCon is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
+    : null;
 
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
-const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
-
-/* ------------------------------------------------------------------ */
-/*  Client initialization                                               */
-/* ------------------------------------------------------------------ */
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder.invalid",
+  supabaseAnonKey || "missing-anon-key",
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: "pkce",
+    },
+    realtime: {
+      timeout: 20000,
+    },
   },
-  realtime: {
-    timeout: 20000,
-  },
-});
-
-/* ------------------------------------------------------------------ */
-/*  Database types                                                      */
-/* ------------------------------------------------------------------ */
+);
 
 export type Profile = {
   id: string;
@@ -59,9 +44,11 @@ export type Profile = {
   language: string | null;
   region: string | null;
   avatar_url: string | null;
-  role: 'owner' | 'admin' | 'member' | null;
+  role: "owner" | "admin" | "member" | null;
   created_at: string;
   updated_at: string;
+  plan?: "startup" | "starter" | "growth" | "enterprise" | null;
+  is_active_subscription?: boolean | null;
 };
 
 export type BusinessCard = {
@@ -90,13 +77,14 @@ export type BusinessCard = {
 export type Contact = {
   id: string;
   user_id: string;
+  card_id?: string | null;
   full_name: string;
   email: string;
   phone: string;
-  company: string;
-  job_title: string;
-  notes: string;
-  status: 'new' | 'follow_up' | 'converted' | 'archived';
+  company: string | null;
+  job_title: string | null;
+  notes: string | null;
+  status: "new" | "follow_up" | "converted" | "archived";
   source: string;
   consent_given: boolean;
   consent_date: string | null;
@@ -121,5 +109,6 @@ export type Badge = {
   description: string;
   icon: string;
   threshold: number;
+  category?: string;
   created_at: string;
 };
