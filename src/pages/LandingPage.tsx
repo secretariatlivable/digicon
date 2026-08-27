@@ -67,39 +67,39 @@ export function LandingPage() {
   ];
 
   const pricingPlans: Array<{
-  id: Exclude<DigiConPlanId, 'startup'>;
-  nameKey: TranslationKey;
-  priceKey: TranslationKey;
-  descKey: TranslationKey;
-  features: readonly string[];
-  highlight: boolean;
-}> = [
-  {
-    id: 'starter',
-    nameKey: 'landing.pricing.starter' as TranslationKey,
-    priceKey: 'landing.pricing.starterPrice' as TranslationKey,
-    descKey: 'landing.pricing.starterDesc' as TranslationKey,
-    features: DIGICON_PAYPAL_PLANS.starter.features,
-    highlight: false,
-  },
-  {
-    id: 'growth',
-    nameKey: 'landing.pricing.growth' as TranslationKey,
-    priceKey: 'landing.pricing.growthPrice' as TranslationKey,
-    descKey: 'landing.pricing.growthDesc' as TranslationKey,
-    features: DIGICON_PAYPAL_PLANS.growth.features,
-    highlight: true,
-  },
-  {
-    id: 'enterprise',
-    nameKey: 'landing.pricing.enterprise' as TranslationKey,
-    priceKey: 'landing.pricing.enterprisePrice' as TranslationKey,
-    descKey: 'landing.pricing.enterpriseDesc' as TranslationKey,
-    features: DIGICON_PAYPAL_PLANS.enterprise.features,
-    highlight: false,
-  },
-  {
-  
+    id: Exclude<DigiConPlanId, 'startup'>;
+    nameKey: TranslationKey;
+    priceKey: TranslationKey;
+    descKey: TranslationKey;
+    features: readonly string[];
+    highlight: boolean;
+  }> = [
+    {
+      id: 'starter',
+      nameKey: 'landing.pricing.starter' as TranslationKey,
+      priceKey: 'landing.pricing.starterPrice' as TranslationKey,
+      descKey: 'landing.pricing.starterDesc' as TranslationKey,
+      features: DIGICON_PAYPAL_PLANS.starter.features,
+      highlight: false,
+    },
+    {
+      id: 'growth',
+      nameKey: 'landing.pricing.growth' as TranslationKey,
+      priceKey: 'landing.pricing.growthPrice' as TranslationKey,
+      descKey: 'landing.pricing.growthDesc' as TranslationKey,
+      features: DIGICON_PAYPAL_PLANS.growth.features,
+      highlight: true,
+    },
+    {
+      id: 'enterprise',
+      nameKey: 'landing.pricing.enterprise' as TranslationKey,
+      priceKey: 'landing.pricing.enterprisePrice' as TranslationKey,
+      descKey: 'landing.pricing.enterpriseDesc' as TranslationKey,
+      features: DIGICON_PAYPAL_PLANS.enterprise.features,
+      highlight: false,
+    },
+  ];
+
   const handlePrimaryCTA = () => {
     navigate(session ? '/dashboard' : '/auth?mode=signup');
   };
@@ -539,14 +539,15 @@ export function LandingPage() {
 
               <div className="space-y-3">
                 <PayPalSubscriptionButton
-  planId={plan.id}
-  onApproved={(subscriptionId: string) => {
-    console.log('PayPal subscription approved:', subscriptionId);
-  }}
-  onError={(error) => {
-    console.error('PayPal subscription error:', error);
-  }}
-/>
+                  planId={plan.id}
+                  onApproved={(subscriptionId) => {
+                    console.info('DigiCon PayPal subscription approved:', subscriptionId);
+                    navigate('/dashboard');
+                  }}
+                  onError={(error) => {
+                    console.error('DigiCon PayPal subscription error:', error);
+                  }}
+                />
 
                 <GlassButton
                   variant="ghost"
