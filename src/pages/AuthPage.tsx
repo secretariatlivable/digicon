@@ -1,267 +1,426 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, Apple, CheckCircle2, LogIn, LogOut, ShieldCheck, Smartphone, User } from 'lucide-react';
-import { useAuth0 } from '@auth0/auth0-react';
-import { supabase } from '@/lib/supabase';
-import { DigiConLogo } from '@/components/brand/DigiConLogo';
-import { GlassButton, GlassCard } from '@/components/ui/GlassCard';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  AlertCircle,
+  CheckCircle2,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+  UserPlus,
+  KeyRound,
+} from "lucide-react";
 
-const AUTH0_CLIENT_ID = import.meta.env.VITE_AUTH0_CLIENT_ID as string | undefined;
-const AUTH0_DOMAIN = import.meta.env.VITE_AUTH0_DOMAIN as string | undefined;
-const PRODUCTION_ORIGIN = 'https://digicon.cards';
+import { useAuth } from "@/lib/auth";
+import { DigiConLogo } from "@/components/brand/DigiConLogo";
+import { GlassButton, GlassCard, GlassInput, GlassLabel } from "@/components/ui/GlassCard";
 
-type WalletResponse = {
-  passBase64?: string;
-  filename?: string;
-  saveUrl?: string;
-  error?: string;
-};
+type AuthMode = "signin" | "signup" | "reset";
 
-function redirectUri() {
-  if (typeof window === 'undefined') return `${PRODUCTION_ORIGIN}/auth`;
-  return window.location.hostname === 'digicon.cards'
+const PRODUCTION_ORIGIN = "https://digicon.cards";
+
+function getSafeReturnTo(value: string | null): string {
+  if (!value) return "/dashboard";
+  if (!value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  return value;
+}
+
+function getRedirectPath(): string {
+  if (typeof window === "undefined") return "/auth";
+  return window.location.hostname === "digicon.cards"
     ? `${PRODUCTION_ORIGIN}/auth`
     : `${window.location.origin}/auth`;
 }
 
-function base64Blob(value: string, type: string) {
-  const binary = window.atob(value);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type });
-}
-
-function download(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-async function invokeWallet(name: 'apple-wallet-pass' | 'google-wallet-pass', cardId: string) {
-  const { data, error } = await supabase.functions.invoke<WalletResponse>(name, {
-    body: { card_id: cardId },
-  });
-  if (error) throw new Error(error.message || `Unable to call ${name}.`);
-  if (!data) throw new Error('Wallet service returned no response.');
-  if (data.error) throw new Error(data.error);
-  return data;
-}
-
 export function AuthPage() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const [walletLoading, setWalletLoading] = useState<'apple' | 'google' | null>(null);
+  const [params, setParams] = useSearchParams();
+  const { session, loading, signIn, signUp, signOut } = useAuth();
+
+  const requestedMode = params.get("mode");
+  const initialMode: AuthMode =
+    requestedMode === "signup"
+      ? "signup"
+      : requestedMode === "reset"
+        ? "reset"
+        : "signin";
+
+  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [fullName, setFullName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const {
-    isLoading,
-    isAuthenticated,
-    user,
-    error: auth0Error,
-    loginWithRedirect,
-    logout,
-  } = useAuth0();
-
-  const mode = params.get('mode') === 'signup' ? 'signup' : 'signin';
-  const cardId = useMemo(
-    () => (params.get('card_id') || params.get('cardId') || '').trim(),
+  const returnTo = useMemo(
+    () => getSafeReturnTo(params.get("returnTo")),
     [params],
   );
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const returnTo = params.get('returnTo');
-      if (returnTo?.startsWith('/') && !returnTo.startsWith('//')) {
-        navigate(returnTo, { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
+    if (!requestedMode) return;
+
+    const nextMode: AuthMode =
+      requestedMode === "signup"
+        ? "signup"
+        : requestedMode === "reset"
+          ? "reset"
+          : "signin";
+
+    setMode(nextMode);
+  }, [requestedMode]);
+
+  useEffect(() => {
+    if (!loading && session) {
+      navigate(returnTo, { replace: true });
     }
-  }, [isAuthenticated, navigate, params]);
+  }, [loading, navigate, returnTo, session]);
 
-  const configError =
-    !AUTH0_DOMAIN || !AUTH0_CLIENT_ID
-      ? 'Auth0 is not configured. Set VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID.'
-      : null;
-
-  const signIn = async () => {
-    setError(null);
+  const changeMode = (nextMode: AuthMode) => {
+    setMode(nextMode);
     setMessage(null);
-    if (configError) {
-      setError(configError);
-      return;
-    }
-    try {
-      await loginWithRedirect({
-        authorizationParams: {
-          redirect_uri: redirectUri(),
-          ...(mode === 'signup' ? { screen_hint: 'signup' } : {}),
-        },
-        appState: { returnTo: params.get('returnTo') || '/dashboard' },
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to start Auth0 authentication.');
-    }
+    setError(null);
+    setPassword("");
+
+    const nextParams = new URLSearchParams(params);
+    if (nextMode === "signup") nextParams.set("mode", "signup");
+    else if (nextMode === "reset") nextParams.set("mode", "reset");
+    else nextParams.delete("mode");
+
+    setParams(nextParams, { replace: true });
   };
 
-  const signOut = async () => {
-    await logout({ logoutParams: { returnTo: `${window.location.origin}/` } });
-  };
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-  const appleWallet = async () => {
-    if (!cardId) {
-      setError('A card_id is required to generate an Apple Wallet pass.');
-      return;
-    }
-    setWalletLoading('apple');
+    setBusy(true);
     setError(null);
     setMessage(null);
-    try {
-      const data = await invokeWallet('apple-wallet-pass', cardId);
-      if (!data.passBase64) throw new Error('Apple Wallet service did not return a pass.');
-      const filename = data.filename?.endsWith('.pkpass')
-        ? data.filename
-        : `${data.filename || 'digicon-business-card'}.pkpass`;
-      download(base64Blob(data.passBase64, 'application/vnd.apple.pkpass'), filename);
-      setMessage('Apple Wallet pass generated successfully.');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to generate Apple Wallet pass.');
-    } finally {
-      setWalletLoading(null);
-    }
-  };
 
-  const googleWallet = async () => {
-    if (!cardId) {
-      setError('A card_id is required to generate a Google Wallet pass.');
-      return;
-    }
-    setWalletLoading('google');
-    setError(null);
-    setMessage(null);
     try {
-      const data = await invokeWallet('google-wallet-pass', cardId);
-      if (!data.saveUrl) {
-        throw new Error(
-          'Google Wallet service did not return a Save to Google Wallet URL. The google-wallet-pass Edge Function must return saveUrl.',
+      if (mode === "reset") {
+        const { error: resetError } = await import("@/lib/supabase").then(
+          ({ supabase }) =>
+            supabase.auth.resetPasswordForEmail(email.trim(), {
+              redirectTo: `${getRedirectPath()}?mode=reset`,
+            }),
         );
+
+        if (resetError) {
+          throw resetError;
+        }
+
+        setMessage(
+          "If an account exists for that email, a password-reset email has been sent.",
+        );
+        return;
       }
-      window.location.assign(data.saveUrl);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to generate Google Wallet pass.');
+
+      if (mode === "signup") {
+        if (fullName.trim().length < 2) {
+          throw new Error("Please enter your full name.");
+        }
+
+        const result = await signUp(
+          email.trim(),
+          password,
+          fullName.trim(),
+          companyName.trim(),
+        );
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        setMessage(
+          "Your account was created. Check your email if confirmation is required, then sign in.",
+        );
+        setMode("signin");
+        return;
+      }
+
+      const result = await signIn(email.trim(), password);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      navigate(returnTo, { replace: true });
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to complete authentication.",
+      );
     } finally {
-      setWalletLoading(null);
+      setBusy(false);
     }
   };
 
-  if (isLoading) {
+  const handleSignOut = async () => {
+    setBusy(true);
+    setError(null);
+
+    try {
+      await signOut();
+      navigate("/", { replace: true });
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to sign out.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white/70">
+      <main className="min-h-screen flex items-center justify-center bg-black">
         <DigiConLogo size="lg" showText={false} />
-      </div>
+        <span className="sr-only">Loading DigiCon authentication.</span>
+      </main>
+    );
+  }
+
+  if (session) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-black">
+        <GlassCard variant="thick" className="w-full max-w-md p-8">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-6 w-6 text-digicon-eco" />
+            <div>
+              <h1 className="text-xl font-bold text-white">
+                You are signed in
+              </h1>
+              <p className="text-sm text-white/50">
+                Continue to your DigiCon workspace.
+              </p>
+            </div>
+          </div>
+
+          {error && (
+            <div
+              className="mt-5 flex gap-2 rounded-glass-sm bg-digicon-error/10 p-3 text-sm text-digicon-error"
+              role="alert"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="mt-6 grid gap-3">
+            <GlassButton
+              type="button"
+              className="w-full"
+              onClick={() => navigate(returnTo, { replace: true })}
+            >
+              Continue to DigiCon
+            </GlassButton>
+
+            <GlassButton
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => void handleSignOut()}
+              disabled={busy}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </GlassButton>
+          </div>
+        </GlassCard>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-digicon-primary/15 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-digicon-secondary/15 rounded-full blur-[120px]" />
+    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-black relative overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0"
+        aria-hidden="true"
+      >
+        <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-digicon-primary/15 blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-digicon-secondary/15 blur-[120px]" />
       </div>
 
       <div className="relative w-full max-w-md">
-        <div className="text-center mb-8">
-          <button type="button" onClick={() => navigate('/')} className="inline-flex mb-4">
+        <div className="mb-8 text-center">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="inline-flex"
+            aria-label="Back to DigiCon home"
+          >
             <DigiConLogo size="lg" showText={false} />
           </button>
-          <h1 className="text-2xl font-bold text-white">
-            {isAuthenticated ? `Welcome${user?.name ? `, ${user.name}` : ''}` : mode === 'signup' ? 'Create your DigiCon account' : 'Welcome back'}
+
+          <h1 className="mt-4 text-2xl font-bold text-white">
+            {mode === "signup"
+              ? "Create your DigiCon account"
+              : mode === "reset"
+                ? "Reset your password"
+                : "Welcome back"}
           </h1>
-          {!isAuthenticated && (
-            <p className="text-white/50 text-sm mt-2">
-              Secure sign-in and registration powered by Auth0.
-            </p>
-          )}
+
+          <p className="mt-2 text-sm text-white/50">
+            {mode === "signup"
+              ? "Build your digital identity and start connecting."
+              : mode === "reset"
+                ? "Enter your email and we will send password-reset instructions."
+                : "Sign in to manage your digital cards and connections."}
+          </p>
         </div>
 
         <GlassCard variant="thick" className="p-8">
-          {isAuthenticated ? (
-            <div className="space-y-5">
-              <div className="flex items-center gap-3 p-4 rounded-glass-sm bg-white/5 border border-white/10">
-                {user?.picture ? (
-                  <img src={user.picture} alt="" className="w-10 h-10 rounded-full object-cover" referrerPolicy="no-referrer" />
-                ) : (
-                  <User className="w-10 h-10 p-2 text-white/60" />
-                )}
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user?.name || 'DigiCon user'}</p>
-                  <p className="text-xs text-white/50 truncate">{user?.email || ''}</p>
-                </div>
-                <CheckCircle2 className="ml-auto w-5 h-5 text-emerald-400" />
-              </div>
+          <div className="mb-6 flex items-start gap-3 rounded-glass-sm border border-white/10 bg-white/5 p-4">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-digicon-primary" />
+            <p className="text-xs leading-5 text-white/55">
+              Authentication is handled by Supabase Auth. No Auth0 provider or
+              client secret is required by the DigiCon frontend.
+            </p>
+          </div>
 
-              {cardId && (
-                <div className="space-y-3">
-                  <h2 className="text-sm font-semibold text-white">Add your DigiCon card to Wallet</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <GlassButton type="button" onClick={appleWallet} disabled={walletLoading !== null} className="w-full">
-                      <Apple className="w-4 h-4 mr-2" />
-                      {walletLoading === 'apple' ? 'Generating...' : 'Apple Wallet'}
-                    </GlassButton>
-                    <GlassButton type="button" onClick={googleWallet} disabled={walletLoading !== null} className="w-full">
-                      <Smartphone className="w-4 h-4 mr-2" />
-                      {walletLoading === 'google' ? 'Generating...' : 'Google Wallet'}
-                    </GlassButton>
-                  </div>
-                </div>
+          {(message || error) && (
+            <div
+              className={`mb-5 flex gap-2 rounded-glass-sm p-3 text-sm ${
+                error
+                  ? "bg-digicon-error/10 text-digicon-error"
+                  : "bg-digicon-eco/10 text-digicon-eco"
+              }`}
+              role={error ? "alert" : "status"}
+            >
+              {error ? (
+                <AlertCircle className="h-4 w-4 shrink-0" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
               )}
-
-              {message && <div className="flex gap-2 p-3 rounded-glass-sm bg-emerald-500/10 text-emerald-300 text-sm"><CheckCircle2 className="w-4 h-4" />{message}</div>}
-              {error && <div className="flex gap-2 p-3 rounded-glass-sm bg-digicon-error/10 text-digicon-error text-sm"><AlertCircle className="w-4 h-4" />{error}</div>}
-
-              <GlassButton type="button" onClick={() => navigate('/dashboard')} className="w-full">
-                Continue to DigiCon
-              </GlassButton>
-              <GlassButton type="button" onClick={signOut} className="w-full">
-                <LogOut className="w-4 h-4 mr-2" /> Sign out
-              </GlassButton>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              <div className="flex items-start gap-3 p-4 rounded-glass-sm bg-white/5 border border-white/10">
-                <ShieldCheck className="w-5 h-5 text-digicon-primary flex-shrink-0" />
-                <p className="text-xs text-white/60">
-                  DigiCon uses Auth0 Universal Login with Authorization Code Flow + PKCE.
-                  Credentials are entered on Auth0, not in this React application.
-                </p>
-              </div>
-
-              {(configError || auth0Error || error) && (
-                <div className="flex gap-2 p-3 rounded-glass-sm bg-digicon-error/10 text-digicon-error text-sm">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{configError || auth0Error?.message || error}</span>
-                </div>
-              )}
-
-              <GlassButton type="button" onClick={signIn} disabled={Boolean(configError)} className="w-full">
-                <LogIn className="w-4 h-4 mr-2" />
-                {mode === 'signup' ? 'Sign up with Auth0' : 'Sign in with Auth0'}
-              </GlassButton>
-
-              <p className="text-center text-xs text-white/40">
-                You will be redirected to the secure Auth0 Universal Login page.
-              </p>
+              <span>{error || message}</span>
             </div>
           )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "signup" && (
+              <>
+                <div>
+                  <GlassLabel htmlFor="full-name">Full name</GlassLabel>
+                  <GlassInput
+                    id="full-name"
+                    autoComplete="name"
+                    required
+                    minLength={2}
+                    value={fullName}
+                    onChange={(event) => setFullName(event.target.value)}
+                    placeholder="Your full name"
+                  />
+                </div>
+
+                <div>
+                  <GlassLabel htmlFor="company-name">
+                    Company / organization
+                  </GlassLabel>
+                  <GlassInput
+                    id="company-name"
+                    autoComplete="organization"
+                    value={companyName}
+                    onChange={(event) => setCompanyName(event.target.value)}
+                    placeholder="Optional"
+                  />
+                </div>
+              </>
+            )}
+
+            <div>
+              <GlassLabel htmlFor="email">Email</GlassLabel>
+              <GlassInput
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
+
+            {mode !== "reset" && (
+              <div>
+                <GlassLabel htmlFor="password">Password</GlassLabel>
+                <GlassInput
+                  id="password"
+                  type="password"
+                  autoComplete={
+                    mode === "signup" ? "new-password" : "current-password"
+                  }
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="At least 6 characters"
+                />
+              </div>
+            )}
+
+            <GlassButton
+              type="submit"
+              className="w-full"
+              disabled={busy}
+            >
+              {mode === "signup" ? (
+                <UserPlus className="mr-2 h-4 w-4" />
+              ) : mode === "reset" ? (
+                <KeyRound className="mr-2 h-4 w-4" />
+              ) : (
+                <LogIn className="mr-2 h-4 w-4" />
+              )}
+
+              {busy
+                ? "Please wait…"
+                : mode === "signup"
+                  ? "Create account"
+                  : mode === "reset"
+                    ? "Send reset email"
+                    : "Sign in"}
+            </GlassButton>
+          </form>
+
+          <div className="mt-6 space-y-2 text-center text-sm">
+            {mode !== "signup" && (
+              <button
+                type="button"
+                onClick={() => changeMode("signup")}
+                className="block w-full text-white/55 hover:text-white"
+              >
+                New to DigiCon? <span className="font-medium">Create an account</span>
+              </button>
+            )}
+
+            {mode !== "signin" && (
+              <button
+                type="button"
+                onClick={() => changeMode("signin")}
+                className="block w-full text-white/55 hover:text-white"
+              >
+                Already have an account? <span className="font-medium">Sign in</span>
+              </button>
+            )}
+
+            {mode === "signin" && (
+              <button
+                type="button"
+                onClick={() => changeMode("reset")}
+                className="block w-full text-white/40 hover:text-white/70"
+              >
+                Forgot your password?
+              </button>
+            )}
+          </div>
         </GlassCard>
       </div>
-    </div>
+    </main>
   );
 }
+
+export default AuthPage;
