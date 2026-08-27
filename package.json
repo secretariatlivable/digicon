@@ -21,7 +21,6 @@
     "type-check": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
-    "@auth0/auth0-react": "2.4.0",
     "@paypal/react-paypal-js": "9.0.0",
     "@supabase/supabase-js": "2.57.4",
     "lucide-react": "0.446.0",
