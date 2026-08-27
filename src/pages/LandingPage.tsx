@@ -99,7 +99,7 @@ export function LandingPage() {
     highlight: false,
   },
   {
-  ];
+  
   const handlePrimaryCTA = () => {
     navigate(session ? '/dashboard' : '/auth?mode=signup');
   };
