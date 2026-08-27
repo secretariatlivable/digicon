@@ -1,567 +1,645 @@
-import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowRight,
+  CreditCard,
   BarChart3,
-  Check,
+  RefreshCw,
   Leaf,
-  Link2,
-  Menu,
-  QrCode,
-  ShieldCheck,
-  Sparkles,
+  Smartphone,
+  Globe,
+  ArrowRight,
+  Check,
+  Zap,
+  TrendingUp,
   Users,
-  WalletCards,
-  X,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-
-import { PayPalSubscriptionButton } from "@/components/PayPalSubscriptionButton";
-import {
-  DIGICON_PAYPAL_PLANS,
-  type DigiConPlanId,
-} from "@/config/paypalPlans";
-
-type PricingPlan = {
-  id: DigiConPlanId;
-  name: string;
-  price: string;
-  period: string;
-  description: string;
-  features: string[];
-  highlighted?: boolean;
-  badge?: string;
-  cta: string;
-};
-
-const PRICING_PLANS: PricingPlan[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "₱199",
-    period: "/month",
-    description: "Essential digital networking tools for individuals and small businesses.",
-    features: [
-      "Professional digital business card",
-      "QR code and shareable card URL",
-      "Contact capture",
-      "Basic card analytics",
-      "Photo or company logo",
-      "Eco-impact tracking",
-    ],
-    cta: "Choose Starter",
-  },
-  {
-    id: "growth",
-    name: "Growth",
-    price: "₱499",
-    period: "/month",
-    description: "Advanced networking and CRM tools for growing teams and businesses.",
-    features: [
-      "Everything in Starter",
-      "Advanced contact management",
-      "Lead and conversion analytics",
-      "CRM workflow support",
-      "Advanced eco analytics",
-      "Apple Wallet and Google Wallet support",
-      "Priority support",
-    ],
-    highlighted: true,
-    badge: "Most Popular",
-    cta: "Choose Growth",
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    description: "A scalable networking and relationship-management solution for organizations.",
-    features: [
-      "Everything in Growth",
-      "Team and multi-seat access",
-      "Organization-level analytics",
-      "Advanced governance controls",
-      "Enterprise onboarding",
-      "Dedicated support",
-      "Custom integrations",
-    ],
-    cta: "Choose Enterprise",
-  },
-];
-
-const FEATURES = [
-  {
-    icon: WalletCards,
-    title: "Digital Business Cards",
-    description:
-      "Create polished, mobile-first cards that are easy to share through QR codes, links, NFC and messaging.",
-  },
-  {
-    icon: Users,
-    title: "Contact Management",
-    description:
-      "Turn networking interactions into organized contacts and actionable relationships.",
-  },
-  {
-    icon: BarChart3,
-    title: "Actionable Analytics",
-    description:
-      "Understand card engagement, contact growth and networking performance from one dashboard.",
-  },
-  {
-    icon: Leaf,
-    title: "Eco Impact",
-    description:
-      "Track paper saved, trees preserved and carbon impact as your digital network grows.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Privacy & Security",
-    description:
-      "Built around modern authentication, controlled access and responsible data handling.",
-  },
-  {
-    icon: QrCode,
-    title: "One Scan Away",
-    description:
-      "Give prospects and partners a fast path to your verified digital profile.",
-  },
-];
-
-function scrollToPricing() {
-  document
-    .getElementById("pricing")
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function scrollToPayPal(planId: DigiConPlanId) {
-  document
-    .getElementById(`paypal-${planId}`)
-    ?.scrollIntoView({ behavior: "smooth", block: "center" });
-}
+} from 'lucide-react';
+import { useAuth, useLanguage } from '@/lib/auth';
+import { translate, type TranslationKey } from '@/lib/i18n';
+import { GlassButton, GlassCard } from '@/components/ui/GlassCard';
+import { LandingNav } from '@/components/layout/AppLayout';
+import { DigiConLogo } from '@/components/brand/DigiConLogo';
+import { PayPalSubscriptionButton } from '@/components/PayPalSubscriptionButton';
+import { DIGICON_PAYPAL_PLANS, type DigiConPlanId } from '@/config/paypalPlans';
 
 export function LandingPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<DigiConPlanId | null>(null);
+  const { session } = useAuth();
+  const [lang] = useLanguage();
+  const navigate = useNavigate();
 
-  const paypalClientId =
-    import.meta.env.VITE_PAYPAL_CLIENT_ID?.trim() || "";
+  const t = (key: TranslationKey) => translate(key, lang);
 
-  const plans = useMemo(
-    () =>
-      PRICING_PLANS.map((plan) => ({
-        ...plan,
-        paypalPlanId: DIGICON_PAYPAL_PLANS[plan.id].planId,
-      })),
-    [],
-  );
+  const features = [
+    {
+      icon: CreditCard,
+      titleKey: 'landing.cards.title' as TranslationKey,
+      descKey: 'landing.cards.desc' as TranslationKey,
+      color: 'text-digicon-primary',
+    },
+    {
+      icon: RefreshCw,
+      titleKey: 'landing.crm.title' as TranslationKey,
+      descKey: 'landing.crm.desc' as TranslationKey,
+      color: 'text-digicon-secondary',
+    },
+    {
+      icon: BarChart3,
+      titleKey: 'landing.analytics.title' as TranslationKey,
+      descKey: 'landing.analytics.desc' as TranslationKey,
+      color: 'text-digicon-info',
+    },
+    {
+      icon: Leaf,
+      titleKey: 'landing.eco.title' as TranslationKey,
+      descKey: 'landing.eco.desc' as TranslationKey,
+      color: 'text-digicon-eco',
+    },
+    {
+      icon: Globe,
+      titleKey: 'landing.localized.title' as TranslationKey,
+      descKey: 'landing.localized.desc' as TranslationKey,
+      color: 'text-digicon-warning',
+    },
+    {
+      icon: Smartphone,
+      titleKey: 'landing.cards.title' as TranslationKey,
+      descKey: 'landing.cards.desc' as TranslationKey,
+      color: 'text-digicon-accent',
+    },
+  ];
 
-  useEffect(() => {
-    const handler = () => setMobileMenuOpen(false);
-    window.addEventListener("hashchange", handler);
-    return () => window.removeEventListener("hashchange", handler);
-  }, []);
+  const pricingPlans: Array<{
+    id: Exclude<DigiConPlanId, 'startup'>;
+    nameKey: TranslationKey;
+    priceKey: TranslationKey;
+    descKey: TranslationKey;
+    features: readonly string[];
+    highlight: boolean;
+  }> = [
+    {
+      id: 'starter',
+      nameKey: 'landing.pricing.starter' as TranslationKey,
+      priceKey: 'landing.pricing.starterPrice' as TranslationKey,
+      descKey: 'landing.pricing.starterDesc' as TranslationKey,
+      features: DIGICON_PAYPAL_PLANS.starter.features,
+      highlight: false,
+    },
+    {
+      id: 'growth',
+      nameKey: 'landing.pricing.growth' as TranslationKey,
+      priceKey: 'landing.pricing.growthPrice' as TranslationKey,
+      descKey: 'landing.pricing.growthDesc' as TranslationKey,
+      features: DIGICON_PAYPAL_PLANS.growth.features,
+      highlight: true,
+    },
+    {
+      id: 'enterprise',
+      nameKey: 'landing.pricing.enterprise' as TranslationKey,
+      priceKey: 'landing.pricing.enterprisePrice' as TranslationKey,
+      descKey: 'landing.pricing.enterpriseDesc' as TranslationKey,
+      features: DIGICON_PAYPAL_PLANS.enterprise.features,
+      highlight: false,
+    },
+  ];
 
-  const handleChoosePlan = (planId: DigiConPlanId) => {
-    setSelectedPlan(planId);
-    requestAnimationFrame(() => scrollToPayPal(planId));
+  const handlePrimaryCTA = () => {
+    navigate(session ? '/dashboard' : '/auth?mode=signup');
+  };
+
+  const scrollToFeatures = () => {
+    document.getElementById('features')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-black text-white">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link
-            to="/"
-            className="flex items-center gap-3"
-            aria-label="DigiCon home"
-          >
-            <img
-              src="/DigiCon_logo_transparent.jpg"
-              alt="DigiCon"
-              className="h-9 w-9 rounded-xl object-cover"
-            />
-            <span className="text-lg font-bold tracking-tight">DigiCon</span>
-          </Link>
+    <div className="min-h-screen relative">
+      <LandingNav />
 
-          <nav className="hidden items-center gap-8 md:flex" aria-label="Primary">
-            <a className="text-sm text-white/70 transition hover:text-white" href="#features">
-              Features
-            </a>
-            <a className="text-sm text-white/70 transition hover:text-white" href="#pricing">
-              Pricing
-            </a>
-            <a className="text-sm text-white/70 transition hover:text-white" href="#how-it-works">
-              How it works
-            </a>
-            <Link
-              to="/auth"
-              className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              Sign in
-            </Link>
-            <Link
-              to="/auth?mode=signup"
-              className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-white/90"
-            >
-              Get started
-            </Link>
-          </nav>
+      {/* Full-width banner */}
+      <section
+        aria-label="DigiCon introduction"
+        className="relative w-full overflow-hidden"
+      >
+        <img
+          src="/DigiCon_Banner.png"
+          alt="DigiCon digital business cards, CRM automation, and analytics platform for Philippine SMEs and startups"
+          className="w-full h-auto block"
+        />
+      </section>
 
-          <button
-            type="button"
-            className="rounded-lg p-2 md:hidden"
-            onClick={() => setMobileMenuOpen((open) => !open)}
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+      {/* Hero */}
+      <section className="relative pt-20 pb-20 px-4 lg:px-8 overflow-hidden">
+        <div
+          className="absolute inset-0 overflow-hidden pointer-events-none"
+          aria-hidden="true"
+        >
+          <div className="absolute top-20 left-1/4 w-96 h-96 bg-digicon-primary/20 rounded-full blur-[120px] animate-pulse" />
+
+          <div
+            className="absolute top-40 right-1/4 w-96 h-96 bg-digicon-secondary/20 rounded-full blur-[120px] animate-pulse"
+            style={{ animationDelay: '1s' }}
+          />
+
+          <div
+            className="absolute bottom-0 left-1/2 w-96 h-96 bg-digicon-eco/15 rounded-full blur-[120px] animate-pulse"
+            style={{ animationDelay: '2s' }}
+          />
         </div>
 
-        {mobileMenuOpen && (
-          <div className="border-t border-white/10 px-4 pb-5 pt-4 md:hidden">
-            <nav className="flex flex-col gap-2" aria-label="Mobile">
-              <a className="rounded-lg px-3 py-3 text-white/80 hover:bg-white/5" href="#features">
-                Features
-              </a>
-              <a className="rounded-lg px-3 py-3 text-white/80 hover:bg-white/5" href="#pricing">
-                Pricing
-              </a>
-              <a className="rounded-lg px-3 py-3 text-white/80 hover:bg-white/5" href="#how-it-works">
-                How it works
-              </a>
-              <Link className="rounded-lg px-3 py-3 text-white/80 hover:bg-white/5" to="/auth">
-                Sign in
-              </Link>
-              <Link
-                className="rounded-lg bg-white px-3 py-3 text-center font-semibold text-black"
-                to="/auth?mode=signup"
-              >
-                Get started
-              </Link>
-            </nav>
+        <div className="relative max-w-6xl mx-auto text-center">
+          <div className="hero-kicker inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 animate-fade-in-down">
+            <Leaf className="w-4 h-4 text-digicon-eco" />
+            <span className="text-sm font-medium">
+              {lang === 'en'
+                ? 'Your next connection starts here'
+                : 'Dito nagsisimula ang susunod mong koneksyon'}
+            </span>
           </div>
-        )}
-      </header>
 
-      <main>
-        <section className="relative isolate overflow-hidden">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(180,37,170,0.28),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.12),transparent_30%)]" />
-
-          <div className="mx-auto grid max-w-7xl gap-14 px-4 pb-24 pt-20 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:pb-32 lg:pt-28">
-            <div className="flex flex-col justify-center">
-              <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75">
-                <Sparkles size={15} />
-                Digital networking for modern businesses
-              </div>
-
-              <h1 className="max-w-4xl text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-                Make every
-                <span className="block bg-gradient-to-r from-fuchsia-400 via-purple-300 to-white bg-clip-text text-transparent">
-                  hello count.
-                </span>
-              </h1>
-
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-white/65 sm:text-xl">
-                DigiCon replaces paper business cards with beautiful digital
-                profiles, smarter contact capture and practical CRM tools for
-                SMEs, startups and teams.
-              </p>
-
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  to="/auth?mode=signup"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:bg-white/90"
-                >
-                  Create your card
-                  <ArrowRight size={18} />
-                </Link>
-                <button
-                  type="button"
-                  onClick={scrollToPricing}
-                  className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10"
-                >
-                  View plans
-                </button>
-              </div>
-
-              <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/55">
-                <span className="inline-flex items-center gap-2">
-                  <Check size={15} /> No paper waste
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <Check size={15} /> Share anywhere
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <Check size={15} /> Built for growth
-                </span>
-              </div>
-            </div>
-
-            <div className="relative flex items-center justify-center">
-              <div className="absolute h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl" />
-              <div className="relative w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.07] p-5 shadow-2xl backdrop-blur-2xl">
-                <div className="rounded-[1.5rem] border border-white/10 bg-black/60 p-6">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src="/DigiCon_logo_transparent.jpg"
-                      alt=""
-                      className="h-16 w-16 rounded-2xl object-cover"
-                    />
-                    <div>
-                      <p className="text-xl font-bold">Your Digital Card</p>
-                      <p className="text-sm text-white/50">Ready to share</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-7 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <QrCode className="mb-3" size={22} />
-                      <p className="font-semibold">QR sharing</p>
-                      <p className="mt-1 text-xs text-white/45">One scan to connect</p>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <Link2 className="mb-3" size={22} />
-                      <p className="font-semibold">Smart link</p>
-                      <p className="mt-1 text-xs text-white/45">Share from anywhere</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4">
-                    <div className="flex items-center gap-3">
-                      <Leaf size={20} className="text-emerald-300" />
-                      <div>
-                        <p className="font-semibold">Eco impact</p>
-                        <p className="text-xs text-white/45">
-                          Every digital card helps reduce paper use.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="features" className="scroll-mt-24 border-t border-white/10">
-          <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-                Everything connected
-              </p>
-              <h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">
-                More than a business card.
-              </h2>
-              <p className="mt-5 text-white/60">
-                Give every introduction a useful next step—from the first scan
-                to the next relationship.
-              </p>
-            </div>
-
-            <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((feature) => {
-                const Icon = feature.icon;
-                return (
-                  <article
-                    key={feature.title}
-                    className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 transition hover:-translate-y-1 hover:bg-white/[0.06]"
-                  >
-                    <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
-                      <Icon size={21} />
-                    </div>
-                    <h3 className="text-lg font-bold">{feature.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-white/55">
-                      {feature.description}
-                    </p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section id="how-it-works" className="scroll-mt-24 border-t border-white/10">
-          <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-            <div className="grid gap-12 lg:grid-cols-3">
-              {[
-                ["01", "Create", "Build your professional digital card and add your photo or company logo."],
-                ["02", "Connect", "Share your card through your unique URL, QR code, NFC or messaging."],
-                ["03", "Grow", "Capture contacts, measure engagement and turn introductions into relationships."],
-              ].map(([number, title, description]) => (
-                <div key={number} className="relative">
-                  <span className="text-sm font-bold text-fuchsia-300">{number}</span>
-                  <h3 className="mt-3 text-2xl font-bold">{title}</h3>
-                  <p className="mt-3 leading-7 text-white/55">{description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="pricing" className="scroll-mt-24 border-t border-white/10">
-          <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-fuchsia-300">
-                Simple pricing
-              </p>
-              <h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">
-                Choose the plan that fits your network.
-              </h2>
-              <p className="mt-5 text-white/60">
-                Select a plan first, then complete your subscription securely
-                through PayPal.
-              </p>
-            </div>
-
-            {!paypalClientId && (
-              <div
-                role="status"
-                className="mx-auto mt-8 max-w-3xl rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-center text-sm text-amber-200"
-              >
-                Online subscription checkout is currently unavailable. Please
-                configure <code>VITE_PAYPAL_CLIENT_ID</code> before enabling
-                live PayPal checkout.
-              </div>
+          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 animate-fade-in-up leading-tight tracking-tight">
+            {lang === 'en' ? (
+              <>
+                Make every{' '}
+                <span className="text-gradient">hello</span> count.
+              </>
+            ) : (
+              <>
+                Gawing{' '}
+                <span className="text-gradient">makabuluhan</span> ang bawat
+                hello.
+              </>
             )}
+          </h1>
 
-            <div className="mt-14 grid items-start gap-6 lg:grid-cols-3">
-              {plans.map((plan) => (
-                <article
-                  key={plan.id}
-                  className={[
-                    "relative flex h-full flex-col rounded-3xl border p-7",
-                    plan.highlighted
-                      ? "border-fuchsia-400/50 bg-fuchsia-400/[0.07] shadow-2xl shadow-fuchsia-900/20"
-                      : "border-white/10 bg-white/[0.04]",
-                  ].join(" ")}
-                >
-                  {plan.badge && (
-                    <span className="absolute right-5 top-5 rounded-full bg-fuchsia-400 px-3 py-1 text-xs font-bold text-black">
-                      {plan.badge}
-                    </span>
-                  )}
+          <p
+            className="text-lg md:text-xl text-white/60 mb-10 max-w-3xl mx-auto animate-fade-in-up"
+            style={{ animationDelay: '0.1s' }}
+          >
+            {lang === 'en'
+              ? 'One beautiful digital card for your identity, your relationships, and the opportunities waiting on the other side of every introduction.'
+              : 'Isang magandang digital card para sa iyong pagkakakilanlan, mga koneksyon, at mga oportunidad sa bawat pagpapakilala.'}
+          </p>
 
-                  <div>
-                    <h3 className="text-2xl font-bold">{plan.name}</h3>
-                    <p className="mt-3 min-h-12 text-sm leading-6 text-white/55">
-                      {plan.description}
-                    </p>
-                  </div>
+          <div
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up"
+            style={{ animationDelay: '0.2s' }}
+          >
+            <GlassButton size="lg" onClick={handlePrimaryCTA}>
+              {lang === 'en' ? 'Create my card' : 'Gumawa ng card ko'}
+              <ArrowRight className="inline ml-2 w-5 h-5" />
+            </GlassButton>
 
-                  <div className="mt-7 flex items-end gap-1">
-                    <span className="text-4xl font-black">{plan.price}</span>
-                    {plan.period && (
-                      <span className="pb-1 text-sm text-white/45">{plan.period}</span>
-                    )}
-                  </div>
-
-                  <ul className="mt-7 space-y-3 border-t border-white/10 pt-7">
-                    {plan.features.map((feature) => (
-                      <li
-                        key={feature}
-                        className="flex items-start gap-3 text-sm text-white/75"
-                      >
-                        <Check
-                          size={17}
-                          className="mt-0.5 shrink-0 text-emerald-300"
-                        />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-8">
-                    <button
-                      type="button"
-                      onClick={() => handleChoosePlan(plan.id)}
-                      aria-pressed={selectedPlan === plan.id}
-                      className={[
-                        "flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold transition",
-                        selectedPlan === plan.id
-                          ? "bg-white text-black"
-                          : "border border-white/15 bg-white/5 text-white hover:bg-white/10",
-                      ].join(" ")}
-                    >
-                      {plan.cta}
-                      <ArrowRight size={17} />
-                    </button>
-                  </div>
-
-                  <div
-                    id={`paypal-${plan.id}`}
-                    className="mt-5 scroll-mt-28 rounded-2xl border border-white/10 bg-black/20 p-4"
-                  >
-                    <div className="mb-3">
-                      <p className="text-sm font-semibold">
-                        Subscribe with PayPal
-                      </p>
-                      <p className="mt-1 text-xs text-white/45">
-                        Secure recurring payment for {plan.name}.
-                      </p>
-                    </div>
-
-                    {paypalClientId ? (
-                      <PayPalSubscriptionButton
-                        clientId={paypalClientId}
-                        planId={plan.paypalPlanId}
-                        planName={plan.name}
-                      />
-                    ) : (
-                      <div className="rounded-xl border border-white/10 px-4 py-3 text-center text-xs text-white/40">
-                        PayPal checkout unavailable
-                      </div>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-5 text-white/35">
-              PayPal subscription availability and payment methods are subject
-              to PayPal account eligibility, plan configuration and applicable
-              regional restrictions.
-            </p>
+            <GlassButton
+              variant="ghost"
+              size="lg"
+              onClick={scrollToFeatures}
+            >
+              {lang === 'en' ? 'Explore DigiCon' : 'Tingnan ang DigiCon'}
+            </GlassButton>
           </div>
-        </section>
 
-        <section className="border-t border-white/10">
-          <div className="mx-auto max-w-4xl px-4 py-24 text-center sm:px-6">
-            <h2 className="text-4xl font-black tracking-tight sm:text-5xl">
-              Ready to make every hello count?
-            </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-white/60">
-              Create your DigiCon card and turn your next introduction into a
-              lasting connection.
-            </p>
-            <div className="mt-8">
-              <Link
-                to="/auth?mode=signup"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-semibold text-black transition hover:bg-white/90"
+          {/* Stats */}
+          <div
+            className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mt-16 animate-fade-in-up"
+            style={{ animationDelay: '0.3s' }}
+          >
+            {[
+              {
+                icon: Leaf,
+                value: '2.5T',
+                label: lang === 'en' ? 'Paper Saved' : 'Naitipid na Papel',
+              },
+              {
+                icon: Users,
+                value: '12K+',
+                label: lang === 'en' ? 'Contacts Captured' : 'Nakuha na Contact',
+              },
+              {
+                icon: TrendingUp,
+                value: '45%',
+                label:
+                  lang === 'en'
+                    ? 'Avg. Conversion'
+                    : 'Average na Conversion',
+              },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="glass-thin rounded-glass-lg p-4"
               >
-                Start with DigiCon
-                <ArrowRight size={18} />
-              </Link>
+                <stat.icon
+                  className="w-5 h-5 text-digicon-eco mx-auto mb-2"
+                  aria-hidden="true"
+                />
+                <p className="text-2xl font-bold text-white">
+                  {stat.value}
+                </p>
+                <p className="text-xs text-white/50">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Dual value proposition */}
+      <section className="px-4 lg:px-8 py-16 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6">
+          <GlassCard
+            variant="thick"
+            className="p-8 animate-fade-in-up group hover:scale-[1.02] transition-transform duration-500"
+          >
+            <div className="w-14 h-14 rounded-glass-lg glass-chrome flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
+              <Zap className="w-7 h-7 text-digicon-warning" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-white mb-3">
+              {t('landing.startups.title')}
+            </h2>
+
+            <p className="text-white/60 mb-4">
+              {t('landing.startups.desc')}
+            </p>
+
+            <ul className="space-y-2">
+              {[
+                'Free digital cards',
+                'Zero printing costs',
+                'Eco-friendly branding',
+                'QR + NFC sharing',
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="flex items-center gap-2 text-sm text-white/70"
+                >
+                  <Check
+                    className="w-4 h-4 text-digicon-eco"
+                    aria-hidden="true"
+                  />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </GlassCard>
+
+          <GlassCard
+            variant="thick"
+            className="p-8 animate-fade-in-up group hover:scale-[1.02] transition-transform duration-500"
+          >
+            <div className="w-14 h-14 rounded-glass-lg glass-chrome flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
+              <TrendingUp className="w-7 h-7 text-digicon-secondary" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-white mb-3">
+              {t('landing.smes.title')}
+            </h2>
+
+            <p className="text-white/60 mb-4">
+              {t('landing.smes.desc')}
+            </p>
+
+            <ul className="space-y-2">
+              {[
+                'HubSpot CRM sync',
+                'CSV/Excel export',
+                'Lead analytics',
+                'Team collaboration',
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="flex items-center gap-2 text-sm text-white/70"
+                >
+                  <Check
+                    className="w-4 h-4 text-digicon-eco"
+                    aria-hidden="true"
+                  />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </GlassCard>
+        </div>
+      </section>
+
+      {/* Community visual */}
+      <section className="px-4 lg:px-8 py-16 max-w-6xl mx-auto">
+        <GlassCard
+          variant="thick"
+          className="overflow-hidden p-0 grid md:grid-cols-[0.9fr_1.1fr] items-stretch relative"
+        >
+          <div className="relative min-h-64">
+            <img
+              src="/networking.png"
+              alt="Connected community members sharing digital networks"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-transparent to-black/50"
+              aria-hidden="true"
+            />
+          </div>
+
+          <div className="relative p-8 md:p-10 flex flex-col justify-center overflow-hidden">
+            <img
+              src="/Cover_2.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover opacity-10"
+            />
+
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 text-digicon-info text-sm font-medium mb-4">
+                <Users className="w-4 h-4" aria-hidden="true" />
+                {lang === 'en'
+                  ? 'Built for meaningful connections'
+                  : 'Ginawa para sa makabuluhang koneksyon'}
+              </div>
+
+              <h2 className="text-3xl font-bold text-white mb-4">
+                {lang === 'en'
+                  ? 'A good introduction should not disappear.'
+                  : 'Hindi dapat nawawala ang magandang pagpapakilala.'}
+              </h2>
+
+              <p className="text-white/60 leading-relaxed">
+                {lang === 'en'
+                  ? 'DigiCon keeps the person, the conversation, and the next step connected—so a quick hello can become a lasting opportunity.'
+                  : 'Pinananatiling magkakaugnay ng DigiCon ang tao, usapan, at susunod na hakbang—para ang simpleng hello ay maging pangmatagalang oportunidad.'}
+              </p>
             </div>
           </div>
-        </section>
-      </main>
+        </GlassCard>
+      </section>
 
-      <footer className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-white/40 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <p>© {new Date().getFullYear()} DigiCon. All rights reserved.</p>
-          <div className="flex gap-5">
-            <Link to="/auth" className="hover:text-white">
-              Sign in
-            </Link>
-            <Link to="/auth?mode=signup" className="hover:text-white">
-              Get started
-            </Link>
+      {/* Features */}
+      <section
+        id="features"
+        className="px-4 lg:px-8 py-16 max-w-6xl mx-auto scroll-mt-24"
+      >
+        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+          {lang === 'en'
+            ? 'Less friction. More connection.'
+            : 'Mas kaunting abala. Mas maraming koneksyon.'}
+        </h2>
+
+        <p className="text-white/50 text-center mb-12 max-w-2xl mx-auto">
+          {lang === 'en'
+            ? 'Everything important stays close, clear, and ready when the right moment arrives.'
+            : 'Nasa iisang lugar ang mahahalagang bagay—simple, malinaw, at handa sa tamang pagkakataon.'}
+        </p>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {features.map((feature) => (
+            <GlassCard
+              key={feature.titleKey}
+              variant="regular"
+              hover
+              className="p-6 animate-fade-in-up"
+            >
+              <div className="w-12 h-12 rounded-glass-md glass-thin flex items-center justify-center mb-4">
+                <feature.icon
+                  className={`w-6 h-6 ${feature.color}`}
+                  aria-hidden="true"
+                />
+              </div>
+
+              <h3 className="text-lg font-semibold text-white mb-2">
+                {t(feature.titleKey)}
+              </h3>
+
+              <p className="text-sm text-white/50">
+                {t(feature.descKey)}
+              </p>
+            </GlassCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Eco impact */}
+      <section id="eco" className="px-4 lg:px-8 py-16 max-w-5xl mx-auto scroll-mt-24">
+        <GlassCard
+          variant="thick"
+          className="p-8 md:p-12 text-center relative overflow-hidden"
+        >
+          <div
+            className="absolute top-0 right-0 w-64 h-64 bg-digicon-eco/20 rounded-full blur-[100px]"
+            aria-hidden="true"
+          />
+
+          <Leaf
+            className="w-16 h-16 text-digicon-eco mx-auto mb-6 relative"
+            aria-hidden="true"
+          />
+
+          <h2 className="text-3xl font-bold text-white mb-4 relative">
+            {lang === 'en'
+              ? 'Every Card Makes a Difference'
+              : 'Bawat Card ay May Ambag'}
+          </h2>
+
+          <p className="text-white/60 max-w-2xl mx-auto mb-8 relative">
+            {lang === 'en'
+              ? 'Every time you share a digital card instead of paper, you save resources. Track your impact in real-time and earn eco badges.'
+              : 'Sa bawat digital card na ibinabahagi mo sa halip na papel, nakakatipid ka ng resources. Subaybayan ang impact mo at makakuha ng eco badges.'}
+          </p>
+
+          <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto relative">
+            {[
+              {
+                value: '500cm²',
+                label: lang === 'en' ? 'Paper per card' : 'Papel bawat card',
+              },
+              {
+                value: '0.02kg',
+                label: lang === 'en' ? 'CO₂ per card' : 'CO₂ bawat card',
+              },
+              {
+                value: '17 cards',
+                label: lang === 'en' ? '= 1 tree' : '= 1 puno',
+              },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="glass-thin rounded-glass-md p-4"
+              >
+                <p className="text-2xl font-bold text-digicon-eco">
+                  {stat.value}
+                </p>
+                <p className="text-xs text-white/50 mt-1">{stat.label}</p>
+              </div>
+            ))}
           </div>
+        </GlassCard>
+      </section>
+
+      {/* Pricing */}
+      <section
+        id="pricing"
+        className="px-4 lg:px-8 py-16 max-w-6xl mx-auto scroll-mt-24"
+      >
+        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+          {t('landing.pricing.title')}
+        </h2>
+
+        <p className="text-white/50 text-center mb-12 max-w-2xl mx-auto">
+          {lang === 'en'
+            ? 'Simple plans that grow with you, without the complexity.'
+            : 'Simpleng plans na lumalago kasama mo, walang komplikasyon.'}
+        </p>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {pricingPlans.map((plan) => (
+            <GlassCard
+              key={plan.nameKey}
+              variant={plan.highlight ? 'chrome' : 'regular'}
+              className={`p-8 relative ${
+                plan.highlight
+                  ? 'ring-2 ring-digicon-primary/50 scale-105'
+                  : ''
+              }`}
+            >
+              {plan.highlight && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-digicon-primary text-white text-xs font-semibold">
+                  {lang === 'en' ? 'Most Popular' : 'Pinakasikat'}
+                </div>
+              )}
+
+              <h3 className="text-xl font-bold text-white mb-2">
+                {t(plan.nameKey)}
+              </h3>
+
+              <p className="text-3xl font-bold text-white mb-1">
+                {t(plan.priceKey)}
+
+                {plan.priceKey !== 'landing.pricing.enterprisePrice' && (
+                  <span className="text-sm font-normal text-white/50">
+                    /mo
+                  </span>
+                )}
+              </p>
+
+              <p className="text-sm text-white/50 mb-6">
+                {t(plan.descKey)}
+              </p>
+
+              <ul className="space-y-3 mb-8">
+                {plan.features.map((feature) => (
+                  <li
+                    key={feature}
+                    className="flex items-center gap-2 text-sm text-white/70"
+                  >
+                    <Check
+                      className="w-4 h-4 text-digicon-eco flex-shrink-0"
+                      aria-hidden="true"
+                    />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="space-y-3">
+                <PayPalSubscriptionButton
+                  planId={plan.id}
+                  onApproved={(subscriptionId) => {
+                    console.info('DigiCon PayPal subscription approved:', subscriptionId);
+                    navigate('/dashboard');
+                  }}
+                  onError={(error) => {
+                    console.error('DigiCon PayPal subscription error:', error);
+                  }}
+                />
+
+                <GlassButton
+                  variant="ghost"
+                  className="w-full"
+                  onClick={handlePrimaryCTA}
+                >
+                  {lang === 'en' ? 'Continue to DigiCon' : 'Magpatuloy sa DigiCon'}
+                  <ArrowRight className="inline ml-2 w-4 h-4" />
+                </GlassButton>
+              </div>
+            </GlassCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="px-4 lg:px-8 py-16 max-w-4xl mx-auto">
+        <GlassCard
+          variant="chrome"
+          className="p-12 text-center relative overflow-hidden"
+        >
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-digicon-primary/10 via-transparent to-digicon-eco/10"
+            aria-hidden="true"
+          />
+
+          <img
+            src="/DigiCon_logo_transparent.jpg"
+            alt="DigiCon logo"
+            className="w-16 h-16 rounded-full mx-auto mb-6 relative ring-1 ring-white/10"
+          />
+
+          <h2 className="text-3xl font-bold text-white mb-4 relative">
+            {lang === 'en'
+              ? 'Your next opportunity could start with one hello.'
+              : 'Maaaring magsimula ang susunod mong oportunidad sa isang hello.'}
+          </h2>
+
+          <p className="text-white/60 mb-8 relative">
+            {lang === 'en'
+              ? 'Create a card that feels like you, share it in seconds, and stay connected after the moment is over.'
+              : 'Gumawa ng card na tunay na ikaw, ibahagi ito sa ilang segundo, at manatiling konektado kahit tapos na ang sandali.'}
+          </p>
+
+          <GlassButton
+            size="lg"
+            onClick={handlePrimaryCTA}
+            className="relative"
+          >
+            {lang === 'en' ? 'Create my card' : 'Gumawa ng card ko'}
+            <ArrowRight className="inline ml-2 w-5 h-5" />
+          </GlassButton>
+        </GlassCard>
+      </section>
+
+      {/* Footer */}
+      <footer className="px-4 lg:px-8 py-12 border-t border-white/5">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <DigiConLogo size="sm" />
+            <span className="text-white/30 text-sm ml-2">
+              © 2026. Made for You.
+            </span>
+          </div>
+
+          <nav
+            aria-label="Footer navigation"
+            className="flex items-center gap-6 text-sm text-white/50"
+          >
+            <Link
+              to="/auth"
+              className="hover:text-white transition-colors"
+            >
+              {lang === 'en' ? 'Sign In' : 'Mag Sign In'}
+            </Link>
+
+            <a
+              href="#features"
+              className="hover:text-white transition-colors"
+            >
+              {lang === 'en' ? 'Features' : 'Features'}
+            </a>
+
+            <a
+              href="#pricing"
+              className="hover:text-white transition-colors"
+            >
+              {lang === 'en' ? 'Pricing' : 'Pricing'}
+            </a>
+          </nav>
         </div>
       </footer>
     </div>
   );
 }
-
-export default LandingPage;
