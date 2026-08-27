@@ -16,7 +16,7 @@ export function DigiConLogo({ size = 'md', showText = true, className = '' }: Di
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
       <img
-        src="/DigiCon.png"
+        src="/DigiCon_logo_transparent.jpg"
         alt="DigiCon logo"
         className={`${s.img} rounded-full object-cover ring-1 ring-white/10`}
       />
