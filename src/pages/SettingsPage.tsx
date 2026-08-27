@@ -4,7 +4,7 @@ import { useAuth, useLanguage } from '@/lib/auth';
 import { useTheme } from '@/components/theme-provider';
 import { translate, type TranslationKey, regions } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
-import { GlassCard, GlassButton, GlassInput, GlassLabel, GlassSelect, Spinner } from '@/components/ui/Glass';
+import { GlassCard, GlassButton, GlassInput, GlassLabel, GlassSelect, Spinner } from '@/components/ui/GlassCard';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 type Tab = 'profile' | 'preferences' | 'team' | 'billing';
