@@ -512,3 +512,577 @@ svg[id*="badge"] {
   opacity: 0 !important;
 }
 
+/* ====================================================================
+   DIGICON RELATIONSHIP SYSTEM  —  v2
+   Metallic + glass surfaces, banners, motion, a11y, PWA chrome.
+   Everything below is token-driven and reused by the component library
+   in src/components/ui — do not hard-code these values in components.
+   ==================================================================== */
+
+:root {
+  /* --- brand ------------------------------------------------------ */
+  --brand-ink: #050710;
+  --brand-ink-2: #0a0e1c;
+  --brand-primary: #007AFF;
+  --brand-secondary: #5856D6;
+  --brand-info: #5AC8FA;
+  --brand-eco: #10B981;
+  --brand-violet: #8B5CF6;
+  --brand-gold: #FFD166;
+  --brand-steel: #C9D6E8;
+
+  /* --- metallic surfaces ------------------------------------------ */
+  --metal-edge: linear-gradient(145deg,
+      rgba(255, 255, 255, 0.42) 0%,
+      rgba(255, 255, 255, 0.06) 26%,
+      rgba(255, 255, 255, 0.00) 52%,
+      rgba(255, 255, 255, 0.08) 78%,
+      rgba(255, 255, 255, 0.30) 100%);
+  --metal-face: linear-gradient(155deg,
+      rgba(30, 41, 66, 0.92) 0%,
+      rgba(14, 20, 38, 0.86) 45%,
+      rgba(22, 30, 54, 0.90) 100%);
+  --metal-sheen: linear-gradient(115deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.00) 34%,
+      rgba(255, 255, 255, 0.16) 48%,
+      rgba(255, 255, 255, 0.00) 62%,
+      transparent 100%);
+
+  /* --- type ------------------------------------------------------- */
+  --lede: clamp(1rem, 2.6vw, 1.2rem);
+
+  /* --- layout ----------------------------------------------------- */
+  --appnav-h: 68px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+
+  /* --- accessibility (driven by the a11y panel) -------------------- */
+  --a11y-scale: 1;
+}
+
+/* Font scaling from the accessibility panel. Applied to the root so every
+   rem/em-based size in the system scales together. */
+html { font-size: calc(100% * var(--a11y-scale, 1)); }
+
+/* ====================================================================
+   METALLIC SURFACES
+   ==================================================================== */
+
+/* zero-specificity default so `absolute`/`fixed` utilities can still win */
+:where(.metal, .banner, .tip) { position: relative; }
+
+.metal {
+  background: var(--metal-face);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--radius-2xl);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.5),
+    0 18px 44px rgba(0, 0, 0, 0.45);
+  isolation: isolate;
+}
+
+/* the brushed highlight that gives the surface its machined edge */
+.metal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--metal-edge);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* travelling sheen — only on hover, only when motion is welcome */
+.metal-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--metal-sheen);
+  background-size: 260% 100%;
+  background-position: 140% 0;
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-smooth),
+              background-position 900ms var(--ease-smooth);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.metal-sheen:hover::after,
+.metal-sheen:focus-within::after {
+  opacity: 1;
+  background-position: -40% 0;
+}
+
+/* ====================================================================
+   SECTION BANNERS
+   ==================================================================== */
+
+.banner {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.banner__media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+  transform: scale(1.04);
+}
+
+/* Ken-Burns drift keeps the still banners feeling alive without video weight */
+.banner__media--drift { animation: bannerDrift 26s var(--ease-smooth) infinite alternate; }
+
+.banner__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(3, 5, 14, 0.46) 0%, rgba(3, 5, 14, 0.72) 55%, rgba(3, 5, 14, 0.92) 100%);
+}
+
+/* left-weighted scrim for banners with copy on one side */
+.banner__scrim--side {
+  background:
+    linear-gradient(100deg, rgba(3, 5, 14, 0.94) 0%, rgba(3, 5, 14, 0.78) 44%, rgba(3, 5, 14, 0.42) 100%),
+    linear-gradient(0deg, rgba(3, 5, 14, 0.72) 0%, transparent 60%);
+}
+
+.banner__grain {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.28;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+}
+
+@keyframes bannerDrift {
+  from { transform: scale(1.04) translate3d(0, 0, 0); }
+  to   { transform: scale(1.12) translate3d(-1.5%, -1.5%, 0); }
+}
+
+/* ====================================================================
+   REVEAL ON SCROLL
+   ==================================================================== */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 700ms var(--ease-spring), transform 700ms var(--ease-spring);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible { opacity: 1; transform: none; }
+.reveal--left  { transform: translateX(-26px); }
+.reveal--right { transform: translateX(26px); }
+.reveal--scale { transform: scale(0.94); }
+
+/* ====================================================================
+   TOOLTIPS
+   ==================================================================== */
+
+.tip { display: inline-flex; }
+
+.tip__bubble {
+  position: absolute;
+  z-index: 80;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  width: max-content;
+  max-width: min(300px, 78vw);
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-md);
+  background: rgba(8, 12, 30, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 6px);
+  transition: opacity var(--duration-fast) var(--ease-smooth),
+              transform var(--duration-fast) var(--ease-smooth),
+              visibility var(--duration-fast);
+}
+
+.tip__bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(8, 12, 30, 0.97);
+}
+
+.tip__bubble--open,
+.tip:hover .tip__bubble,
+.tip:focus-within .tip__bubble {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+.tip__anchor {
+  border-bottom: 1px dashed rgba(90, 200, 250, 0.6);
+  cursor: help;
+}
+
+/* ====================================================================
+   COLLAPSIBLE COPY
+   ==================================================================== */
+
+.collapse__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 420ms var(--ease-spring);
+}
+
+.collapse__body > div { overflow: hidden; }
+.collapse__body--open { grid-template-rows: 1fr; }
+
+.collapse__chev { transition: transform var(--duration-normal) var(--ease-spring); }
+.collapse__chev--open { transform: rotate(180deg); }
+
+/* ====================================================================
+   MOBILE APP NAVIGATION  (persistent bottom bar, PWA-style)
+   ==================================================================== */
+
+.appnav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-height: var(--appnav-h);
+  padding: 6px max(8px, env(safe-area-inset-left)) calc(6px + var(--safe-b)) max(8px, env(safe-area-inset-right));
+  background: rgba(8, 11, 24, 0.86);
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+}
+
+.appnav__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 54px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-smooth),
+              background-color var(--duration-fast) var(--ease-smooth),
+              transform var(--duration-fast) var(--ease-smooth);
+}
+
+.appnav__item:hover { color: #fff; }
+.appnav__item:active { transform: scale(0.94); }
+.appnav__item--active { color: var(--brand-info); background: rgba(90, 200, 250, 0.10); }
+
+.appnav__item--active::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 20px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: var(--radius-full);
+  background: var(--brand-info);
+}
+
+.appnav__label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* keep page content clear of the bar */
+.has-appnav { padding-bottom: calc(var(--appnav-h) + 12px + var(--safe-b)); }
+
+@media (min-width: 1024px) {
+  .appnav { display: none; }
+  .has-appnav { padding-bottom: 0; }
+}
+
+/* ====================================================================
+   PWA INSTALL BAR
+   ==================================================================== */
+
+/* Sits clear of the mobile bottom navigation and the home indicator. */
+.above-appnav {
+  bottom: calc(var(--appnav-h) + 16px + var(--safe-b));
+}
+
+.install-bar {
+  position: fixed;
+  z-index: 70;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(var(--appnav-h) + 12px + var(--safe-b));
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: var(--radius-xl);
+  transform: translateY(160%);
+  transition: transform 480ms var(--ease-spring);
+}
+
+.install-bar--open { transform: none; }
+
+@media (min-width: 1024px) {
+  .install-bar { left: auto; right: 1.25rem; bottom: 1.25rem; max-width: 420px; }
+}
+
+/* ====================================================================
+   FOOTER — collapsed icon navigation
+   ==================================================================== */
+
+.footdock {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 0.5rem;
+}
+
+.footdock__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.9rem 0.4rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-decoration: none;
+  transition: all var(--duration-normal) var(--ease-spring);
+}
+
+.footdock__item:hover,
+.footdock__item:focus-visible {
+  color: #fff;
+  border-color: rgba(90, 200, 250, 0.35);
+  background: rgba(90, 200, 250, 0.08);
+  transform: translateY(-3px);
+}
+
+/* ====================================================================
+   ACCESSIBILITY TOOLKIT
+   ==================================================================== */
+
+.skip-link {
+  /* fixed, not absolute: the link must reach the viewport even when a keyboard
+     user tabs into the page after it has already been scrolled */
+  position: fixed;
+  top: -60px;
+  left: 12px;
+  z-index: 200;
+  padding: 0.65rem 1.1rem;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  background: var(--brand-info);
+  color: #04070f;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top var(--duration-normal) var(--ease-spring);
+}
+
+.skip-link:focus { top: 0; }
+
+.a11y-fab {
+  position: fixed;
+  left: 1rem;
+  bottom: calc(var(--appnav-h) + 12px + var(--safe-b));
+  z-index: 65;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(10, 14, 32, 0.92);
+  color: var(--brand-info);
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: transform var(--duration-normal) var(--ease-spring);
+}
+
+.a11y-fab:hover { transform: translateY(-3px); }
+
+/* Desktop only: on phones the launcher would sit on top of the primary CTA, so
+   the same panel is reached from the bottom-nav "More" sheet instead. */
+@media (max-width: 1023px) {
+  .a11y-fab { display: none; }
+}
+
+@media (min-width: 1024px) {
+  .a11y-fab { bottom: 1.25rem; }
+}
+
+.a11y-panel {
+  position: fixed;
+  top: 50%;
+  right: -110%;
+  z-index: 120;
+  width: min(340px, 90vw);
+  max-height: 86dvh;
+  overflow-y: auto;
+  padding: 1.25rem;
+  border-radius: var(--radius-2xl) 0 0 var(--radius-2xl);
+  transform: translateY(-50%);
+  transition: right 420ms var(--ease-spring);
+}
+
+.a11y-panel--open { right: 0; }
+
+.a11y-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.a11y-row:first-of-type { border-top: none; }
+
+/* --- user-activated accessibility modes -------------------------- */
+
+html.a11y-contrast body { background: #000 !important; }
+
+html.a11y-contrast .glass-ultra-thin,
+html.a11y-contrast .glass-thin,
+html.a11y-contrast .glass-regular,
+html.a11y-contrast .glass-thick,
+html.a11y-contrast .glass-chrome,
+html.a11y-contrast .metal {
+  background: #0a0a0a !important;
+  border-color: #ffd166 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.a11y-contrast p,
+html.a11y-contrast li,
+html.a11y-contrast span,
+html.a11y-contrast h1,
+html.a11y-contrast h2,
+html.a11y-contrast h3,
+html.a11y-contrast h4 {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+html.a11y-contrast .banner__scrim,
+html.a11y-contrast .banner__scrim--side { background: rgba(0, 0, 0, 0.88) !important; }
+
+html.a11y-grayscale body { filter: grayscale(1); }
+
+html.a11y-underline a { text-decoration: underline !important; text-underline-offset: 3px; }
+
+html.a11y-cursor,
+html.a11y-cursor a,
+html.a11y-cursor button {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M6 3 L34 20 L20 23 L15 36 Z' fill='%235AC8FA' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E") 6 3, auto !important;
+}
+
+/* User-chosen calm mode, and the OS-level preference, both stop motion. */
+html.a11y-calm *,
+html.a11y-calm *::before,
+html.a11y-calm *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.a11y-calm .reveal { opacity: 1 !important; transform: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .banner__media--drift { animation: none !important; }
+}
+
+/* ====================================================================
+   MOTION KEYFRAMES USED BY THE COMPONENT LIBRARY
+   ==================================================================== */
+
+@keyframes floatSoft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+@keyframes pulseRing {
+  0%   { transform: scale(0.85); opacity: 0.55; }
+  70%  { transform: scale(1.5);  opacity: 0; }
+  100% { transform: scale(1.5);  opacity: 0; }
+}
+
+@keyframes dashFlow { to { stroke-dashoffset: -120; } }
+
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+.anim-float  { animation: floatSoft 6s var(--ease-smooth) infinite; }
+.anim-dash   { stroke-dasharray: 6 10; animation: dashFlow 5s linear infinite; }
+.anim-marquee { animation: marquee 34s linear infinite; }
+.anim-marquee:hover { animation-play-state: paused; }
+
+/* ====================================================================
+   TOUCH TARGETS  —  WCAG 2.5.5 / 2.5.8
+   ==================================================================== */
+
+@media (pointer: coarse) {
+  a, button, [role='button'], summary { min-height: 44px; }
+  .appnav__item { min-height: 48px; }
+}
+
+/* ====================================================================
+   PRINT
+   ==================================================================== */
+
+@media print {
+  .appnav, .install-bar, .a11y-fab, .a11y-panel, .skip-link, video { display: none !important; }
+  body { background: #fff; color: #000; }
+  .metal, .glass-thin, .glass-regular, .glass-thick, .glass-chrome {
+    background: #fff !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+}

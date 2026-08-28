@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -9,20 +9,45 @@ import {
 
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ThemeProvider } from '@/components/theme-provider';
+import { A11yProvider } from '@/lib/a11y';
+import { registerServiceWorker } from '@/lib/pwa';
+import { AccessibilityTools, SkipLink } from '@/components/a11y/AccessibilityTools';
+import { InstallBar } from '@/components/pwa/InstallBar';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { isSupabaseConfigured, missingSupabaseConfig } from '@/lib/supabase';
 
 import { LandingPage } from '@/pages/LandingPage';
 import { AuthPage } from '@/pages/AuthPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { CardsPage } from '@/pages/CardsPage';
-import { ContactsPage } from '@/pages/ContactsPage';
-import { AnalyticsPage } from '@/pages/AnalyticsPage';
-import { EcoPage } from '@/pages/EcoPage';
-import { SettingsPage } from '@/pages/SettingsPage';
 import { PublicCardPage } from '@/pages/PublicCardPage';
 
 import { Spinner } from '@/components/ui/GlassCard';
+
+/*
+ * Route-level code splitting.
+ *
+ * The landing page, auth and the public card are what a first-time visitor or
+ * a QR scan actually loads, so they stay in the entry bundle. Everything behind
+ * the login — including the charting vendor chunk — is fetched only once
+ * someone is signed in, which keeps the first paint light on mobile data.
+ */
+const DashboardPage = lazy(() =>
+  import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
+const CardsPage = lazy(() =>
+  import('@/pages/CardsPage').then((m) => ({ default: m.CardsPage })),
+);
+const ContactsPage = lazy(() =>
+  import('@/pages/ContactsPage').then((m) => ({ default: m.ContactsPage })),
+);
+const AnalyticsPage = lazy(() =>
+  import('@/pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
+);
+const EcoPage = lazy(() =>
+  import('@/pages/EcoPage').then((m) => ({ default: m.EcoPage })),
+);
+const SettingsPage = lazy(() =>
+  import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+);
 
 function LoadingScreen() {
   return (
@@ -99,7 +124,9 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 function ProtectedPage({ children }: { children: ReactNode }) {
   return (
     <ProtectedRoute>
-      <AppLayout>{children}</AppLayout>
+      <AppLayout>
+        <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
+      </AppLayout>
     </ProtectedRoute>
   );
 }
@@ -166,15 +193,29 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // Registering the worker before the configuration guard means an already
+  // installed DigiCon still opens offline even if the deployment loses its
+  // environment variables.
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
+
   if (!isSupabaseConfigured) return <ConfigurationScreen />;
 
   return (
-    <ThemeProvider defaultTheme="system" storageKey="digicon-theme">
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </ThemeProvider>
+    /* A11yProvider sits outside the router so accessibility preferences apply
+       on every route — including the public card a stranger opens from a QR. */
+    <A11yProvider>
+      <ThemeProvider defaultTheme="system" storageKey="digicon-theme">
+        <BrowserRouter>
+          <AuthProvider>
+            <SkipLink />
+            <AppRoutes />
+            <AccessibilityTools />
+            <InstallBar />
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
+    </A11yProvider>
   );
 }
