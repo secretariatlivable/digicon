@@ -7,7 +7,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss)](https://tailwindcss.com)
 [![Supabase](https://img.shields.io/badge/Supabase-2.57-3ECF8E?logo=supabase)](https://supabase.com)
 
-> **DigiCon** is an all-in-one digital business card and CRM platform built for Philippine SMEs and startups.
+> **DigiCon** helps you remember what happens next. It is an all-in-one digital business card and CRM platform built for SMEs and startups.
 
 DigiCon replaces traditional paper business cards with beautiful, shareable digital cards while capturing leads into a lightweight CRM.
 
