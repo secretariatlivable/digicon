@@ -1,40 +1,89 @@
 /**
  * DigiCon Supabase client.
  *
- * Browser-safe configuration only:
+ * SECURITY
+ * --------
+ * No credentials are hardcoded. Configuration is read from Vite environment
+ * variables, which must be prefixed with `VITE_` to be exposed to the browser
+ * bundle. The anon key is a *public* key: it is safe in the client only
+ * because Row Level Security is enforced on every table. Never place the
+ * service-role key behind a `VITE_` prefix.
+ *
+ * Required:
  *   VITE_SUPABASE_URL
  *   VITE_SUPABASE_ANON_KEY
  *
- * Never place service-role keys, PayPal secrets, Apple signing keys, or
- * Google service-account private keys in VITE_* variables.
+ * IMPORTANT (Vite): environment variables must be accessed as *static*
+ * property reads (`import.meta.env.VITE_FOO`). Dynamic indexing such as
+ * `import.meta.env[key]` is not reliably statically replaced at build time
+ * and can silently resolve to `undefined` in a production bundle.
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+/* ------------------------------------------------------------------ */
+/*  Configuration                                                      */
+/* ------------------------------------------------------------------ */
 
-export const supabaseConfigError =
-  !supabaseUrl || !supabaseAnonKey
-    ? "DigiCon is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
-    : null;
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL ?? '').trim();
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim();
 
-export const supabase = createClient(
-  supabaseUrl || "https://placeholder.invalid",
-  supabaseAnonKey || "missing-anon-key",
+export const missingSupabaseConfig: string[] = [
+  SUPABASE_URL ? null : 'VITE_SUPABASE_URL',
+  SUPABASE_ANON_KEY ? null : 'VITE_SUPABASE_ANON_KEY',
+].filter((value): value is string => value !== null);
+
+export const isSupabaseConfigured = missingSupabaseConfig.length === 0;
+
+if (!isSupabaseConfigured) {
+  // Do NOT throw at module scope. A throw here happens before React mounts
+  // and produces a blank white page with no diagnostics for the operator.
+  // The app renders an actionable configuration screen instead.
+  console.error(
+    `[DigiCon] Missing environment variables: ${missingSupabaseConfig.join(', ')}. ` +
+      'Copy .env.example to .env and provide your Supabase project credentials.',
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Client                                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * When configuration is absent we still construct a client against a
+ * syntactically valid placeholder so that importing modules do not explode.
+ * `isSupabaseConfigured` is checked by the app shell before any route that
+ * performs network calls is rendered.
+ */
+export const supabase: SupabaseClient = createClient(
+  SUPABASE_URL || 'https://placeholder.supabase.co',
+  SUPABASE_ANON_KEY || 'public-anon-key-placeholder',
   {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: "pkce",
+      flowType: 'pkce',
     },
-    realtime: {
-      timeout: 20000,
+    global: {
+      headers: { 'x-application-name': 'digicon-web' },
     },
+    realtime: { timeout: 20_000 },
   },
 );
+
+/* ------------------------------------------------------------------ */
+/*  Row types — kept in sync with supabase/migrations                   */
+/* ------------------------------------------------------------------ */
+
+export type PlanId = 'startup' | 'starter' | 'growth' | 'enterprise';
+
+export type SubscriptionStatus =
+  | 'active'
+  | 'approval_pending'
+  | 'suspended'
+  | 'cancelled'
+  | 'expired';
 
 export type Profile = {
   id: string;
@@ -44,11 +93,9 @@ export type Profile = {
   language: string | null;
   region: string | null;
   avatar_url: string | null;
-  role: "owner" | "admin" | "member" | null;
+  role: 'owner' | 'admin' | 'member' | null;
   created_at: string;
   updated_at: string;
-  plan?: "startup" | "starter" | "growth" | "enterprise" | null;
-  is_active_subscription?: boolean | null;
 };
 
 export type BusinessCard = {
@@ -63,28 +110,54 @@ export type BusinessCard = {
   address: string;
   bio: string;
   photo_url: string;
-  theme_color: string;
+  /** Legacy alias retained by the schema; `card_color` is authoritative. */
+  logo_url: string;
   card_color: string;
   accent_color: string;
   design_template: string;
   font_family: string;
   is_active: boolean;
   share_count: number;
+  edit_count: number;
   created_at: string;
   updated_at: string;
 };
 
+/**
+ * Projection returned by the `public_business_cards` view.
+ *
+ * Deliberately excludes `user_id`, `share_count`, `edit_count`, `is_active`,
+ * and timestamps: this shape is readable by anonymous visitors.
+ */
+export type PublicBusinessCard = Pick<
+  BusinessCard,
+  | 'id'
+  | 'full_name'
+  | 'job_title'
+  | 'company'
+  | 'email'
+  | 'phone'
+  | 'website'
+  | 'address'
+  | 'bio'
+  | 'photo_url'
+  | 'card_color'
+  | 'accent_color'
+  | 'design_template'
+  | 'font_family'
+>;
+
 export type Contact = {
   id: string;
   user_id: string;
-  card_id?: string | null;
+  card_id: string | null;
   full_name: string;
   email: string;
   phone: string;
-  company: string | null;
-  job_title: string | null;
-  notes: string | null;
-  status: "new" | "follow_up" | "converted" | "archived";
+  company: string;
+  job_title: string;
+  notes: string;
+  status: 'new' | 'follow_up' | 'converted' | 'archived';
   source: string;
   consent_given: boolean;
   consent_date: string | null;
@@ -94,6 +167,7 @@ export type Contact = {
 };
 
 export type EcoStats = {
+  id: string;
   user_id: string;
   cards_shared: number;
   contacts_saved: number;
@@ -109,6 +183,18 @@ export type Badge = {
   description: string;
   icon: string;
   threshold: number;
-  category?: string;
+  category: string;
   created_at: string;
+};
+
+export type Subscription = {
+  id: string;
+  user_id: string;
+  provider: string;
+  provider_subscription_id: string;
+  plan: PlanId;
+  status: SubscriptionStatus;
+  current_period_end: string | null;
+  created_at: string;
+  updated_at: string;
 };
