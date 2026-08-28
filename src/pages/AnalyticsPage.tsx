@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area
@@ -11,7 +11,6 @@ import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
 import { supabase, type Contact, type EcoStats } from '@/lib/supabase';
 import { GlassCard, Spinner } from '@/components/ui/GlassCard';
-import { AppLayout } from '@/components/layout/AppLayout';
 
 export function AnalyticsPage() {
   const { session } = useAuth();
@@ -22,43 +21,20 @@ export function AnalyticsPage() {
 
   const t = (k: TranslationKey) => translate(k, lang);
 
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      const result = await loadData();
-      if (!cancelled && result) {
-        setContacts(result.contacts);
-        setEcoStats(result.ecoStats);
-        setLoading(false);
-      } else if (!cancelled) {
-        setLoading(false);
-      }
-    };
-    void run();
-    return () => { cancelled = true; };
+  const loadData = useCallback(async () => {
+    if (!session?.user?.id) return;
+    const [contactsRes, ecoRes] = await Promise.all([
+      supabase.from('contacts').select('*').eq('user_id', session.user.id).order('created_at', { ascending: true }),
+      supabase.from('eco_stats').select('*').eq('user_id', session.user.id).maybeSingle(),
+    ]);
+    setContacts((contactsRes.data as Contact[]) || []);
+    setEcoStats(ecoRes.data as EcoStats | null);
+    setLoading(false);
   }, [session?.user?.id]);
 
-  const loadData = async () => {
-    if (!session?.user?.id) return null;
-
-    const [contactsRes, ecoRes] = await Promise.all([
-      supabase
-        .from('contacts')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('eco_stats')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .maybeSingle(),
-    ]);
-
-    return {
-      contacts: (contactsRes.data as Contact[]) || [],
-      ecoStats: (ecoRes.data as EcoStats | null) ?? null,
-    };
-  };
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   // Leads over time (last 7 days)
   const leadsOverTime = useMemo(() => {
@@ -105,11 +81,11 @@ export function AnalyticsPage() {
   };
 
   if (loading) {
-    return <AppLayout><div className="flex items-center justify-center py-32"><Spinner className="w-8 h-8" /></div></AppLayout>;
+    return <div className="flex items-center justify-center py-32"><Spinner className="w-8 h-8" /></div>;
   }
 
   return (
-    <AppLayout>
+    <>
       <div className="mb-8 animate-fade-in-up">
         <h1 className="text-3xl font-bold text-white mb-1">{t('analytics.title')}</h1>
         <p className="text-white/50">Track your networking performance and eco impact</p>
@@ -122,8 +98,8 @@ export function AnalyticsPage() {
           { icon: Target, label: t('analytics.converted'), value: stats.converted, color: 'text-digicon-eco' },
           { icon: TrendingUp, label: t('analytics.pending'), value: stats.pending, color: 'text-digicon-warning' },
           { icon: Target, label: t('analytics.converted'), value: `${stats.rate}%`, color: 'text-digicon-secondary' },
-        ].map((stat, i) => (
-          <GlassCard key={i} variant="regular" hover className="p-5 animate-fade-in-up">
+        ].map((stat) => (
+          <GlassCard key={`${stat.label}-${stat.value}`} variant="regular" hover className="p-5 animate-fade-in-up">
             <div className="w-10 h-10 rounded-glass-md glass-thin flex items-center justify-center mb-3">
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
             </div>
@@ -174,8 +150,8 @@ export function AnalyticsPage() {
                 contentStyle={{ background: 'rgba(20,20,20,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }}
               />
               <Bar dataKey="value" radius={[0, 8, 8, 0]}>
-                {funnelData.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} />
+                {funnelData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.fill} />
                 ))}
               </Bar>
             </BarChart>
@@ -194,8 +170,8 @@ export function AnalyticsPage() {
               { icon: Leaf, label: t('analytics.paperSaved'), value: `${(ecoStats?.paper_saved_sqm || 0).toFixed(1)}m²`, color: 'text-digicon-eco' },
               { icon: TreePine, label: t('analytics.treesSaved'), value: (ecoStats?.trees_saved || 0).toFixed(2), color: 'text-digicon-eco' },
               { icon: Factory, label: t('analytics.carbonReduced'), value: `${(ecoStats?.carbon_reduced_kg || 0).toFixed(2)}kg`, color: 'text-digicon-eco' },
-            ].map((stat, i) => (
-              <div key={i} className="text-center">
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
                 <div className="w-10 h-10 rounded-glass-md glass-thin flex items-center justify-center mx-auto mb-2">
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
@@ -231,8 +207,11 @@ export function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
                   <Pie data={sourceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={40}>
-                    {sourceData.map((_, i) => (
-                      <Cell key={i} fill={['#007AFF', '#5856D6', '#34C759', '#FF9500'][i % 4]} />
+                    {sourceData.map((entry, index) => (
+                      <Cell
+                        key={entry.name}
+                        fill={['#007AFF', '#5856D6', '#34C759', '#FF9500'][index % 4]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip
@@ -241,10 +220,10 @@ export function AnalyticsPage() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-3 justify-center mt-4">
-                {sourceData.map((src, i) => {
+                {sourceData.map((src) => {
                   const Icon = sourceIcons[src.name] || Users;
                   return (
-                    <div key={i} className="flex items-center gap-2 text-sm text-white/60">
+                    <div key={src.name} className="flex items-center gap-2 text-sm text-white/60">
                       <Icon className="w-4 h-4" />
                       <span className="capitalize">{src.name}</span>
                       <span className="font-medium text-white">{src.value}</span>
@@ -256,6 +235,6 @@ export function AnalyticsPage() {
           )}
         </GlassCard>
       </div>
-    </AppLayout>
+    </>
   );
 }

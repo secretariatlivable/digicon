@@ -1,73 +1,99 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   CreditCard, Users, TrendingUp, Leaf, Plus, Share2, ArrowRight,
-  Sparkles, Award, TreePine, Factory, BarChart3
+  Award, TreePine, BarChart3
 } from 'lucide-react';
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
-import { supabase, type BusinessCard, type Contact, type EcoStats, type Badge } from '@/lib/supabase';
+import { supabase, type Contact, type EcoStats, type Badge } from '@/lib/supabase';
 import { GlassCard, GlassButton, Spinner, EmptyState } from '@/components/ui/GlassCard';
-import { AppLayout } from '@/components/layout/AppLayout';
 
 export function DashboardPage() {
   const { session, profile } = useAuth();
   const [lang] = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [cardCount, setCardCount] = useState(0);
+  const [contactCount, setContactCount] = useState(0);
+  const [convertedCount, setConvertedCount] = useState(0);
   const [ecoStats, setEcoStats] = useState<EcoStats | null>(null);
   const [badges, setBadges] = useState<(Badge & { earned: boolean })[]>([]);
 
   const t = (k: TranslationKey) => translate(k, lang);
 
-  useEffect(() => {
-    void loadData();
-  }, [session?.user?.id]);
-
-  const loadData = async () => {
-    if (!session?.user?.id) {
+  const loadData = useCallback(async () => {
+    const userId = session?.user?.id;
+    if (!userId) {
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    const [contactsRes, ecoRes, badgesRes, userBadgesRes] = await Promise.all([
-      supabase.from('contacts').select('*').eq('user_id', session!.user.id).order('created_at', { ascending: false }).limit(5),
-      supabase.from('eco_stats').select('*').eq('user_id', session!.user.id).maybeSingle(),
+
+    /*
+     * Counts are requested with `head: true`, which returns only the row count.
+     *
+     * The previous version pulled every business card row purely to discard it,
+     * and computed the conversion rate from a `.limit(5)` slice of contacts —
+     * so the headline percentage described the five most recent leads rather
+     * than the whole pipeline.
+     */
+    const [
+      cardCountRes,
+      contactCountRes,
+      convertedCountRes,
+      recentContactsRes,
+      ecoRes,
+      badgesRes,
+      userBadgesRes,
+    ] = await Promise.all([
+      supabase.from('business_cards').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'converted'),
+      supabase.from('contacts').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+      supabase.from('eco_stats').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('badges').select('*'),
-      supabase.from('user_badges').select('badge_id').eq('user_id', session!.user.id),
+      supabase.from('user_badges').select('badge_id').eq('user_id', userId),
     ]);
 
-        setContacts((contactsRes.data as Contact[]) || []);
+    setCardCount(cardCountRes.count ?? 0);
+    setContactCount(contactCountRes.count ?? 0);
+    setConvertedCount(convertedCountRes.count ?? 0);
+    setContacts((recentContactsRes.data as Contact[]) || []);
     setEcoStats(ecoRes.data as EcoStats | null);
 
     const earnedIds = new Set((userBadgesRes.data || []).map((ub: { badge_id: string }) => ub.badge_id));
     setBadges(((badgesRes.data as Badge[]) || []).map(b => ({ ...b, earned: earnedIds.has(b.id) })));
 
     setLoading(false);
-  };
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const stats = [
+    { icon: CreditCard, label: t('nav.cards'), value: cardCount, color: 'text-digicon-primary' },
     { icon: Share2, label: t('dashboard.cardsShared'), value: ecoStats?.cards_shared || 0, color: 'text-digicon-primary' },
     { icon: Users, label: t('dashboard.contactsCaptured'), value: ecoStats?.contacts_saved || 0, color: 'text-digicon-secondary' },
-    { icon: TrendingUp, label: t('dashboard.conversionRate'), value: `${contacts.length > 0 ? Math.round((contacts.filter(c => c.status === 'converted').length / contacts.length) * 100) : 0}%`, color: 'text-digicon-eco' },
+    { icon: TrendingUp, label: t('dashboard.conversionRate'), value: `${contactCount > 0 ? Math.round((convertedCount / contactCount) * 100) : 0}%`, color: 'text-digicon-eco' },
     { icon: Leaf, label: t('dashboard.ecoImpact'), value: `${(ecoStats?.paper_saved_sqm || 0).toFixed(1)}m²`, color: 'text-digicon-eco' },
   ];
 
   if (loading) {
     return (
-      <AppLayout>
+      <>
         <div className="flex items-center justify-center py-32">
           <Spinner className="w-8 h-8" />
         </div>
-      </AppLayout>
+      </>
     );
   }
 
   return (
-    <AppLayout>
+    <>
       {/* Welcome header */}
       <div className="mb-8 animate-fade-in-up">
         <h1 className="text-3xl font-bold text-white mb-1">
@@ -215,7 +241,8 @@ export function DashboardPage() {
           </GlassCard>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 }
+
 

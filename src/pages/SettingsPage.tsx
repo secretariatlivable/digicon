@@ -5,7 +5,6 @@ import { useTheme } from '@/components/theme-provider';
 import { translate, type TranslationKey, regions } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { GlassCard, GlassButton, GlassInput, GlassLabel, GlassSelect, Spinner } from '@/components/ui/GlassCard';
-import { AppLayout } from '@/components/layout/AppLayout';
 
 type Tab = 'profile' | 'preferences' | 'team' | 'billing';
 
@@ -72,11 +71,11 @@ export function SettingsPage() {
 
   if (loading) {
     return (
-      <AppLayout>
+      <>
         <div className="flex items-center justify-center py-32">
           <Spinner className="w-8 h-8" />
         </div>
-      </AppLayout>
+      </>
     );
   }
 
@@ -88,7 +87,7 @@ export function SettingsPage() {
   ];
 
   return (
-    <AppLayout>
+    <>
       <div className="mb-8 animate-fade-in-up">
         <h1 className="text-3xl font-bold text-white mb-1">{t('settings.title')}</h1>
         <p className="text-white/50">Manage your account and preferences</p>
@@ -355,6 +354,6 @@ export function SettingsPage() {
           </div>
         </GlassCard>
       )}
-    </AppLayout>
+    </>
   );
 }
