@@ -1,24 +1,75 @@
 {
-  "name": "DigiCon - Digital Business Cards & CRM",
+  "id": "/",
+  "name": "DigiCon — Turn introductions into relationships",
   "short_name": "DigiCon",
-  "description": "Digital business cards, CRM automation, and eco-impact analytics for Philippine SMEs and startups.",
-  "start_url": "/",
+  "description": "More than a digital business card. Create your professional identity, share it instantly, capture the people you meet, and follow up with intention.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#050710",
+  "theme_color": "#050710",
   "orientation": "portrait-primary",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "social"],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "My Network",
+      "short_name": "Network",
+      "description": "Open your relationship workspace",
+      "url": "/dashboard?source=shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Make an Introduction",
+      "short_name": "Share",
+      "description": "Share your DigiCon identity",
+      "url": "/cards?source=shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Connections",
+      "short_name": "Connections",
+      "description": "Everyone you have met",
+      "url": "/contacts?source=shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/media/og-image.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "More than a digital business card — turn introductions into relationships"
+    }
+  ],
+  "prefer_related_applications": false
 }
