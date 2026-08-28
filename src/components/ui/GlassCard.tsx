@@ -56,6 +56,7 @@ export function GlassButton({
   variant = 'primary',
   size = 'md',
   className = '',
+  type = 'button',
   ...props
 }: GlassButtonProps) {
   const sizeClasses = {
@@ -73,6 +74,9 @@ export function GlassButton({
 
   return (
     <button
+      // Defaults to "button". A bare <button> is type="submit", so every
+      // GlassButton placed inside a form previously submitted it on click.
+      type={type}
       className={`glass-button ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     >
