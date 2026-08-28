@@ -142,29 +142,47 @@ export interface PayPalSubscriptionButtonProps {
   planId: Exclude<DigiConPlanId, "startup">;
   className?: string;
   onApproved?: (subscriptionId: string) => void | Promise<void>;
+  /**
+   * Notified for any failure raised while loading the SDK, creating the
+   * subscription, or handling approval. Typed as `unknown` so callers get a
+   * contextually typed parameter instead of an implicit `any`.
+   */
+  onError?: (error: unknown) => void;
 }
 
 export function PayPalSubscriptionButton({
   planId,
   className = "",
   onApproved,
+  onError,
 }: PayPalSubscriptionButtonProps) {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Kept in a ref so the mount effect does not re-run — and therefore does not
+  // tear down and re-render the PayPal iframe — when a parent passes a new
+  // inline callback on every render.
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [approved, setApproved] = useState(false);
+  const [requiresSignIn, setRequiresSignIn] = useState(false);
 
   const plan = getDigiConPayPalPlan(planId);
 
   const handleApprove = useCallback(
     async (data: PayPalSubscriptionData) => {
       if (!data.subscriptionID) {
-        setError(
+        const cause = new Error(
           "PayPal approved the subscription but did not return a subscription ID.",
         );
+        setError(cause.message);
+        onErrorRef.current?.(cause);
         return;
       }
 
@@ -180,6 +198,7 @@ export function PayPalSubscriptionButton({
             ? cause.message
             : "Subscription approval handling failed.",
         );
+        onErrorRef.current?.(cause);
       } finally {
         setProcessing(false);
       }
@@ -201,9 +220,16 @@ export function PayPalSubscriptionButton({
         } = await supabase.auth.getSession();
 
         if (!session) {
-          if (!cancelled) setLoading(false);
+          if (!cancelled) {
+            // Previously this rendered nothing at all, so a signed-out visitor
+            // saw an empty pricing card with no explanation.
+            setRequiresSignIn(true);
+            setLoading(false);
+          }
           return;
         }
+
+        if (!cancelled) setRequiresSignIn(false);
 
         if (!plan.paypalPlanId) {
           throw new Error(
@@ -246,6 +272,7 @@ export function PayPalSubscriptionButton({
 
           onError: (cause) => {
             console.error("PayPal subscription error:", cause);
+            onErrorRef.current?.(cause);
 
             if (!cancelled) {
               setProcessing(false);
@@ -258,6 +285,7 @@ export function PayPalSubscriptionButton({
 
         await buttons.render(containerRef.current);
       } catch (cause) {
+        onErrorRef.current?.(cause);
         if (!cancelled) {
           setError(
             cause instanceof Error
@@ -270,12 +298,16 @@ export function PayPalSubscriptionButton({
       }
     };
 
+    // Captured now: `containerRef.current` may already point elsewhere by the
+    // time the cleanup function runs.
+    const container = containerRef.current;
+
     void mount();
 
     return () => {
       cancelled = true;
       buttons?.close?.();
-      containerRef.current?.replaceChildren();
+      container?.replaceChildren();
     };
   }, [handleApprove, plan.name, plan.paypalPlanId, planId]);
 
@@ -305,6 +337,25 @@ export function PayPalSubscriptionButton({
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (requiresSignIn) {
+    return (
+      <div
+        className={`rounded-2xl border border-white/10 bg-white/5 p-4 text-center ${className}`}
+      >
+        <p className="text-sm text-white/70">
+          Sign in to subscribe to {plan.name}.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate("/auth?returnTo=%2F%23pricing")}
+          className="mt-2 text-sm font-medium text-digicon-primary underline underline-offset-4"
+        >
+          Sign in or create an account
+        </button>
       </div>
     );
   }
