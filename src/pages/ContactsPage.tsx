@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   Users, Plus, Search, Download, RefreshCw, Trash2, Edit3, X,
   Check, Mail, Phone, Building2
@@ -7,7 +7,6 @@ import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
 import { supabase, type Contact } from '@/lib/supabase';
 import { GlassCard, GlassButton, GlassInput, GlassLabel, GlassTextarea, GlassSelect, Spinner, EmptyState, Badge } from '@/components/ui/GlassCard';
-import { AppLayout } from '@/components/layout/AppLayout';
 
 const statusColors: Record<string, string> = {
   new: 'blue',
@@ -27,6 +26,7 @@ export function ContactsPage() {
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncedCount, setSyncedCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const t = (k: TranslationKey) => translate(k, lang);
 
@@ -34,34 +34,39 @@ export function ContactsPage() {
     full_name: '', email: '', phone: '', company: '', job_title: '', notes: '', status: 'new', consent_given: false,
   });
 
-  useEffect(() => {
-    void loadContacts();
-  }, [session?.user?.id]);
-
-  const loadContacts = async () => {
+  const loadContacts = useCallback(async () => {
     if (!session?.user?.id) {
       setContacts([]);
       setLoading(false);
       return;
     }
 
-    const { data } = await supabase
+    const { data, error: dbError } = await supabase
       .from('contacts')
       .select('*')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
 
-    setContacts((data as Contact[]) || []);
+    if (dbError) {
+      console.error('[DigiCon] Contact load failed:', dbError);
+      setError(dbError.message);
+      setContacts([]);
+    } else {
+      setContacts((data as Contact[]) ?? []);
+      setError(null);
+    }
+
     setLoading(false);
-  };
+  }, [session?.user?.id]);
+
+  useEffect(() => { void loadContacts(); }, [loadContacts]);
 
   const filteredContacts = useMemo(() => {
     return contacts.filter(c => {
-      const normalizedSearch = search.toLowerCase();
       const matchesSearch = !search ||
-        c.full_name.toLowerCase().includes(normalizedSearch) ||
-        c.email.toLowerCase().includes(normalizedSearch) ||
-        (c.company ?? '').toLowerCase().includes(normalizedSearch);
+        c.full_name.toLowerCase().includes(search.toLowerCase()) ||
+        c.email.toLowerCase().includes(search.toLowerCase()) ||
+        c.company.toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -76,81 +81,195 @@ export function ContactsPage() {
   const openEdit = (contact: Contact) => {
     setEditingContact(contact);
     setFormData({
-      full_name: contact.full_name ?? '',
-      email: contact.email ?? '',
-      phone: contact.phone ?? '',
-      company: contact.company ?? '',
-      job_title: contact.job_title ?? '',
-      notes: contact.notes ?? '',
-      status: contact.status,
-      consent_given: contact.consent_given,
+      full_name: contact.full_name, email: contact.email, phone: contact.phone,
+      company: contact.company, job_title: contact.job_title, notes: contact.notes,
+      status: contact.status, consent_given: contact.consent_given,
     });
     setShowForm(true);
   };
 
   const saveContact = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingContact) {
-      await supabase.from('contacts').update({
-        ...formData, consent_date: formData.consent_given && !editingContact.consent_given ? new Date().toISOString() : editingContact.consent_date,
-        updated_at: new Date().toISOString(),
-      }).eq('id', editingContact.id);
-    } else {
-      await supabase.from('contacts').insert({
-        ...formData, user_id: session!.user.id, consent_date: formData.consent_given ? new Date().toISOString() : null,
-      });
-      await supabase.from('eco_stats').update({
-        contacts_saved: (await supabase.from('eco_stats').select('contacts_saved').eq('user_id', session!.user.id).maybeSingle()).data?.contacts_saved + 1,
-        updated_at: new Date().toISOString(),
-      }).eq('user_id', session!.user.id);
+
+    const userId = session?.user?.id;
+    if (!userId) {
+      setError('Your session has expired. Please sign in again.');
+      return;
     }
-    setShowForm(false);
-    loadContacts();
+
+    setError(null);
+
+    try {
+      if (editingContact) {
+        const { error: updateError } = await supabase
+          .from('contacts')
+          .update({
+            ...formData,
+            consent_date:
+              formData.consent_given && !editingContact.consent_given
+                ? new Date().toISOString()
+                : editingContact.consent_date,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingContact.id)
+          .eq('user_id', userId);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase.from('contacts').insert({
+          ...formData,
+          user_id: userId,
+          consent_date: formData.consent_given ? new Date().toISOString() : null,
+        });
+
+        if (insertError) throw insertError;
+
+        /*
+         * Atomic server-side increment.
+         *
+         * The previous read-modify-write produced `NaN` whenever the
+         * `eco_stats` row did not exist yet (`undefined + 1`), permanently
+         * corrupting the counter, and lost updates under concurrency.
+         */
+        const { error: statsError } = await supabase.rpc(
+          'increment_eco_contacts_saved',
+          { p_amount: 1 },
+        );
+
+        if (statsError) {
+          // Non-fatal: the contact was saved, only the vanity metric lagged.
+          console.error('[DigiCon] Eco stats increment failed:', statsError);
+        }
+      }
+
+      setShowForm(false);
+      await loadContacts();
+    } catch (cause) {
+      console.error('[DigiCon] Contact save failed:', cause);
+      setError(
+        cause instanceof Error ? cause.message : 'Unable to save the contact.',
+      );
+    }
   };
 
   const deleteContact = async (id: string) => {
-    await supabase.from('contacts').delete().eq('id', id);
-    loadContacts();
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    // Scoped to the owner in addition to RLS: defence in depth, and it turns a
+    // policy violation into an explicit zero-row result rather than a silent no-op.
+    const { error: deleteError } = await supabase
+      .from('contacts')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('[DigiCon] Contact delete failed:', deleteError);
+      setError(deleteError.message);
+      return;
+    }
+
+    await loadContacts();
   };
 
   const updateStatus = async (contact: Contact, status: string) => {
-    await supabase.from('contacts').update({ status, updated_at: new Date().toISOString() }).eq('id', contact.id);
-    loadContacts();
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    const { error: statusError } = await supabase
+      .from('contacts')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', contact.id)
+      .eq('user_id', userId);
+
+    if (statusError) {
+      console.error('[DigiCon] Contact status update failed:', statusError);
+      setError(statusError.message);
+      return;
+    }
+
+    await loadContacts();
+  };
+
+  /**
+   * Escapes one CSV field.
+   *
+   * Two separate concerns:
+   *  1. RFC 4180 quoting — embedded double quotes must be doubled. The previous
+   *     implementation wrapped fields in quotes without escaping them, so any
+   *     contact containing a `"` produced a malformed, unparseable file.
+   *  2. Formula injection — spreadsheet applications execute a cell beginning
+   *     with `=`, `+`, `-`, `@`, TAB, or CR. Contact names are attacker-supplied
+   *     via the public capture form, so they are prefixed with a single quote.
+   */
+  const csvField = (value: unknown) => {
+    const raw = value === null || value === undefined ? '' : String(value);
+    const guarded = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+    return `"${guarded.replace(/"/g, '""')}"`;
   };
 
   const exportCSV = () => {
     const headers = ['Name', 'Email', 'Phone', 'Company', 'Job Title', 'Status', 'Consent', 'Source', 'Created At'];
     const rows = filteredContacts.map(c => [
       c.full_name, c.email, c.phone, c.company, c.job_title, c.status,
-      c.consent_given ? 'Yes' : 'No', c.source, new Date(c.created_at).toLocaleDateString(),
+      c.consent_given ? 'Yes' : 'No', c.source, new Date(c.created_at).toISOString().slice(0, 10),
     ]);
-    const csv = [headers, ...rows].map(r => r.map(f => `"${f}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+
+    // CRLF line endings and a UTF-8 BOM so Excel opens non-ASCII names correctly.
+    const csv = [headers, ...rows]
+      .map(row => row.map(csvField).join(','))
+      .join('\r\n');
+
+    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = 'digicon-contacts.csv';
+    document.body.appendChild(link);
     link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const syncToCRM = async () => {
-    setSyncing(true);
+    const userId = session?.user?.id;
+    if (!userId) return;
+
     const unsynced = contacts.filter(c => !c.synced_to_crm && c.consent_given);
-    for (const contact of unsynced) {
-      await supabase.from('contacts').update({ synced_to_crm: true, updated_at: new Date().toISOString() }).eq('id', contact.id);
+    if (unsynced.length === 0) return;
+
+    setSyncing(true);
+    setError(null);
+
+    try {
+      // One round trip instead of one per contact. The previous sequential loop
+      // was O(n) network calls and left the batch half-applied on any failure.
+      const { error: syncError } = await supabase
+        .from('contacts')
+        .update({ synced_to_crm: true, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .in('id', unsynced.map(c => c.id));
+
+      if (syncError) throw syncError;
+
+      setSyncedCount(unsynced.length);
+      window.setTimeout(() => setSyncedCount(0), 3000);
+      await loadContacts();
+    } catch (cause) {
+      console.error('[DigiCon] CRM sync failed:', cause);
+      setError(cause instanceof Error ? cause.message : 'Unable to sync contacts.');
+    } finally {
+      setSyncing(false);
     }
-    setSyncedCount(unsynced.length);
-    setSyncing(false);
-    setTimeout(() => setSyncedCount(0), 3000);
-    loadContacts();
   };
 
   if (loading) {
-    return <AppLayout><div className="flex items-center justify-center py-32"><Spinner className="w-8 h-8" /></div></AppLayout>;
+    return <div className="flex items-center justify-center py-32"><Spinner className="w-8 h-8" /></div>;
   }
 
   return (
-    <AppLayout>
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 animate-fade-in-up">
         <div>
           <h1 className="text-3xl font-bold text-white mb-1">{t('contacts.title')}</h1>
@@ -171,6 +290,23 @@ export function ContactsPage() {
           </GlassButton>
         </div>
       </div>
+
+      {error && (
+        <div
+          className="mb-6 flex items-start gap-2 rounded-glass-sm border border-digicon-error/30 bg-digicon-error/10 p-3 text-sm text-digicon-error"
+          role="alert"
+        >
+          <span className="flex-1">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="rounded p-1 hover:bg-white/10"
+            aria-label="Dismiss error"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Search and filter */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -316,6 +452,6 @@ export function ContactsPage() {
           </GlassCard>
         </div>
       )}
-    </AppLayout>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
@@ -31,6 +32,14 @@ import {
 import { useAuth } from "@/lib/auth";
 import { supabase, type BusinessCard } from "@/lib/supabase";
 import { addToAppleWallet, addToGoogleWallet } from "@/lib/wallet";
+import {
+  checkCreateCardEntitlement,
+  checkEditCardEntitlement,
+  checkWalletEntitlement,
+  type EntitlementResult,
+  type EntitlementState,
+} from "@/lib/entitlements";
+import { UpgradeRequiredDialog } from "@/components/UpgradeRequiredDialog";
 import {
   Badge,
   EmptyState,
@@ -122,14 +131,26 @@ function normalizeWebsite(value: string) {
     : `https://${trimmed}`;
 }
 
+/**
+ * Strips path separators, Windows-reserved characters, and C0 control codes
+ * from a value used as a download filename.
+ *
+ * Control characters are removed with an explicit character-code filter rather
+ * than a `\u0000-\u001F` regex range, which trips ESLint's `no-control-regex`
+ * rule and is easy to get subtly wrong.
+ */
 function safeFileName(value: string) {
-  return (
-    value
-      .trim()
-      .replace(/[<>:"/\\|?*]/g, "")
-      .replace(/\s+/g, "_")
-      .slice(0, 80) || "digicon-card"
-  );
+  const cleaned = Array.from(value.trim())
+    .filter((character) => {
+      const code = character.codePointAt(0) ?? 0;
+      if (code <= 0x1f || code === 0x7f) return false;
+      return !'<>:"/\\|?*'.includes(character);
+    })
+    .join("")
+    .replace(/\s+/g, "_")
+    .slice(0, 80);
+
+  return cleaned || "digicon-card";
 }
 
 function CardPreview({
@@ -209,7 +230,7 @@ function CardPreview({
 }
 
 export function CardsPage() {
-  const { session } = useAuth();
+  const { session, plan, isActiveSubscription } = useAuth();
   const [cards, setCards] = useState<BusinessCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -223,7 +244,26 @@ export function CardsPage() {
   const [walletLoading, setWalletLoading] = useState<"apple" | "google" | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [upgradePrompt, setUpgradePrompt] = useState<EntitlementResult | null>(
+    null,
+  );
   const fileInput = useRef<HTMLInputElement>(null);
+
+  /**
+   * Client-side entitlement state. This is a UX affordance only — the
+   * authoritative limits are enforced by database triggers and RLS, so a user
+   * who edits browser state still cannot exceed their plan.
+   */
+  const entitlementState = useMemo<EntitlementState>(
+    () => ({
+      accountType: "startup",
+      plan,
+      cardCount: cards.length,
+      completedCardEdits: editingCard?.edit_count ?? 0,
+      isActiveSubscription,
+    }),
+    [plan, cards.length, editingCard?.edit_count, isActiveSubscription],
+  );
 
   const loadCards = useCallback(async () => {
     if (!session?.user?.id) {
@@ -243,7 +283,7 @@ export function CardsPage() {
       setError(dbError.message);
       setCards([]);
     } else {
-      setCards((data as BusinessCard[]) || []);
+      setCards((data as BusinessCard[]) ?? []);
     }
     setLoading(false);
   }, [session?.user?.id]);
@@ -253,6 +293,12 @@ export function CardsPage() {
   }, [loadCards]);
 
   const openCreate = () => {
+    const verdict = checkCreateCardEntitlement(entitlementState);
+    if (!verdict.allowed) {
+      setUpgradePrompt(verdict);
+      return;
+    }
+
     setEditingCard(null);
     setForm({ ...DEFAULT_FORM });
     setError(null);
@@ -260,6 +306,15 @@ export function CardsPage() {
   };
 
   const openEdit = (card: BusinessCard) => {
+    const verdict = checkEditCardEntitlement({
+      ...entitlementState,
+      completedCardEdits: card.edit_count ?? 0,
+    });
+    if (!verdict.allowed) {
+      setUpgradePrompt(verdict);
+      return;
+    }
+
     setEditingCard(card);
     setForm({
       full_name: card.full_name || "",
@@ -447,15 +502,23 @@ export function CardsPage() {
     }
 
     /*
-     * Do not use a client-side increment for billing/security.
-     * share_count is analytics only and is updated here only for UX.
+     * Server-side atomic increment.
+     *
+     * The previous client-side `share_count + 1` wrote a value derived from
+     * possibly stale local state, so concurrent shares lost updates and the
+     * counter was directly settable by anyone with the REST endpoint. A
+     * BEFORE UPDATE trigger now rejects client writes to `share_count`
+     * outright, so this must go through the RPC.
      */
-    const nextCount = (card.share_count || 0) + 1;
-    await supabase
-      .from("business_cards")
-      .update({ share_count: nextCount })
-      .eq("id", card.id)
-      .eq("user_id", session?.user?.id || "");
+    const { error: shareError } = await supabase.rpc(
+      "increment_card_share_count",
+      { p_card_id: card.id },
+    );
+
+    if (shareError) {
+      // Non-fatal: the link is already copied and shared. Only the metric lags.
+      console.error("DigiCon share count increment failed:", shareError);
+    }
   };
 
   const downloadVCard = (card: BusinessCard) => {
@@ -494,7 +557,22 @@ export function CardsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleWallet = async (kind: "apple" | "google", card: BusinessCard) => {
+  /*
+   * NOTE: this was previously named `useWallet`. Any function whose name begins
+   * with `use` is treated as a React Hook, so calling it from an `onClick`
+   * callback violated the Rules of Hooks and failed lint. It is a plain async
+   * event handler, so it is named accordingly.
+   */
+  const handleWalletExport = async (
+    kind: "apple" | "google",
+    card: BusinessCard,
+  ) => {
+    const verdict = checkWalletEntitlement(entitlementState, kind);
+    if (!verdict.allowed) {
+      setUpgradePrompt(verdict);
+      return;
+    }
+
     setWalletError(null);
     setWalletLoading(kind);
 
@@ -758,11 +836,11 @@ export function CardsPage() {
             </div>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void handleWallet("apple", shareCard)}>
+              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void handleWalletExport("apple", shareCard)}>
                 {walletLoading === "apple" ? <Spinner className="mr-2 h-4 w-4" /> : <Wallet className="mr-2 h-4 w-4" />}
                 Apple Wallet
               </GlassButton>
-              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void handleWallet("google", shareCard)}>
+              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void handleWalletExport("google", shareCard)}>
                 {walletLoading === "google" ? <Spinner className="mr-2 h-4 w-4" /> : <Wallet className="mr-2 h-4 w-4" />}
                 Google Wallet
               </GlassButton>
@@ -772,6 +850,17 @@ export function CardsPage() {
           </GlassCard>
         </div>
       )}
+
+      <UpgradeRequiredDialog
+        open={upgradePrompt !== null}
+        onClose={() => setUpgradePrompt(null)}
+        title="Upgrade required"
+        message={
+          upgradePrompt?.message ??
+          "This feature is available on a paid DigiCon plan."
+        }
+        suggestedPlan={upgradePrompt?.suggestedPlan}
+      />
     </main>
   );
 }
