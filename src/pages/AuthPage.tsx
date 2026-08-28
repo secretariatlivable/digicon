@@ -1,247 +1,168 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+/**
+ * DigiCon sign-in / sign-up.
+ *
+ * Uses Supabase Auth exclusively. The previous Auth0 implementation could
+ * never grant access: `ProtectedRoute` reads the Supabase session, and every
+ * RLS policy is written against `auth.uid()`, so an Auth0 identity resolved
+ * to no rows. It also rendered a permanent spinner because `useAuth0()` was
+ * called without an `<Auth0Provider>` in the tree.
+ */
+
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
   CheckCircle2,
+  Eye,
+  EyeOff,
   LogIn,
-  LogOut,
+  Mail,
   ShieldCheck,
   UserPlus,
-  KeyRound,
-} from "lucide-react";
+} from 'lucide-react';
+import { useAuth } from '@/lib/auth';
+import { DigiConLogo } from '@/components/brand/DigiConLogo';
+import {
+  GlassButton,
+  GlassCard,
+  GlassInput,
+  GlassLabel,
+  Spinner,
+} from '@/components/ui/GlassCard';
 
-import { useAuth } from "@/lib/auth";
-import { DigiConLogo } from "@/components/brand/DigiConLogo";
-import { GlassButton, GlassCard, GlassInput, GlassLabel } from "@/components/ui/GlassCard";
+type Mode = 'signin' | 'signup' | 'reset';
 
-type AuthMode = "signin" | "signup" | "reset";
+const MIN_PASSWORD_LENGTH = 8;
 
-const PRODUCTION_ORIGIN = "https://digicon.cards";
-
-function getSafeReturnTo(value: string | null): string {
-  if (!value) return "/dashboard";
-  if (!value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+/** Only same-origin, non-protocol-relative paths are accepted. */
+function safeReturnTo(value: string | null): string {
+  if (!value) return '/dashboard';
+  if (!value.startsWith('/') || value.startsWith('//')) return '/dashboard';
   return value;
-}
-
-function getRedirectPath(): string {
-  if (typeof window === "undefined") return "/auth";
-  return window.location.hostname === "digicon.cards"
-    ? `${PRODUCTION_ORIGIN}/auth`
-    : `${window.location.origin}/auth`;
 }
 
 export function AuthPage() {
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
-  const { session, loading, signIn, signUp, signOut } = useAuth();
+  const [params] = useSearchParams();
+  const { session, loading, signIn, signUp, sendPasswordReset } = useAuth();
 
-  const requestedMode = params.get("mode");
-  const initialMode: AuthMode =
-    requestedMode === "signup"
-      ? "signup"
-      : requestedMode === "reset"
-        ? "reset"
-        : "signin";
+  const initialMode = useMemo<Mode>(() => {
+    const raw = params.get('mode');
+    return raw === 'signup' || raw === 'reset' ? raw : 'signin';
+  }, [params]);
 
-  const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [fullName, setFullName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const returnTo = useMemo(
-    () => getSafeReturnTo(params.get("returnTo")),
-    [params],
-  );
+  useEffect(() => setMode(initialMode), [initialMode]);
 
-  useEffect(() => {
-    if (!requestedMode) return;
-
-    const nextMode: AuthMode =
-      requestedMode === "signup"
-        ? "signup"
-        : requestedMode === "reset"
-          ? "reset"
-          : "signin";
-
-    setMode(nextMode);
-  }, [requestedMode]);
+  const returnTo = safeReturnTo(params.get('returnTo'));
 
   useEffect(() => {
-    if (!loading && session) {
-      navigate(returnTo, { replace: true });
-    }
-  }, [loading, navigate, returnTo, session]);
+    if (!loading && session) navigate(returnTo, { replace: true });
+  }, [loading, session, navigate, returnTo]);
 
-  const changeMode = (nextMode: AuthMode) => {
-    setMode(nextMode);
-    setMessage(null);
+  const switchMode = (next: Mode) => {
+    setMode(next);
     setError(null);
-    setPassword("");
-
-    const nextParams = new URLSearchParams(params);
-    if (nextMode === "signup") nextParams.set("mode", "signup");
-    else if (nextMode === "reset") nextParams.set("mode", "reset");
-    else nextParams.delete("mode");
-
-    setParams(nextParams, { replace: true });
+    setNotice(null);
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    setBusy(true);
     setError(null);
-    setMessage(null);
+    setNotice(null);
 
-    try {
-      if (mode === "reset") {
-        const { error: resetError } = await import("@/lib/supabase").then(
-          ({ supabase }) =>
-            supabase.auth.resetPasswordForEmail(email.trim(), {
-              redirectTo: `${getRedirectPath()}?mode=reset`,
-            }),
-        );
-
-        if (resetError) {
-          throw resetError;
-        }
-
-        setMessage(
-          "If an account exists for that email, a password-reset email has been sent.",
-        );
-        return;
-      }
-
-      if (mode === "signup") {
-        if (fullName.trim().length < 2) {
-          throw new Error("Please enter your full name.");
-        }
-
-        const result = await signUp(
-          email.trim(),
-          password,
-          fullName.trim(),
-          companyName.trim(),
-        );
-
-        if (result.error) {
-          throw new Error(result.error);
-        }
-
-        setMessage(
-          "Your account was created. Check your email if confirmation is required, then sign in.",
-        );
-        setMode("signin");
-        return;
-      }
-
-      const result = await signIn(email.trim(), password);
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
-      navigate(returnTo, { replace: true });
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Unable to complete authentication.",
-      );
-    } finally {
-      setBusy(false);
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Enter your email address.');
+      return;
     }
-  };
 
-  const handleSignOut = async () => {
-    setBusy(true);
-    setError(null);
+    if (mode !== 'reset' && password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Your password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
+
+    if (mode === 'signup' && !fullName.trim()) {
+      setError('Enter your full name.');
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
-      await signOut();
-      navigate("/", { replace: true });
+      if (mode === 'reset') {
+        const { error: resetError } = await sendPasswordReset(trimmedEmail);
+        if (resetError) throw new Error(resetError);
+        setNotice(
+          'If that email is registered, a password reset link is on its way.',
+        );
+        return;
+      }
+
+      if (mode === 'signin') {
+        const { error: signInError } = await signIn(trimmedEmail, password);
+        if (signInError) throw new Error(signInError);
+        // Navigation is handled by the session effect above.
+        return;
+      }
+
+      const { error: signUpError, needsEmailConfirmation } = await signUp(
+        trimmedEmail,
+        password,
+        fullName,
+        companyName,
+      );
+      if (signUpError) throw new Error(signUpError);
+
+      if (needsEmailConfirmation) {
+        setNotice(
+          'Check your inbox and confirm your email address to finish creating your DigiCon account.',
+        );
+        setPassword('');
+      }
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
-          : "Unable to sign out.",
+          : 'We could not complete that request. Please try again.',
       );
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   };
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-black">
-        <DigiConLogo size="lg" showText={false} />
-        <span className="sr-only">Loading DigiCon authentication.</span>
+      <main
+        className="flex min-h-screen items-center justify-center bg-black"
+        role="status"
+        aria-live="polite"
+      >
+        <Spinner className="h-8 w-8" />
+        <span className="sr-only">Checking your DigiCon session…</span>
       </main>
     );
   }
 
-  if (session) {
-    return (
-      <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-black">
-        <GlassCard variant="thick" className="w-full max-w-md p-8">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-6 w-6 text-digicon-eco" />
-            <div>
-              <h1 className="text-xl font-bold text-white">
-                You are signed in
-              </h1>
-              <p className="text-sm text-white/50">
-                Continue to your DigiCon workspace.
-              </p>
-            </div>
-          </div>
-
-          {error && (
-            <div
-              className="mt-5 flex gap-2 rounded-glass-sm bg-digicon-error/10 p-3 text-sm text-digicon-error"
-              role="alert"
-            >
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <div className="mt-6 grid gap-3">
-            <GlassButton
-              type="button"
-              className="w-full"
-              onClick={() => navigate(returnTo, { replace: true })}
-            >
-              Continue to DigiCon
-            </GlassButton>
-
-            <GlassButton
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => void handleSignOut()}
-              disabled={busy}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </GlassButton>
-          </div>
-        </GlassCard>
-      </main>
-    );
-  }
+  const heading =
+    mode === 'signup'
+      ? 'Create your DigiCon account'
+      : mode === 'reset'
+        ? 'Reset your password'
+        : 'Welcome back';
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-black relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden="true"
-      >
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8">
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-digicon-primary/15 blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-digicon-secondary/15 blur-[120px]" />
       </div>
@@ -250,177 +171,167 @@ export function AuthPage() {
         <div className="mb-8 text-center">
           <button
             type="button"
-            onClick={() => navigate("/")}
-            className="inline-flex"
-            aria-label="Back to DigiCon home"
+            onClick={() => navigate('/')}
+            className="mb-4 inline-flex"
+            aria-label="Back to the DigiCon home page"
           >
             <DigiConLogo size="lg" showText={false} />
           </button>
-
-          <h1 className="mt-4 text-2xl font-bold text-white">
-            {mode === "signup"
-              ? "Create your DigiCon account"
-              : mode === "reset"
-                ? "Reset your password"
-                : "Welcome back"}
-          </h1>
-
+          <h1 className="text-2xl font-bold text-white">{heading}</h1>
           <p className="mt-2 text-sm text-white/50">
-            {mode === "signup"
-              ? "Build your digital identity and start connecting."
-              : mode === "reset"
-                ? "Enter your email and we will send password-reset instructions."
-                : "Sign in to manage your digital cards and connections."}
+            {mode === 'reset'
+              ? 'We will email you a secure link to choose a new password.'
+              : 'Digital business cards and CRM for SMEs and startups.'}
           </p>
         </div>
 
         <GlassCard variant="thick" className="p-8">
-          <div className="mb-6 flex items-start gap-3 rounded-glass-sm border border-white/10 bg-white/5 p-4">
-            <ShieldCheck className="h-5 w-5 shrink-0 text-digicon-primary" />
-            <p className="text-xs leading-5 text-white/55">
-              Authentication is handled by Supabase Auth. No Auth0 provider or
-              client secret is required by the DigiCon frontend.
-            </p>
-          </div>
-
-          {(message || error) && (
-            <div
-              className={`mb-5 flex gap-2 rounded-glass-sm p-3 text-sm ${
-                error
-                  ? "bg-digicon-error/10 text-digicon-error"
-                  : "bg-digicon-eco/10 text-digicon-eco"
-              }`}
-              role={error ? "alert" : "status"}
-            >
-              {error ? (
-                <AlertCircle className="h-4 w-4 shrink-0" />
-              ) : (
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-              )}
-              <span>{error || message}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "signup" && (
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {mode === 'signup' && (
               <>
                 <div>
-                  <GlassLabel htmlFor="full-name">Full name</GlassLabel>
+                  <GlassLabel htmlFor="auth-full-name">Full name *</GlassLabel>
                   <GlassInput
-                    id="full-name"
+                    id="auth-full-name"
                     autoComplete="name"
-                    required
-                    minLength={2}
                     value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    placeholder="Your full name"
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Juan Dela Cruz"
                   />
                 </div>
-
                 <div>
-                  <GlassLabel htmlFor="company-name">
-                    Company / organization
-                  </GlassLabel>
+                  <GlassLabel htmlFor="auth-company">Company</GlassLabel>
                   <GlassInput
-                    id="company-name"
+                    id="auth-company"
                     autoComplete="organization"
                     value={companyName}
-                    onChange={(event) => setCompanyName(event.target.value)}
-                    placeholder="Optional"
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Your company"
                   />
                 </div>
               </>
             )}
 
             <div>
-              <GlassLabel htmlFor="email">Email</GlassLabel>
+              <GlassLabel htmlFor="auth-email">Email *</GlassLabel>
               <GlassInput
-                id="email"
+                id="auth-email"
                 type="email"
                 autoComplete="email"
-                required
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
               />
             </div>
 
-            {mode !== "reset" && (
+            {mode !== 'reset' && (
               <div>
-                <GlassLabel htmlFor="password">Password</GlassLabel>
-                <GlassInput
-                  id="password"
-                  type="password"
-                  autoComplete={
-                    mode === "signup" ? "new-password" : "current-password"
-                  }
-                  required
-                  minLength={6}
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="At least 6 characters"
-                />
+                <GlassLabel htmlFor="auth-password">Password *</GlassLabel>
+                <div className="relative">
+                  <GlassInput
+                    id="auth-password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete={
+                      mode === 'signup' ? 'new-password' : 'current-password'
+                    }
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    className="pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/50 hover:text-white"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             )}
 
-            <GlassButton
-              type="submit"
-              className="w-full"
-              disabled={busy}
-            >
-              {mode === "signup" ? (
+            {error && (
+              <div
+                className="flex gap-2 rounded-glass-sm bg-digicon-error/10 p-3 text-sm text-digicon-error"
+                role="alert"
+              >
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {notice && (
+              <div
+                className="flex gap-2 rounded-glass-sm bg-emerald-500/10 p-3 text-sm text-emerald-300"
+                role="status"
+              >
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                <span>{notice}</span>
+              </div>
+            )}
+
+            <GlassButton type="submit" className="w-full" disabled={submitting}>
+              {submitting ? (
+                <Spinner className="mr-2 h-4 w-4" />
+              ) : mode === 'signup' ? (
                 <UserPlus className="mr-2 h-4 w-4" />
-              ) : mode === "reset" ? (
-                <KeyRound className="mr-2 h-4 w-4" />
+              ) : mode === 'reset' ? (
+                <Mail className="mr-2 h-4 w-4" />
               ) : (
                 <LogIn className="mr-2 h-4 w-4" />
               )}
-
-              {busy
-                ? "Please wait…"
-                : mode === "signup"
-                  ? "Create account"
-                  : mode === "reset"
-                    ? "Send reset email"
-                    : "Sign in"}
+              {mode === 'signup'
+                ? 'Create account'
+                : mode === 'reset'
+                  ? 'Send reset link'
+                  : 'Sign in'}
             </GlassButton>
           </form>
 
           <div className="mt-6 space-y-2 text-center text-sm">
-            {mode !== "signup" && (
+            {mode !== 'signin' && (
               <button
                 type="button"
-                onClick={() => changeMode("signup")}
-                className="block w-full text-white/55 hover:text-white"
+                onClick={() => switchMode('signin')}
+                className="text-white/60 underline underline-offset-4 hover:text-white"
               >
-                New to DigiCon? <span className="font-medium">Create an account</span>
+                Already have an account? Sign in
               </button>
             )}
-
-            {mode !== "signin" && (
+            {mode !== 'signup' && (
               <button
                 type="button"
-                onClick={() => changeMode("signin")}
-                className="block w-full text-white/55 hover:text-white"
+                onClick={() => switchMode('signup')}
+                className="block w-full text-white/60 underline underline-offset-4 hover:text-white"
               >
-                Already have an account? <span className="font-medium">Sign in</span>
+                New to DigiCon? Create an account
               </button>
             )}
-
-            {mode === "signin" && (
+            {mode === 'signin' && (
               <button
                 type="button"
-                onClick={() => changeMode("reset")}
-                className="block w-full text-white/40 hover:text-white/70"
+                onClick={() => switchMode('reset')}
+                className="block w-full text-white/40 underline underline-offset-4 hover:text-white"
               >
                 Forgot your password?
               </button>
             )}
+          </div>
+
+          <div className="mt-6 flex items-start gap-3 rounded-glass-sm border border-white/10 bg-white/5 p-4">
+            <ShieldCheck className="h-5 w-5 flex-shrink-0 text-digicon-primary" />
+            <p className="text-xs text-white/60">
+              Credentials are handled by Supabase Auth over TLS and are never
+              stored by the DigiCon browser application.
+            </p>
           </div>
         </GlassCard>
       </div>
     </main>
   );
 }
-
-export default AuthPage;
