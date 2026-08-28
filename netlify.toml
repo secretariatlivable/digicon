@@ -1,41 +1,79 @@
-# DigiCon — Netlify production deployment configuration
-# Vite + React + TypeScript SPA
+# DigiCon — Netlify production deployment configuration.
+# Vite + React + TypeScript SPA.
 
 [build]
   command = "npm run build"
   publish = "dist"
 
-# Netlify should use the repository's Node 24.x-compatible runtime.
 [build.environment]
-  NODE_VERSION = "24.x"
+  # Aligned with package.json engines (">=22.0.0 <25.0.0"). The previous value
+  # of "24.x" was inside that range but pinned to a floating major; 22 is the
+  # active LTS line and matches local development.
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--include=dev"
 
-# React Router / SPA fallback.
-# Static files and real Netlify Functions are excluded from the fallback.
+# ---------------------------------------------------------------------------
+# SPA fallback for React Router.
+# Hashed assets are matched by the more specific rules above this one, so the
+# catch-all only ever serves real application routes.
+# ---------------------------------------------------------------------------
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false
 
-# Long-term caching for Vite-generated static assets.
+# ---------------------------------------------------------------------------
+# Caching
+# ---------------------------------------------------------------------------
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# PWA manifest should be revalidated.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 [[headers]]
   for = "/manifest.json"
   [headers.values]
     Content-Type = "application/manifest+json"
     Cache-Control = "public, max-age=0, must-revalidate"
 
-# Security headers for the application.
+# ---------------------------------------------------------------------------
+# Security headers
+# ---------------------------------------------------------------------------
 [[headers]]
   for = "/*"
   [headers.values]
     X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "SAMEORIGIN"
+    X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Cross-Origin-Opener-Policy = "same-origin"
+
+    # Content-Security-Policy was absent entirely. This policy allows only the
+    # third parties the application actually loads:
+    #   - Supabase   REST, Realtime (wss), Storage, Edge Functions
+    #   - PayPal     Checkout SDK + its iframe
+    #   - Secure Privacy  consent banner in index.html
+    #
+    # 'unsafe-inline' remains on style-src because Tailwind and the card
+    # builder set inline style attributes for user-chosen colours. Replace the
+    # Supabase wildcard with your own project ref to tighten this further.
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' https://www.paypal.com https://*.paypal.com https://app.secureprivacy.ai;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob: https://*.supabase.co https://*.paypal.com;
+      font-src 'self' data:;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api-m.paypal.com https://www.paypal.com https://*.paypal.com https://app.secureprivacy.ai;
+      frame-src https://www.paypal.com https://*.paypal.com;
+      form-action 'self';
+      base-uri 'self';
+      object-src 'none';
+      frame-ancestors 'none';
+      upgrade-insecure-requests
+      """
