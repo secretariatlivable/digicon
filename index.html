@@ -40,7 +40,7 @@
     <!-- =========================================================
          Theme / Browser UI
          ========================================================= -->
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#050710" />
     <meta name="color-scheme" content="dark light" />
     <meta name="application-name" content="DigiCon" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -60,31 +60,34 @@
     <!-- =========================================================
          Microsoft / Windows
          ========================================================= -->
-    <meta name="msapplication-TileColor" content="#000000" />
+    <meta name="msapplication-TileColor" content="#050710" />
 
-    <meta
-      name="msapplication-TileImage"
-      content="/DigiCon_logo_transparent.jpg"
-    />
+    <meta name="msapplication-TileImage" content="/icon-192.png" />
 
     <!-- =========================================================
          Favicon
          ========================================================= -->
-    <link
-      rel="icon"
-      type="image/jpeg"
-      href="/DigiCon_logo_transparent.jpg"
-    />
-
-    <link
-      rel="apple-touch-icon"
-      href="/DigiCon_logo_transparent.jpg"
-    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
     <!-- =========================================================
          Progressive Web App
          ========================================================= -->
     <link rel="manifest" href="/manifest.json" />
+
+    <!-- =========================================================
+         Performance — the hero banner is the LCP element
+         ========================================================= -->
+    <link
+      rel="preload"
+      as="image"
+      href="/media/banners/hero-1200.jpg"
+      imagesrcset="/media/banners/hero-1200.jpg 1200w, /media/banners/hero-2400.jpg 2400w"
+      imagesizes="100vw"
+      fetchpriority="high"
+    />
 
     <!-- =========================================================
          Canonical URL
@@ -119,15 +122,18 @@
 
     <meta
       property="og:image"
-      content="https://digicon.cards/DigiCon_Banner.png"
+      content="https://digicon.cards/media/og-image.jpg"
     />
+
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <meta
       property="og:image:alt"
-      content="DigiCon digital business cards and CRM platform"
+      content="DigiCon — more than a digital business card. Turn introductions into relationships."
     />
 
-    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:type" content="image/jpeg" />
 
     <!-- =========================================================
          Twitter / X
@@ -146,7 +152,7 @@
 
     <meta
       name="twitter:image"
-      content="https://digicon.cards/DigiCon_Banner.png"
+      content="https://digicon.cards/media/og-image.jpg"
     />
 
     <meta
