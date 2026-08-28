@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
-import { GlassButton } from '@/components/ui/GlassCard';
 import { DigiConLogo } from '@/components/brand/DigiConLogo';
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -154,96 +153,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
 }
 
-export function LandingNav() {
-  const { session } = useAuth();
-  const [lang, setLang] = useLanguage();
-  const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  // The section links are hidden below `md`, and the state backing a mobile
-  // menu existed but was never rendered, so small screens had no way to reach
-  // Features / Pricing / Eco Impact.
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass-header">
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <DigiConLogo size="sm" />
-        </Link>
-
-        <nav className="hidden md:flex items-center gap-1">
-          <a href="#features" className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors">Features</a>
-          <a href="#pricing" className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors">Pricing</a>
-          <a href="#eco" className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors">Eco Impact</a>
-        </nav>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setMobileOpen((open) => !open)}
-            className="md:hidden p-2 rounded-glass-sm text-white/70 hover:text-white hover:bg-white/10"
-            aria-expanded={mobileOpen}
-            aria-controls="landing-mobile-nav"
-            aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setLang(lang === 'en' ? 'fil' : 'en')}
-            className="px-3 py-1.5 rounded-glass-sm text-xs font-medium text-white/70 hover:text-white glass-thin transition-all"
-          >
-            {lang === 'en' ? 'FIL' : 'ENG'}
-          </button>
-          {session ? (
-            <GlassButton size="sm" onClick={() => navigate('/dashboard')}>
-              {translate('nav.dashboard', lang)}
-            </GlassButton>
-          ) : (
-            <>
-              <GlassButton variant="ghost" size="sm" onClick={() => navigate('/auth')} className="hidden sm:flex">
-                {translate('nav.login', lang)}
-              </GlassButton>
-              <GlassButton size="sm" onClick={() => navigate('/auth?mode=signup')}>
-                {translate('nav.getStarted', lang)}
-              </GlassButton>
-            </>
-          )}
-        </div>
-      </div>
-
-      {mobileOpen && (
-        <nav
-          id="landing-mobile-nav"
-          className="md:hidden border-t border-white/10 px-4 pb-4 pt-2"
-        >
-          {[
-            { href: '#features', label: 'Features' },
-            { href: '#pricing', label: 'Pricing' },
-            { href: '#eco', label: 'Eco Impact' },
-          ].map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-glass-sm px-4 py-3 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
-            >
-              {item.label}
-            </a>
-          ))}
-          {!session && (
-            <button
-              type="button"
-              onClick={() => {
-                setMobileOpen(false);
-                navigate('/auth');
-              }}
-              className="block w-full rounded-glass-sm px-4 py-3 text-left text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors sm:hidden"
-            >
-              {translate('nav.login', lang)}
-            </button>
-          )}
-        </nav>
-      )}
-    </header>
-  );
-}
+/**
+ * The landing header now lives in its own module alongside the rest of the
+ * landing navigation (grouped dropdowns, mobile drawer, DigiCon vocabulary).
+ * Re-exported here so any existing import keeps working.
+ */
+export { LandingNav } from '@/components/layout/LandingNav';
