@@ -131,14 +131,6 @@ function normalizeWebsite(value: string) {
     : `https://${trimmed}`;
 }
 
-/**
- * Strips path separators, Windows-reserved characters, and C0 control codes
- * from a value used as a download filename.
- *
- * Control characters are removed with an explicit character-code filter rather
- * than a `\u0000-\u001F` regex range, which trips ESLint's `no-control-regex`
- * rule and is easy to get subtly wrong.
- */
 function safeFileName(value: string) {
   const cleaned = Array.from(value.trim())
     .filter((character) => {
@@ -199,7 +191,7 @@ function CardPreview({
         </div>
 
         <p className="mb-1 text-xs uppercase tracking-[0.2em] text-white/50">
-          DigiCon
+          DigiCon · Digital Connections
         </p>
         <h3
           className={`${large ? "text-3xl" : "text-xl"} font-bold text-white`}
@@ -244,16 +236,9 @@ export function CardsPage() {
   const [walletLoading, setWalletLoading] = useState<"apple" | "google" | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [upgradePrompt, setUpgradePrompt] = useState<EntitlementResult | null>(
-    null,
-  );
+  const [upgradePrompt, setUpgradePrompt] = useState<EntitlementResult | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  /**
-   * Client-side entitlement state. This is a UX affordance only — the
-   * authoritative limits are enforced by database triggers and RLS, so a user
-   * who edits browser state still cannot exceed their plan.
-   */
   const entitlementState = useMemo<EntitlementState>(
     () => ({
       accountType: "startup",
@@ -486,14 +471,14 @@ export function CardsPage() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      // Clipboard permission is optional; the share modal still works.
+      // Clipboard permission is optional.
     }
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: `${card.full_name} | DigiCon`,
-          text: `Connect with ${card.full_name} on DigiCon.`,
+          text: `Connect with ${card.full_name} through DigiCon — Digital Connections.`,
           url,
         });
       } catch {
@@ -501,22 +486,12 @@ export function CardsPage() {
       }
     }
 
-    /*
-     * Server-side atomic increment.
-     *
-     * The previous client-side `share_count + 1` wrote a value derived from
-     * possibly stale local state, so concurrent shares lost updates and the
-     * counter was directly settable by anyone with the REST endpoint. A
-     * BEFORE UPDATE trigger now rejects client writes to `share_count`
-     * outright, so this must go through the RPC.
-     */
     const { error: shareError } = await supabase.rpc(
       "increment_card_share_count",
       { p_card_id: card.id },
     );
 
     if (shareError) {
-      // Non-fatal: the link is already copied and shared. Only the metric lags.
       console.error("DigiCon share count increment failed:", shareError);
     }
   };
@@ -525,7 +500,7 @@ export function CardsPage() {
     const esc = (value: string | null | undefined) =>
       (value || "")
         .replace(/\\/g, "\\\\")
-        .replace(/\n/g, "\\n")
+        .replace(/\r?\n/g, "\\n")
         .replace(/;/g, "\\;")
         .replace(/,/g, "\\,");
 
@@ -557,12 +532,6 @@ export function CardsPage() {
     URL.revokeObjectURL(url);
   };
 
-  /*
-   * NOTE: this was previously named `useWallet`. Any function whose name begins
-   * with `use` is treated as a React Hook, so calling it from an `onClick`
-   * callback violated the Rules of Hooks and failed lint. It is a plain async
-   * event handler, so it is named accordingly.
-   */
   const handleWalletExport = async (
     kind: "apple" | "google",
     card: BusinessCard,
@@ -601,14 +570,14 @@ export function CardsPage() {
       <div className="mx-auto max-w-7xl">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <Badge color="blue">Digital Identity</Badge>
-            <h1 className="mt-3 text-3xl font-bold text-white">My Digital Cards</h1>
+            <Badge color="blue">Digital Connections</Badge>
+            <h1 className="mt-3 text-3xl font-bold text-white">Your Digital Identity</h1>
             <p className="mt-2 max-w-2xl text-white/50">
-              Create once, share everywhere. Every QR code below points to the exact saved card.
+              Create once, share anywhere, and give every introduction a place to become a relationship.
             </p>
           </div>
           <GlassButton onClick={openCreate} size="lg">
-            <Plus className="mr-2 inline h-5 w-5" /> Create Card
+            <Plus className="mr-2 inline h-5 w-5" /> Create Digital Identity
           </GlassButton>
         </header>
 
@@ -622,9 +591,14 @@ export function CardsPage() {
           <GlassCard variant="thick" className="p-4">
             <EmptyState
               icon={<QrCode className="h-8 w-8" />}
-              title="Create your first digital card"
-              description="Add only the details people need to connect with you. Your saved card gets its own permanent DigiCon URL."
-              action={<GlassButton onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Create Card</GlassButton>}
+              title="Start your first Digital Connection"
+              description="Create the identity people will use to connect with you. Your saved identity gets its own permanent DigiCon URL."
+              action={
+                <GlassButton onClick={openCreate}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Digital Identity
+                </GlassButton>
+              }
             />
           </GlassCard>
         ) : (
@@ -657,8 +631,17 @@ export function CardsPage() {
                       >
                         <ExternalLink className="mr-1.5 h-4 w-4" />Open
                       </GlassButton>
-                      <GlassButton size="sm" variant="danger" onClick={() => deleteCard(card)} disabled={deleting === card.id}>
-                        {deleting === card.id ? <Spinner className="mr-1.5 h-4 w-4" /> : <Trash2 className="mr-1.5 h-4 w-4" />}
+                      <GlassButton
+                        size="sm"
+                        variant="danger"
+                        onClick={() => deleteCard(card)}
+                        disabled={deleting === card.id}
+                      >
+                        {deleting === card.id ? (
+                          <Spinner className="mr-1.5 h-4 w-4" />
+                        ) : (
+                          <Trash2 className="mr-1.5 h-4 w-4" />
+                        )}
                         Delete
                       </GlassButton>
                     </div>
@@ -676,93 +659,197 @@ export function CardsPage() {
             <GlassCard variant="thick" className="overflow-hidden">
               <div className="flex items-center justify-between border-b border-white/10 p-5">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-digicon-primary">DigiCon Card</p>
+                  <p className="text-xs uppercase tracking-widest text-digicon-primary">
+                    DigiCon · Digital Connections
+                  </p>
                   <h2 className="mt-1 text-2xl font-bold text-white">
-                    {editingCard ? "Edit your card" : "Create your card"}
+                    {editingCard ? "Refine your digital identity" : "Create your digital identity"}
                   </h2>
                 </div>
-                <button type="button" onClick={() => setShowForm(false)} className="rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white" aria-label="Close">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white"
+                  aria-label="Close"
+                >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               <form onSubmit={saveCard} className="grid gap-6 p-5 lg:grid-cols-[1fr_360px]">
                 <div className="space-y-6">
-                  {error && <div className="rounded-xl border border-digicon-error/30 bg-digicon-error/10 p-3 text-sm text-digicon-error">{error}</div>}
+                  {error && (
+                    <div className="rounded-xl border border-digicon-error/30 bg-digicon-error/10 p-3 text-sm text-digicon-error">
+                      {error}
+                    </div>
+                  )}
 
                   <section>
-                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">Contact details</h3>
+                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
+                      Professional details
+                    </h3>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="sm:col-span-2">
                         <GlassLabel htmlFor="card-full-name">Full name *</GlassLabel>
-                        <GlassInput id="card-full-name" required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Juan Dela Cruz" />
+                        <GlassInput
+                          id="card-full-name"
+                          required
+                          value={form.full_name}
+                          onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                          placeholder="Juan Dela Cruz"
+                        />
                       </div>
                       <div>
                         <GlassLabel htmlFor="card-job-title">Job title</GlassLabel>
-                        <GlassInput id="card-job-title" value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} placeholder="Founder & CEO" />
+                        <GlassInput
+                          id="card-job-title"
+                          value={form.job_title}
+                          onChange={(e) => setForm({ ...form, job_title: e.target.value })}
+                          placeholder="Founder & CEO"
+                        />
                       </div>
                       <div>
                         <GlassLabel htmlFor="card-company">Company</GlassLabel>
-                        <GlassInput id="card-company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="DigiCon" />
+                        <GlassInput
+                          id="card-company"
+                          value={form.company}
+                          onChange={(e) => setForm({ ...form, company: e.target.value })}
+                          placeholder="Your company"
+                        />
                       </div>
                       <div>
                         <GlassLabel htmlFor="card-email">Email</GlassLabel>
-                        <GlassInput id="card-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="hello@example.com" />
+                        <GlassInput
+                          id="card-email"
+                          type="email"
+                          value={form.email}
+                          onChange={(e) => setForm({ ...form, email: e.target.value })}
+                          placeholder="hello@example.com"
+                        />
                       </div>
                       <div>
                         <GlassLabel htmlFor="card-phone">Phone</GlassLabel>
-                        <GlassInput id="card-phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+63 917 123 4567" />
+                        <GlassInput
+                          id="card-phone"
+                          type="tel"
+                          value={form.phone}
+                          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                          placeholder="+63 917 123 4567"
+                        />
                       </div>
                       <div className="sm:col-span-2">
                         <GlassLabel htmlFor="card-website">Website</GlassLabel>
-                        <GlassInput id="card-website" type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="yourcompany.com" />
+                        <GlassInput
+                          id="card-website"
+                          type="url"
+                          value={form.website}
+                          onChange={(e) => setForm({ ...form, website: e.target.value })}
+                          placeholder="yourcompany.com"
+                        />
                       </div>
                       <div className="sm:col-span-2">
                         <GlassLabel htmlFor="card-address">Address</GlassLabel>
-                        <GlassInput id="card-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="City, Philippines" />
+                        <GlassInput
+                          id="card-address"
+                          value={form.address}
+                          onChange={(e) => setForm({ ...form, address: e.target.value })}
+                          placeholder="City, Philippines"
+                        />
                       </div>
                     </div>
                   </section>
 
                   <section>
                     <div className="mb-4 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold uppercase tracking-wider text-white/60">Photo or logo</h3>
-                      {form.photo_url && <Badge color="green"><Check className="h-3 w-3" />Saved</Badge>}
+                      <h3 className="text-sm font-semibold uppercase tracking-wider text-white/60">
+                        Photo or logo
+                      </h3>
+                      {form.photo_url && (
+                        <Badge color="green">
+                          <Check className="h-3 w-3" />Saved
+                        </Badge>
+                      )}
                     </div>
 
-                    <input ref={fileInput} className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadPhoto} />
+                    <input
+                      ref={fileInput}
+                      className="hidden"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={uploadPhoto}
+                    />
 
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                       <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
                         {form.photo_url ? (
-                          <img src={form.photo_url} alt="Card photo preview" className="h-full w-full object-cover" />
+                          <img
+                            src={form.photo_url}
+                            alt="Card photo preview"
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
                           <Camera className="h-8 w-8 text-white/30" />
                         )}
                       </div>
                       <div>
-                        <GlassButton type="button" variant="secondary" disabled={uploading} onClick={() => fileInput.current?.click()}>
-                          {uploading ? <Spinner className="mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
+                        <GlassButton
+                          type="button"
+                          variant="secondary"
+                          disabled={uploading}
+                          onClick={() => fileInput.current?.click()}
+                        >
+                          {uploading ? (
+                            <Spinner className="mr-2 h-4 w-4" />
+                          ) : (
+                            <Upload className="mr-2 h-4 w-4" />
+                          )}
                           {uploading ? "Uploading…" : "Choose photo or logo"}
                         </GlassButton>
-                        <p className="mt-2 text-xs text-white/40">JPG, PNG or WebP · max 5 MB</p>
+                        <p className="mt-2 text-xs text-white/40">
+                          JPG, PNG or WebP · max 5 MB
+                        </p>
                       </div>
                     </div>
                   </section>
 
                   <section>
-                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">Style</h3>
+                    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
+                      Style
+                    </h3>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <GlassLabel htmlFor="card-template">Template</GlassLabel>
-                        <GlassSelect id="card-template" value={form.design_template} onChange={(e) => setForm({ ...form, design_template: e.target.value as DesignTemplate })}>
-                          {Object.entries(TEMPLATE_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
+                        <GlassSelect
+                          id="card-template"
+                          value={form.design_template}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              design_template: e.target.value as DesignTemplate,
+                            })
+                          }
+                        >
+                          {Object.entries(TEMPLATE_META).map(([value, meta]) => (
+                            <option key={value} value={value}>
+                              {meta.label}
+                            </option>
+                          ))}
                         </GlassSelect>
                       </div>
                       <div>
                         <GlassLabel htmlFor="card-font">Font</GlassLabel>
-                        <GlassSelect id="card-font" value={form.font_family} onChange={(e) => setForm({ ...form, font_family: e.target.value })}>
-                          {FONTS.map((font) => <option key={font} value={font}>{font}</option>)}
+                        <GlassSelect
+                          id="card-font"
+                          value={form.font_family}
+                          onChange={(e) =>
+                            setForm({ ...form, font_family: e.target.value })
+                          }
+                        >
+                          {FONTS.map((font) => (
+                            <option key={font} value={font}>
+                              {font}
+                            </option>
+                          ))}
                         </GlassSelect>
                       </div>
                     </div>
@@ -771,29 +858,80 @@ export function CardsPage() {
                       <div>
                         <GlassLabel>Primary color</GlassLabel>
                         <div className="flex flex-wrap gap-2">
-                          {COLORS.map((color) => <button key={color} type="button" aria-label={`Primary color ${color}`} onClick={() => setForm({ ...form, card_color: color })} className={`h-9 w-9 rounded-full border-2 ${form.card_color === color ? "border-white" : "border-white/20"}`} style={{ backgroundColor: color }} />)}
+                          {COLORS.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              aria-label={`Primary color ${color}`}
+                              onClick={() =>
+                                setForm({ ...form, card_color: color })
+                              }
+                              className={`h-9 w-9 rounded-full border-2 ${
+                                form.card_color === color
+                                  ? "border-white"
+                                  : "border-white/20"
+                              }`}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
                         </div>
                       </div>
                       <div>
                         <GlassLabel>Accent color</GlassLabel>
                         <div className="flex flex-wrap gap-2">
-                          {COLORS.map((color) => <button key={color} type="button" aria-label={`Accent color ${color}`} onClick={() => setForm({ ...form, accent_color: color })} className={`h-9 w-9 rounded-full border-2 ${form.accent_color === color ? "border-white" : "border-white/20"}`} style={{ backgroundColor: color }} />)}
+                          {COLORS.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              aria-label={`Accent color ${color}`}
+                              onClick={() =>
+                                setForm({ ...form, accent_color: color })
+                              }
+                              className={`h-9 w-9 rounded-full border-2 ${
+                                form.accent_color === color
+                                  ? "border-white"
+                                  : "border-white/20"
+                              }`}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
                         </div>
                       </div>
                     </div>
                   </section>
 
                   <div className="flex flex-col-reverse gap-3 border-t border-white/10 pt-5 sm:flex-row sm:justify-end">
-                    <GlassButton type="button" variant="ghost" onClick={() => setShowForm(false)} disabled={saving}>Cancel</GlassButton>
-                    <GlassButton type="submit" size="lg" disabled={saving || uploading}>
-                      {saving ? <Spinner className="mr-2 h-4 w-4" /> : <Check className="mr-2 h-4 w-4" />}
-                      {saving ? "Saving…" : editingCard ? "Save changes" : "Create card"}
+                    <GlassButton
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setShowForm(false)}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </GlassButton>
+                    <GlassButton
+                      type="submit"
+                      size="lg"
+                      disabled={saving || uploading}
+                    >
+                      {saving ? (
+                        <Spinner className="mr-2 h-4 w-4" />
+                      ) : (
+                        <Check className="mr-2 h-4 w-4" />
+                      )}
+                      {saving
+                        ? "Saving…"
+                        : editingCard
+                          ? "Save changes"
+                          : "Create Digital Identity"}
                     </GlassButton>
                   </div>
                 </div>
 
                 <aside className="lg:sticky lg:top-6 lg:self-start">
-                  <p className="mb-3 text-xs uppercase tracking-widest text-white/40">Live preview</p>
+                  <p className="mb-3 text-xs uppercase tracking-widest text-white/40">
+                    Live preview
+                  </p>
                   <CardPreview card={form} large />
                 </aside>
               </form>
@@ -807,46 +945,104 @@ export function CardsPage() {
           <GlassCard variant="thick" className="w-full max-w-lg p-6">
             <div className="flex items-start justify-between">
               <div>
-                <Badge color="green"><Check className="h-3 w-3" />Card saved</Badge>
-                <h2 className="mt-3 text-2xl font-bold text-white">Share {shareCard.full_name}</h2>
-                <p className="mt-1 text-sm text-white/50">This QR code resolves directly to this saved card.</p>
+                <Badge color="green">
+                  <Check className="h-3 w-3" />Connection ready
+                </Badge>
+                <h2 className="mt-3 text-2xl font-bold text-white">
+                  Share {shareCard.full_name}
+                </h2>
+                <p className="mt-1 text-sm text-white/50">
+                  Share this identity now. It is the starting point for a DigiCon relationship.
+                </p>
               </div>
-              <button type="button" onClick={() => setShareCard(null)} className="rounded-full p-2 text-white/60 hover:bg-white/10" aria-label="Close share dialog"><X className="h-5 w-5" /></button>
+              <button
+                type="button"
+                onClick={() => setShareCard(null)}
+                className="rounded-full p-2 text-white/60 hover:bg-white/10"
+                aria-label="Close share dialog"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             <div className="mt-6 flex justify-center rounded-3xl bg-white p-5">
-              <QRCodeSVG value={publicCardUrl(shareCard.id)} size={240} level="H" includeMargin />
+              <QRCodeSVG
+                value={publicCardUrl(shareCard.id)}
+                size={240}
+                level="H"
+                includeMargin
+              />
             </div>
 
             <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
-              <code className="min-w-0 flex-1 truncate text-xs text-white/70">{publicCardUrl(shareCard.id)}</code>
+              <code className="min-w-0 flex-1 truncate text-xs text-white/70">
+                {publicCardUrl(shareCard.id)}
+              </code>
               <GlassButton size="sm" onClick={() => void copyShareUrl(shareCard)}>
-                {copied ? <Check className="mr-1.5 h-4 w-4" /> : <Copy className="mr-1.5 h-4 w-4" />}
+                {copied ? (
+                  <Check className="mr-1.5 h-4 w-4" />
+                ) : (
+                  <Copy className="mr-1.5 h-4 w-4" />
+                )}
                 {copied ? "Copied" : "Copy"}
               </GlassButton>
             </div>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <GlassButton variant="secondary" onClick={() => window.open(publicCardUrl(shareCard.id), "_blank", "noopener,noreferrer")}>
-                <ExternalLink className="mr-2 h-4 w-4" />Open card
+              <GlassButton
+                variant="secondary"
+                onClick={() =>
+                  window.open(
+                    publicCardUrl(shareCard.id),
+                    "_blank",
+                    "noopener,noreferrer",
+                  )
+                }
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />Open identity
               </GlassButton>
-              <GlassButton variant="ghost" onClick={() => downloadVCard(shareCard)}>
+              <GlassButton
+                variant="ghost"
+                onClick={() => downloadVCard(shareCard)}
+              >
                 <Download className="mr-2 h-4 w-4" />Download vCard
               </GlassButton>
             </div>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void handleWalletExport("apple", shareCard)}>
-                {walletLoading === "apple" ? <Spinner className="mr-2 h-4 w-4" /> : <Wallet className="mr-2 h-4 w-4" />}
+              <GlassButton
+                variant="ghost"
+                disabled={walletLoading !== null}
+                onClick={() =>
+                  void handleWalletExport("apple", shareCard)
+                }
+              >
+                {walletLoading === "apple" ? (
+                  <Spinner className="mr-2 h-4 w-4" />
+                ) : (
+                  <Wallet className="mr-2 h-4 w-4" />
+                )}
                 Apple Wallet
               </GlassButton>
-              <GlassButton variant="ghost" disabled={walletLoading !== null} onClick={() => void handleWalletExport("google", shareCard)}>
-                {walletLoading === "google" ? <Spinner className="mr-2 h-4 w-4" /> : <Wallet className="mr-2 h-4 w-4" />}
+              <GlassButton
+                variant="ghost"
+                disabled={walletLoading !== null}
+                onClick={() =>
+                  void handleWalletExport("google", shareCard)
+                }
+              >
+                {walletLoading === "google" ? (
+                  <Spinner className="mr-2 h-4 w-4" />
+                ) : (
+                  <Wallet className="mr-2 h-4 w-4" />
+                )}
                 Google Wallet
               </GlassButton>
             </div>
 
-            {walletError && <p className="mt-3 text-sm text-digicon-error">{walletError}</p>}
+            {walletError && (
+              <p className="mt-3 text-sm text-digicon-error">{walletError}</p>
+            )}
           </GlassCard>
         </div>
       )}
@@ -854,10 +1050,10 @@ export function CardsPage() {
       <UpgradeRequiredDialog
         open={upgradePrompt !== null}
         onClose={() => setUpgradePrompt(null)}
-        title="Upgrade required"
+        title="Upgrade when DigiCon becomes essential"
         message={
           upgradePrompt?.message ??
-          "This feature is available on a paid DigiCon plan."
+          "This capability is available on a paid DigiCon plan."
         }
         suggestedPlan={upgradePrompt?.suggestedPlan}
       />

@@ -1,20 +1,20 @@
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  CreditCard,
   BarChart3,
-  Link2,
-  Leaf,
-  UserPlus,
-  ShieldCheck,
-  Globe,
-  ArrowRight,
-  Check,
-  Zap,
-  TrendingUp,
-  Users,
-  QrCode,
-  Handshake,
   CalendarClock,
+  Check,
+  CreditCard,
+  Globe,
+  Handshake,
+  Leaf,
+  Link2,
+  QrCode,
+  ShieldCheck,
+  TrendingUp,
+  UserPlus,
+  Users,
+  Zap,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
@@ -22,7 +22,10 @@ import { GlassButton, GlassCard } from '@/components/ui/GlassCard';
 import { LandingNav } from '@/components/layout/AppLayout';
 import { DigiConLogo } from '@/components/brand/DigiConLogo';
 import { PayPalSubscriptionButton } from '@/components/PayPalSubscriptionButton';
-import { DIGICON_PAYPAL_PLANS, type DigiConPlanId } from '@/config/paypalPlans';
+import {
+  DIGICON_PAYPAL_PLANS,
+  type DigiConPlanId,
+} from '@/config/paypalPlans';
 
 export function LandingPage() {
   const { session } = useAuth();
@@ -31,50 +34,46 @@ export function LandingPage() {
 
   const t = (key: TranslationKey) => translate(key, lang);
 
-  /*
-   * The sixth entry previously repeated `landing.cards.*`, so two cards
-   * rendered identical text AND collided on `key={feature.titleKey}` — a
-   * duplicate React key. Each feature now maps to a distinct capability.
-   *
-   * `landing.crm.*` was deliberately dropped: it advertised "Auto-sync
-   * contacts to CRM", which nothing in the codebase implements, and it framed
-   * DigiCon as a CRM feeder — the category the product is positioned against.
-   */
-  const features = [
+  const features: Array<{
+    icon: typeof CreditCard;
+    titleKey: TranslationKey;
+    descKey: TranslationKey;
+    color: string;
+  }> = [
     {
       icon: CreditCard,
-      titleKey: 'landing.cards.title' as TranslationKey,
-      descKey: 'landing.cards.desc' as TranslationKey,
+      titleKey: 'landing.cards.title',
+      descKey: 'landing.cards.desc',
       color: 'text-digicon-primary',
     },
     {
       icon: Link2,
-      titleKey: 'landing.identity.title' as TranslationKey,
-      descKey: 'landing.identity.desc' as TranslationKey,
+      titleKey: 'landing.identity.title',
+      descKey: 'landing.identity.desc',
       color: 'text-digicon-secondary',
     },
     {
       icon: UserPlus,
-      titleKey: 'landing.capture.title' as TranslationKey,
-      descKey: 'landing.capture.desc' as TranslationKey,
+      titleKey: 'landing.capture.title',
+      descKey: 'landing.capture.desc',
       color: 'text-digicon-accent',
     },
     {
       icon: BarChart3,
-      titleKey: 'landing.analytics.title' as TranslationKey,
-      descKey: 'landing.analytics.desc' as TranslationKey,
+      titleKey: 'landing.analytics.title',
+      descKey: 'landing.analytics.desc',
       color: 'text-digicon-info',
     },
     {
       icon: ShieldCheck,
-      titleKey: 'landing.ownership.title' as TranslationKey,
-      descKey: 'landing.ownership.desc' as TranslationKey,
+      titleKey: 'landing.ownership.title',
+      descKey: 'landing.ownership.desc',
       color: 'text-digicon-eco',
     },
     {
       icon: Globe,
-      titleKey: 'landing.localized.title' as TranslationKey,
-      descKey: 'landing.localized.desc' as TranslationKey,
+      titleKey: 'landing.localized.title',
+      descKey: 'landing.localized.desc',
       color: 'text-digicon-warning',
     },
   ];
@@ -86,32 +85,31 @@ export function LandingPage() {
     descKey: TranslationKey;
     features: readonly string[];
     highlight: boolean;
-    /** Custom-priced plans go through sales, not a subscribe button. */
     selfServe: boolean;
   }> = [
     {
       id: 'starter',
-      nameKey: 'landing.pricing.starter' as TranslationKey,
-      priceKey: 'landing.pricing.starterPrice' as TranslationKey,
-      descKey: 'landing.pricing.starterDesc' as TranslationKey,
+      nameKey: 'landing.pricing.starter',
+      priceKey: 'landing.pricing.starterPrice',
+      descKey: 'landing.pricing.starterDesc',
       features: DIGICON_PAYPAL_PLANS.starter.features,
       selfServe: DIGICON_PAYPAL_PLANS.starter.selfServe,
       highlight: false,
     },
     {
       id: 'growth',
-      nameKey: 'landing.pricing.growth' as TranslationKey,
-      priceKey: 'landing.pricing.growthPrice' as TranslationKey,
-      descKey: 'landing.pricing.growthDesc' as TranslationKey,
+      nameKey: 'landing.pricing.growth',
+      priceKey: 'landing.pricing.growthPrice',
+      descKey: 'landing.pricing.growthDesc',
       features: DIGICON_PAYPAL_PLANS.growth.features,
       selfServe: DIGICON_PAYPAL_PLANS.growth.selfServe,
       highlight: true,
     },
     {
       id: 'enterprise',
-      nameKey: 'landing.pricing.enterprise' as TranslationKey,
-      priceKey: 'landing.pricing.enterprisePrice' as TranslationKey,
-      descKey: 'landing.pricing.enterpriseDesc' as TranslationKey,
+      nameKey: 'landing.pricing.enterprise',
+      priceKey: 'landing.pricing.enterprisePrice',
+      descKey: 'landing.pricing.enterpriseDesc',
       features: DIGICON_PAYPAL_PLANS.enterprise.features,
       selfServe: DIGICON_PAYPAL_PLANS.enterprise.selfServe,
       highlight: false,
@@ -133,31 +131,27 @@ export function LandingPage() {
     <div className="min-h-screen relative">
       <LandingNav />
 
-      {/* Full-width banner */}
       <section
-        aria-label="DigiCon introduction"
+        aria-label="DigiCon — Digital Connections"
         className="relative w-full overflow-hidden"
       >
         <img
           src="/DigiCon_Banner.png"
-          alt="DigiCon digital business cards, CRM automation, and analytics platform for Philippine SMEs and startups"
+          alt="DigiCon — Digital Connections for professionals, founders, and growing organizations"
           className="w-full h-auto block"
         />
       </section>
 
-      {/* Hero */}
       <section className="relative pt-20 pb-20 px-4 lg:px-8 overflow-hidden">
         <div
           className="absolute inset-0 overflow-hidden pointer-events-none"
           aria-hidden="true"
         >
           <div className="absolute top-20 left-1/4 w-96 h-96 bg-digicon-primary/20 rounded-full blur-[120px] animate-pulse" />
-
           <div
             className="absolute top-40 right-1/4 w-96 h-96 bg-digicon-secondary/20 rounded-full blur-[120px] animate-pulse"
             style={{ animationDelay: '1s' }}
           />
-
           <div
             className="absolute bottom-0 left-1/2 w-96 h-96 bg-digicon-eco/15 rounded-full blur-[120px] animate-pulse"
             style={{ animationDelay: '2s' }}
@@ -166,8 +160,13 @@ export function LandingPage() {
 
         <div className="relative max-w-6xl mx-auto text-center">
           <div className="hero-kicker inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 animate-fade-in-down">
-            <Handshake className="w-4 h-4 text-digicon-primary" aria-hidden="true" />
-            <span className="text-sm font-medium">{t('landing.kicker')}</span>
+            <Handshake
+              className="w-4 h-4 text-digicon-primary"
+              aria-hidden="true"
+            />
+            <span className="text-sm font-medium">
+              {t('landing.kicker')}
+            </span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 animate-fade-in-up leading-tight tracking-tight">
@@ -191,15 +190,21 @@ export function LandingPage() {
           >
             <GlassButton size="lg" onClick={handlePrimaryCTA}>
               {t('landing.hero.ctaPrimary')}
-              <ArrowRight className="inline ml-2 w-5 h-5" aria-hidden="true" />
+              <ArrowRight
+                className="inline ml-2 w-5 h-5"
+                aria-hidden="true"
+              />
             </GlassButton>
 
-            <GlassButton variant="ghost" size="lg" onClick={scrollToFeatures}>
+            <GlassButton
+              variant="ghost"
+              size="lg"
+              onClick={scrollToFeatures}
+            >
               {t('landing.hero.ctaSecondary')}
             </GlassButton>
           </div>
 
-          {/* How it works */}
           <div
             className="mt-16 animate-fade-in-up"
             style={{ animationDelay: '0.3s' }}
@@ -229,7 +234,10 @@ export function LandingPage() {
                   descKey: 'landing.how.s3d' as TranslationKey,
                 },
               ].map((step, index) => (
-                <li key={step.titleKey} className="glass-thin rounded-glass-lg p-5">
+                <li
+                  key={step.titleKey}
+                  className="glass-thin rounded-glass-lg p-5"
+                >
                   <div className="flex items-center gap-2 mb-3">
                     <span className="w-6 h-6 rounded-full bg-digicon-primary/20 text-digicon-primary text-xs font-bold flex items-center justify-center">
                       {index + 1}
@@ -252,7 +260,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Dual value proposition */}
       <section className="px-4 lg:px-8 py-16 max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-6">
           <GlassCard
@@ -262,29 +269,19 @@ export function LandingPage() {
             <div className="w-14 h-14 rounded-glass-lg glass-chrome flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
               <Zap className="w-7 h-7 text-digicon-warning" />
             </div>
-
             <h2 className="text-2xl font-bold text-white mb-3">
               {t('landing.startups.title')}
             </h2>
-
             <p className="text-white/60 mb-4">
               {t('landing.startups.desc')}
             </p>
-
             <ul className="space-y-2">
-              {/*
-                * "QR + NFC sharing" was removed: NFC appears nowhere in the
-                * codebase. Advertising an unbuilt capability on the pricing
-                * page is a refund conversation waiting to happen.
-                */}
-              {(
-                [
-                  'landing.startups.b1',
-                  'landing.startups.b2',
-                  'landing.startups.b3',
-                  'landing.startups.b4',
-                ] as TranslationKey[]
-              ).map((item) => (
+              {([
+                'landing.startups.b1',
+                'landing.startups.b2',
+                'landing.startups.b3',
+                'landing.startups.b4',
+              ] as TranslationKey[]).map((item) => (
                 <li
                   key={item}
                   className="flex items-center gap-2 text-sm text-white/70"
@@ -306,30 +303,19 @@ export function LandingPage() {
             <div className="w-14 h-14 rounded-glass-lg glass-chrome flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
               <TrendingUp className="w-7 h-7 text-digicon-secondary" />
             </div>
-
             <h2 className="text-2xl font-bold text-white mb-3">
               {t('landing.smes.title')}
             </h2>
-
             <p className="text-white/60 mb-4">
               {t('landing.smes.desc')}
             </p>
-
             <ul className="space-y-2">
-              {/*
-                * "HubSpot CRM sync" was removed: there is no HubSpot
-                * integration, and the claim positioned DigiCon as a feeder
-                * into someone else's CRM rather than the relationship layer
-                * it is meant to be.
-                */}
-              {(
-                [
-                  'landing.smes.b1',
-                  'landing.smes.b2',
-                  'landing.smes.b3',
-                  'landing.smes.b4',
-                ] as TranslationKey[]
-              ).map((item) => (
+              {([
+                'landing.smes.b1',
+                'landing.smes.b2',
+                'landing.smes.b3',
+                'landing.smes.b4',
+              ] as TranslationKey[]).map((item) => (
                 <li
                   key={item}
                   className="flex items-center gap-2 text-sm text-white/70"
@@ -346,7 +332,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Community visual */}
       <section className="px-4 lg:px-8 py-16 max-w-6xl mx-auto">
         <GlassCard
           variant="thick"
@@ -355,10 +340,9 @@ export function LandingPage() {
           <div className="relative min-h-64">
             <img
               src="/networking.png"
-              alt="Connected community members sharing digital networks"
+              alt="Connected professionals building relationships"
               className="absolute inset-0 w-full h-full object-cover"
             />
-
             <div
               className="absolute inset-0 bg-gradient-to-r from-transparent to-black/50"
               aria-hidden="true"
@@ -372,26 +356,22 @@ export function LandingPage() {
               aria-hidden="true"
               className="absolute inset-0 w-full h-full object-cover opacity-10"
             />
-
             <div className="relative">
               <div className="inline-flex items-center gap-2 text-digicon-info text-sm font-medium mb-4">
                 <Users className="w-4 h-4" aria-hidden="true" />
-                {t('landing.community.kicker')}
+                {t('landing.features.title')}
               </div>
-
               <h2 className="text-3xl font-bold text-white mb-4">
-                {t('landing.community.title')}
+                {t('landing.cta.title')}
               </h2>
-
               <p className="text-white/60 leading-relaxed">
-                {t('landing.community.desc')}
+                {t('landing.features.sub')}
               </p>
             </div>
           </div>
         </GlassCard>
       </section>
 
-      {/* Features */}
       <section
         id="features"
         className="px-4 lg:px-8 py-16 max-w-6xl mx-auto scroll-mt-24"
@@ -399,7 +379,6 @@ export function LandingPage() {
         <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
           {t('landing.features.title')}
         </h2>
-
         <p className="text-white/50 text-center mb-12 max-w-2xl mx-auto">
           {t('landing.features.sub')}
         </p>
@@ -418,11 +397,9 @@ export function LandingPage() {
                   aria-hidden="true"
                 />
               </div>
-
               <h3 className="text-lg font-semibold text-white mb-2">
                 {t(feature.titleKey)}
               </h3>
-
               <p className="text-sm text-white/50">
                 {t(feature.descKey)}
               </p>
@@ -431,8 +408,10 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Eco impact */}
-      <section id="eco" className="px-4 lg:px-8 py-16 max-w-5xl mx-auto scroll-mt-24">
+      <section
+        id="eco"
+        className="px-4 lg:px-8 py-16 max-w-5xl mx-auto scroll-mt-24"
+      >
         <GlassCard
           variant="thick"
           className="p-8 md:p-12 text-center relative overflow-hidden"
@@ -441,25 +420,31 @@ export function LandingPage() {
             className="absolute top-0 right-0 w-64 h-64 bg-digicon-eco/20 rounded-full blur-[100px]"
             aria-hidden="true"
           />
-
           <Leaf
             className="w-16 h-16 text-digicon-eco mx-auto mb-6 relative"
             aria-hidden="true"
           />
-
           <h2 className="text-3xl font-bold text-white mb-4 relative">
             {t('landing.eco.sectionTitle')}
           </h2>
-
           <p className="text-white/60 max-w-2xl mx-auto mb-8 relative">
             {t('landing.eco.sectionDesc')}
           </p>
 
           <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto relative">
             {[
-              { value: '500cm²', labelKey: 'landing.eco.statPaper' as TranslationKey },
-              { value: '0.02kg', labelKey: 'landing.eco.statCo2' as TranslationKey },
-              { value: '17', labelKey: 'landing.eco.statTree' as TranslationKey },
+              {
+                value: '500cm²',
+                labelKey: 'landing.eco.statPaper' as TranslationKey,
+              },
+              {
+                value: '0.02kg',
+                labelKey: 'landing.eco.statCo2' as TranslationKey,
+              },
+              {
+                value: '17',
+                labelKey: 'landing.eco.statTree' as TranslationKey,
+              },
             ].map((stat) => (
               <div
                 key={stat.labelKey}
@@ -468,14 +453,15 @@ export function LandingPage() {
                 <p className="text-2xl font-bold text-digicon-eco">
                   {stat.value}
                 </p>
-                <p className="text-xs text-white/50 mt-1">{t(stat.labelKey)}</p>
+                <p className="text-xs text-white/50 mt-1">
+                  {t(stat.labelKey)}
+                </p>
               </div>
             ))}
           </div>
         </GlassCard>
       </section>
 
-      {/* Pricing */}
       <section
         id="pricing"
         className="px-4 lg:px-8 py-16 max-w-6xl mx-auto scroll-mt-24"
@@ -483,7 +469,6 @@ export function LandingPage() {
         <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
           {t('landing.pricing.title')}
         </h2>
-
         <p className="text-white/50 text-center mb-12 max-w-2xl mx-auto">
           {t('landing.pricing.sub')}
         </p>
@@ -511,7 +496,6 @@ export function LandingPage() {
 
               <p className="text-3xl font-bold text-white mb-1">
                 {t(plan.priceKey)}
-
                 {plan.priceKey !== 'landing.pricing.enterprisePrice' && (
                   <span className="text-sm font-normal text-white/50">
                     /mo
@@ -557,7 +541,6 @@ export function LandingPage() {
                         );
                       }}
                     />
-
                     <GlassButton
                       variant="ghost"
                       className="w-full"
@@ -570,7 +553,9 @@ export function LandingPage() {
                   <GlassButton
                     variant="ghost"
                     className="w-full"
-                    onClick={() => navigate('/auth?mode=signup&plan=enterprise')}
+                    onClick={() =>
+                      navigate('/auth?mode=signup&plan=enterprise')
+                    }
                   >
                     {t('landing.pricing.enterpriseCta')}
                     <ArrowRight
@@ -585,7 +570,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Final CTA */}
       <section className="px-4 lg:px-8 py-16 max-w-4xl mx-auto">
         <GlassCard
           variant="chrome"
@@ -595,33 +579,31 @@ export function LandingPage() {
             className="absolute inset-0 bg-gradient-to-br from-digicon-primary/10 via-transparent to-digicon-eco/10"
             aria-hidden="true"
           />
-
           <img
             src="/DigiCon_logo_transparent.jpg"
-            alt="DigiCon logo"
+            alt="DigiCon — Digital Connections"
             className="w-16 h-16 rounded-full mx-auto mb-6 relative ring-1 ring-white/10"
           />
-
           <h2 className="text-3xl font-bold text-white mb-4 relative">
             {t('landing.cta.title')}
           </h2>
-
           <p className="text-white/60 mb-8 relative">
             {t('landing.cta.desc')}
           </p>
-
           <GlassButton
             size="lg"
             onClick={handlePrimaryCTA}
             className="relative"
           >
             {t('landing.cta.button')}
-            <ArrowRight className="inline ml-2 w-5 h-5" aria-hidden="true" />
+            <ArrowRight
+              className="inline ml-2 w-5 h-5"
+              aria-hidden="true"
+            />
           </GlassButton>
         </GlassCard>
       </section>
 
-      {/* Footer */}
       <footer className="px-4 lg:px-8 py-12 border-t border-white/5">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -641,14 +623,12 @@ export function LandingPage() {
             >
               {t('landing.footer.signin')}
             </Link>
-
             <a
               href="#features"
               className="hover:text-white transition-colors"
             >
               {t('landing.footer.features')}
             </a>
-
             <a
               href="#pricing"
               className="hover:text-white transition-colors"
