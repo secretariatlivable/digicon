@@ -1,2 +1,41 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Build output
+# `dist/` was previously committed. The tracked bundle carried a baked-in
+# Supabase project URL and anon key, and drifted out of sync with src/.
+dist/
+dist-ssr/
+build/
+*.local
+
+# Environment — never commit real credentials
 .env
+.env.*
+!.env.example
+
+# Supabase local state
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Test / cache
+coverage/
+.eslintcache
+.vite/
