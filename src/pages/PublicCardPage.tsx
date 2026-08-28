@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
   ExternalLink,
   Mail,
@@ -13,6 +14,7 @@ import { Link, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase, type PublicBusinessCard } from "@/lib/supabase";
 import { GlassButton, GlassCard, GlassInput, GlassLabel, Spinner } from "@/components/ui/GlassCard";
+import { DigiConLogo } from "@/components/brand/DigiConLogo";
 
 const PUBLIC_ORIGIN =
   (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined)?.trim().replace(/\/$/, "") ||
@@ -198,16 +200,19 @@ export function PublicCardPage() {
 
   if (notFound || !card) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-black px-4">
-        <GlassCard variant="thick" className="w-full max-w-md p-8 text-center">
-          <h1 className="text-2xl font-bold text-white">Card cannot be found</h1>
+      <main id="main" className="flex min-h-screen items-center justify-center bg-black px-4">
+        <div className="metal w-full max-w-md p-8 text-center">
+          <h1 className="text-2xl font-bold text-white">This card isn&rsquo;t available</h1>
           <p className="mt-3 text-white/50">
-            This DigiCon card may have been deleted, deactivated, or the link is invalid.
+            It may have been deactivated, or the link may be incomplete.
           </p>
           <Link to="/" className="mt-6 inline-block">
-            <GlassButton><ArrowLeft className="mr-2 h-4 w-4" />Back to DigiCon</GlassButton>
+            <GlassButton>
+              <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+              Create your own DigiCon
+            </GlassButton>
           </Link>
-        </GlassCard>
+        </div>
       </main>
     );
   }
@@ -215,11 +220,19 @@ export function PublicCardPage() {
   const url = publicCardUrl(card.id);
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8 text-white">
-      <div className="mx-auto max-w-5xl">
+    <main id="main" className="relative min-h-screen bg-black px-4 py-8 text-white">
+      {/* ambient wash picked up from the card owner's own colour */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute left-1/2 top-0 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full blur-[130px]"
+          style={{ backgroundColor: `${card.card_color || "#007AFF"}33` }}
+        />
+      </div>
+
+      <div className="relative mx-auto max-w-5xl">
         <div className="mb-5 flex items-center justify-between">
-          <Link to="/" className="text-sm text-white/50 hover:text-white">
-            DigiCon
+          <Link to="/" aria-label="DigiCon home">
+            <DigiConLogo size="sm" />
           </Link>
           <GlassButton size="sm" variant="ghost" onClick={() => void shareCard()}>
             {saved ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
@@ -234,7 +247,12 @@ export function PublicCardPage() {
               background: `linear-gradient(135deg, ${card.card_color || "#007AFF"}, ${card.accent_color || "#5856D6"})`,
             }}
           >
-            <GlassCard variant="thick" className="overflow-hidden bg-transparent">
+            <GlassCard variant="thick" className="relative overflow-hidden bg-transparent">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-40"
+                style={{ background: "var(--metal-sheen)" }}
+                aria-hidden="true"
+              />
             <div className="p-7 sm:p-10">
               <div className="flex justify-end">
                 {card.photo_url ? (
@@ -259,8 +277,14 @@ export function PublicCardPage() {
               </div>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <GlassButton onClick={downloadVCard}><UserPlus className="mr-2 h-4 w-4" />Save contact</GlassButton>
-                <GlassButton variant="ghost" onClick={() => void shareCard()}><Share2 className="mr-2 h-4 w-4" />Share card</GlassButton>
+                <GlassButton onClick={downloadVCard}>
+                  <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Save my card
+                </GlassButton>
+                <GlassButton variant="ghost" onClick={() => void shareCard()}>
+                  <Share2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Pass it on
+                </GlassButton>
               </div>
             </div>
             </GlassCard>
@@ -271,9 +295,12 @@ export function PublicCardPage() {
               <QRCodeSVG value={url} size={220} level="H" includeMargin />
             </div>
 
-            <h2 className="mt-6 text-xl font-semibold">Connect with {card.full_name}</h2>
+            <h2 className="mt-6 text-xl font-semibold">
+              Want to share yours?
+            </h2>
             <p className="mt-2 text-sm text-white/50">
-              Scan this card or send your details to the card owner.
+              Optional, and no DigiCon account needed. {card.full_name.split(" ")[0]}{" "}
+              will remember where this started.
             </p>
 
             <form onSubmit={saveContact} className="mt-6 space-y-4">
@@ -290,8 +317,21 @@ export function PublicCardPage() {
                 <GlassInput id="public-phone" type="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} placeholder="+63..." />
               </div>
 
-              {error && <p className="text-sm text-digicon-error">{error}</p>}
-              {saved && <p className="flex items-center gap-2 text-sm text-digicon-eco"><Check className="h-4 w-4" />Saved successfully.</p>}
+              {error && (
+                <p role="alert" className="text-sm text-digicon-error">
+                  {error}
+                </p>
+              )}
+              {saved && (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-center gap-2 text-sm text-digicon-eco"
+                >
+                  <Check className="h-4 w-4" aria-hidden="true" />
+                  You&rsquo;re connected.
+                </p>
+              )}
 
               <GlassButton type="submit" className="w-full" disabled={savingContact}>
                 {savingContact ? <Spinner className="mr-2 h-4 w-4" /> : <Check className="mr-2 h-4 w-4" />}
@@ -300,6 +340,22 @@ export function PublicCardPage() {
             </form>
           </GlassCard>
         </div>
+
+        <Link
+            to="/"
+            className="metal metal-sheen mt-6 flex items-center gap-3 p-4 transition-transform hover:-translate-y-0.5"
+          >
+            <DigiConLogo size="sm" showText={false} />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-white">
+                Create your own DigiCon
+              </span>
+              <span className="block text-xs text-white/45">
+                Turn introductions into relationships.
+              </span>
+            </span>
+            <ArrowRight className="h-4 w-4 flex-shrink-0 text-digicon-info" aria-hidden="true" />
+        </Link>
       </div>
     </main>
   );
