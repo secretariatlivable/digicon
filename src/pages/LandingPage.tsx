@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Bell, Check, Compass, Contact, Eye, Handshake, Heart, Layers, Lightbulb, Link2,
@@ -26,6 +27,7 @@ import { LandingNav } from '@/components/layout/LandingNav';
 import { MobileAppNav } from '@/components/layout/MobileAppNav';
 import { SiteFooter, VocabularyMarquee } from '@/components/layout/SiteFooter';
 import { scrollToSection } from '@/lib/motion';
+import { useHashLanding } from '@/lib/navigation';
 import {
   AUDIENCES, BIG_IDEA, BRAND, FAQ, FINAL_CTA, GRAPH, HERO, HOW_IT_WORKS, MOVEMENTS,
   PHILOSOPHY, PRIVACY, PROBLEM, SIMPLICITY, VOCABULARY, WHAT_IS, WHY, type Movement,
@@ -439,8 +441,16 @@ export function LandingPage() {
   const navigate = useNavigate();
   const startHref = session ? '/dashboard' : '/auth?mode=signup';
 
+  // Arriving from another route's nav — "/#privacy" — the browser never fires
+  // its native fragment scroll, because React Router owns the URL.
+  const landOnHash = useHashLanding();
+  useEffect(landOnHash, [landOnHash]);
+
   return (
-    <div className="relative min-h-screen has-appnav">
+    /* Art-directed dark: the banners are dark photography in both themes,
+       so the copy set over them stays white rather than following the
+       theme. See the forced-dark block in index.css. */
+    <div className="relative min-h-screen has-appnav" data-force-theme="dark">
       <LandingNav />
 
       <main id="main">
