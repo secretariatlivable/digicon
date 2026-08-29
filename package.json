@@ -13,13 +13,14 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit -p tsconfig.app.json && vite build",
+    "build": "npm run preflight && tsc --noEmit -p tsconfig.app.json && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "type-check": "tsc --noEmit -p tsconfig.app.json",
-    "verify": "npm run typecheck && npm run lint && npm run build"
+    "verify": "npm run preflight && npm run typecheck && npm run lint && npm run build",
+    "preflight": "node scripts/preflight.mjs"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "9.0.0",

@@ -18,6 +18,22 @@ export default {
           steel: '#C9D6E8',
           ink: '#050710',
         },
+
+        /* Semantic, theme-aware surfaces. RGB triplets so Tailwind's
+           <alpha-value> works: bg-surface-1/60, border-line/40, etc.
+           These flip automatically with the .light / .dark class. */
+        surface: {
+          DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
+          1: 'rgb(var(--surface-1) / <alpha-value>)',
+          2: 'rgb(var(--surface-2) / <alpha-value>)',
+        },
+        ink: {
+          DEFAULT: 'rgb(var(--ink) / <alpha-value>)',
+          2: 'rgb(var(--ink-2) / <alpha-value>)',
+          3: 'rgb(var(--ink-3) / <alpha-value>)',
+        },
+        line: 'rgb(var(--line) / <alpha-value>)',
+        field: 'rgb(var(--field) / <alpha-value>)',
         glass: {
           ultraThin: 'rgba(255, 255, 255, 0.04)',
           thin: 'rgba(255, 255, 255, 0.08)',
