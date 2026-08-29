@@ -1,360 +1,289 @@
-/**
- * DigiCon web copy — single source of truth.
- * ==========================================
- * Every string the landing experience renders lives here, so copy can be
- * edited, reviewed or translated without touching layout code. The structure
- * mirrors the approved narrative:
- *
- *   Hero → Problem → Big Idea → What is DigiCon →
- *   Create / Share / Connect / Capture / Manage / Follow Up →
- *   Connection Graph → Audiences → Simplicity → Privacy →
- *   Why → Philosophy → How it works → Final CTA
- *
- * Messaging hierarchy this copy expresses:
- *   CATEGORY   Digital relationship platform
- *   PRODUCT    Professional digital identity + connection capture + lightweight
- *              relationship management
- *   EMOTIONAL  Don't lose the people you meet.
- *   FUNCTIONAL Create, share, capture, remember and follow up — effortlessly.
- *   BRAND      Turn introductions into relationships.
- */
+import type { Accent } from '@/components/ui/Tiles';
 
-import type { BannerName } from '@/components/ui/SectionBanner';
+export type Movement = {
+  id: string;
+  banner: string;
+  kicker: string;
+  title: string;
+  lede: string;
+  body: readonly string[];
+  beats: readonly string[];
+  closer?: string;
+  cta?: string;
+  accent: Accent;
+};
+
+type Audience = {
+  id: 'professionals' | 'teams' | 'organizations';
+  banner: string;
+  kicker: string;
+  title: string;
+  lede: string;
+  body: readonly string[];
+  points: readonly string[];
+  closer: string;
+  cta: string;
+  accent: Accent;
+};
 
 export const BRAND = {
   name: 'DigiCon',
-  tagline: 'More than a digital business card. A better way to build relationships.',
-  category: 'Digital relationship platform',
-  promise: 'Turn introductions into relationships.',
-  philosophyLine:
-    'Every introduction is a possibility. DigiCon helps you remember what happens next.',
+  tagline: 'Digital Connections — your professional identity, connected to your network.',
+  philosophyLine: 'More than a digital business card. A better way to build relationships.',
 } as const;
 
 export const HERO = {
-  eyebrow: 'Identity · Connection · Relationship',
-  titleLead: 'More than a digital business card.',
-  titleAccent: 'Turn introductions into relationships.',
+  eyebrow: 'Digital Connections',
+  titleLead: 'Create connections',
+  titleAccent: 'that last.',
   verses: [
-    'You meet someone once.',
-    'A conversation happens.',
-    'A possibility opens.',
-    'A name is exchanged.',
-    'Then the moment passes.',
+    'People move.',
+    'Meetings end.',
+    'Business cards disappear.',
+    'Relationships should not.',
   ],
-  body:
-    'DigiCon helps you keep the connection alive — giving you a professional digital identity, making every introduction effortless, and helping you remember, manage and follow up with the people who matter.',
-  closer: ['Your card is the beginning.', 'The relationship is the real value.'],
+  body: 'DigiCon turns a professional introduction into a connection you can remember, organize, and follow up on.',
+  closer: ['Your identity is the beginning.', 'Your network is the value.'],
   ctaPrimary: 'Create Your DigiCon',
   ctaSecondary: 'See How It Works',
-  reassurance: 'No complicated setup. No clutter. Just a better way to connect.',
+  reassurance: 'Start with a focused professional identity. No résumé. No unnecessary fields.',
   stats: [
-    { value: 'One', label: 'identity, always ready' },
-    { value: '6 ways', label: 'to make an introduction' },
-    { value: 'Zero', label: 'sign-up to connect with you' },
+    { value: '01', label: 'Digital identity' },
+    { value: '∞', label: 'Connections' },
+    { value: '1', label: 'Relationship layer' },
   ],
 } as const;
 
 export const PROBLEM = {
-  banner: 'problem' as BannerName,
-  kicker: 'The Problem',
-  title: 'We have never been more connected.',
-  titleAccent: 'Yet meaningful connections are easier to lose than ever.',
-  intro: 'A business card can tell someone who you are. But it cannot remember:',
+  banner: 'The problem',
+  kicker: 'Networking is full of moments we lose',
+  title: 'The introduction is easy.',
+  titleAccent: 'Remembering why it mattered is hard.',
+  intro: 'A QR scan can exchange details in seconds. The real failure happens afterward.',
   cannotRemember: [
-    'Where you met.',
-    'What you talked about.',
-    'Why you connected.',
-    'What you promised to do next.',
+    'Who did I meet at that event?',
+    'What were we going to discuss?',
+    'Which person was interested in partnering?',
+    'Who should I follow up with this week?',
   ],
-  after:
-    'And after the event, conference, meeting or introduction, that valuable moment can disappear into a phonebook, spreadsheet, messaging app — or nowhere at all.',
-  pull: 'Networking should not end when the conversation ends.',
-  beliefLead: 'DigiCon was created around a simple belief:',
-  belief: 'Every meaningful introduction deserves a chance to become a meaningful relationship.',
+  after: 'Traditional cards, screenshots, phone contacts, chat threads and spreadsheets scatter the context across places that were never designed to manage relationships.',
+  pull: 'The problem is not exchanging contacts. It is losing the relationship after the handshake.',
+  beliefLead: 'DigiCon believes',
+  belief: 'A valuable connection should become something you can act on.',
 } as const;
 
 export const BIG_IDEA = {
-  banner: 'bigidea' as BannerName,
-  kicker: 'The Big Idea',
-  title: 'A card is a moment.',
-  titleAccent: 'A connection is a journey.',
+  banner: 'The big idea',
+  kicker: 'From identity to relationship',
+  title: 'The card is the entry point.',
+  titleAccent: 'The relationship is the product.',
   body: [
-    'Traditional business cards were designed for exchanging information.',
-    'But relationships are built through memory, context, trust and follow-through.',
-    'DigiCon connects those pieces.',
+    'DigiCon starts with a professional identity because every relationship needs a clear point of introduction.',
+    'Then it follows what happens after the share: connection, context, follow-up, and the network that grows from those interactions.',
   ],
-  steps: [
-    'Create your identity.',
-    'Share it instantly.',
-    'Capture the connection.',
-    'Remember the context.',
-    'Follow up with intention.',
-  ],
-  closerLead: "Because the value of networking isn't how many cards you collect.",
-  closer: "It's what happens after you exchange them.",
+  steps: ['Identity', 'Share', 'Connect', 'Capture', 'Follow Up'],
+  closerLead: 'The outcome we optimize for',
+  closer: 'Never lose a valuable connection again.',
 } as const;
 
 export const WHAT_IS = {
-  banner: 'platform' as BannerName,
-  kicker: 'What is DigiCon?',
-  title: 'Your professional identity, connection memory, and lightweight relationship workspace — in one place.',
+  banner: 'What is DigiCon?',
+  kicker: 'Digital Connections',
+  title: 'Your professional identity, connected to your network.',
   body: [
-    'DigiCon gives you a beautiful digital presence that people can access instantly through QR, link, NFC, email, chat or wallet.',
-    "But it doesn't stop at sharing your information.",
-    'When someone connects with you, DigiCon helps turn that moment into something you can actually build on.',
+    'DigiCon is more than a digital business card. It is the relationship layer around professional networking.',
+    'Create once. Share anywhere. Remember everyone. Grow every connection.',
+    'Your card remains simple while the system becomes more useful as your network grows.',
   ],
-  flowNote: 'A simple flow for something deeply human.',
+  flowNote: 'The experience gets richer after the introduction — not more complicated before it.',
 } as const;
 
-/** The six product movements — each gets its own banner-backed section. */
-export type Movement = {
-  id: string;
-  banner: BannerName;
-  kicker: string;
-  title: string;
-  lede: string;
-  body: string[];
-  /** Short, punchy lines set as a list. */
-  beats: string[];
-  closer?: string;
-  cta?: string;
-  accent: 'primary' | 'info' | 'violet' | 'eco' | 'gold' | 'secondary';
-};
-
-export const MOVEMENTS: Movement[] = [
+export const MOVEMENTS: readonly Movement[] = [
   {
     id: 'create',
-    banner: 'create',
-    kicker: 'Create',
-    title: 'Make your first impression worth remembering.',
-    lede: 'One identity. Always ready.',
+    banner: 'Create',
+    kicker: 'Digital identity',
+    title: 'Build the professional identity people actually need.',
+    lede: 'Simple enough to finish. Strong enough to represent you.',
     body: [
-      'Your professional identity should feel like you — not like a template copied from everyone else.',
-      'Create a polished digital profile containing the information people actually need to know.',
+      'Name, role, company, photo or logo, contact details and the links that matter.',
+      'DigiCon deliberately avoids turning a business card into a résumé. The minimum viable professional identity is the better starting point.',
     ],
-    beats: ['Your name.', 'Your story.', 'Your work.', 'Your links.', 'Your way of connecting.'],
-    cta: 'Create Your Digital Identity',
+    beats: ['Name and professional role', 'Company and contact details', 'Photo or logo', 'Website and relevant links'],
+    closer: 'A card that takes two minutes gets finished.',
     accent: 'violet',
   },
   {
     id: 'share',
-    banner: 'share',
-    kicker: 'Share',
-    title: 'The easiest introduction is the one that gets out of the way.',
-    lede: 'Less friction. More conversation.',
+    banner: 'Share',
+    kicker: 'Effortless introduction',
+    title: 'Share your identity wherever the conversation happens.',
+    lede: 'One card. Multiple ways to introduce yourself.',
     body: [
-      'No fumbling through paper cards. No spelling out long URLs. No searching for your profile.',
-      'Simply share. One tap can open the door to your professional world.',
+      'QR, link, NFC-compatible sharing, messaging, email and Wallet keep the technology in the background.',
+      'The interface should feel like one action: Share Card.',
     ],
-    beats: ['QR.', 'Link.', 'NFC.', 'Email.', 'Chat.', 'Wallet.'],
-    cta: 'Share Your DigiCon',
+    beats: ['QR → your stable card URL', 'Link → open in any browser', 'Wallet → keep your identity ready', 'NFC → tap when the moment calls for it'],
+    closer: 'Technology should disappear into the introduction.',
     accent: 'info',
   },
   {
     id: 'connect',
-    banner: 'connect',
-    kicker: 'Connect',
-    title: "Don't just exchange details. Exchange possibility.",
-    lede: 'Because connection begins when information moves both ways.',
+    banner: 'Connect',
+    kicker: 'Two-way connection',
+    title: 'Turn a one-way card into a two-way exchange.',
+    lede: 'The person you meet should have an easy way to connect back.',
     body: [
-      'Someone scans your card. They see who you are. They choose what they want to share.',
-      'And suddenly, a simple introduction becomes a two-way connection.',
+      'A public card can invite the other person to share their own details without forcing them to create a DigiCon account.',
+      'That turns a scan into the beginning of a relationship record.',
     ],
-    beats: [
-      'They open your identity.',
-      'They save your details.',
-      'They choose to share their own.',
-      'No account required of them.',
-    ],
-    closer: 'DigiCon helps make that transition effortless.',
+    beats: ['Save my contact', 'Share your contact', 'Consent-aware contact exchange', 'Connection captured at the source'],
+    closer: 'A scan is useful. A connection is valuable.',
     accent: 'primary',
   },
   {
     id: 'capture',
-    banner: 'capture',
-    kicker: 'Capture',
-    title: 'The most valuable part of networking is what happens after the handshake.',
-    lede: 'Remember the person — not just the contact.',
+    banner: 'Remember',
+    kicker: 'Relationship context',
+    title: 'Remember the conversation, not just the contact.',
+    lede: 'Context is what makes a connection actionable.',
     body: [
-      'Every connection has context. DigiCon helps you capture those details while they are still meaningful.',
+      'Record where you met, what interested them, what you discussed, and what should happen next.',
+      'DigiCon is designed to make that context feel natural instead of forcing people into a traditional CRM workflow.',
     ],
-    beats: [
-      'Maybe you met at a conference.',
-      'Maybe they mentioned a project.',
-      'Maybe you discovered a shared interest.',
-      'Maybe there is an opportunity worth exploring.',
-    ],
+    beats: ['Where you met', 'Why the connection matters', 'Notes and context', 'Last interaction'],
+    closer: 'Names are data. Context is memory.',
     accent: 'gold',
   },
   {
     id: 'manage',
-    banner: 'manage',
-    kicker: 'Manage',
-    title: 'Your network should feel like a relationship map, not a spreadsheet.',
-    lede: 'Just enough structure to help relationships move forward.',
+    banner: 'Organize',
+    kicker: 'Your network',
+    title: 'Make your network visible and useful.',
+    lede: 'The value compounds when relationships stop living in disconnected tools.',
     body: [
-      "Your contacts shouldn't disappear into an endless list of names.",
-      'DigiCon gives you a lightweight relationship workspace where you can organize connections, capture context and keep track of conversations.',
+      'Organize connections around the people and opportunities that matter instead of forcing every interaction into a sales pipeline.',
+      'The long-term goal is a lightweight relationship workspace for professionals, founders, teams and organizations.',
     ],
-    beats: ['Know who you met.', 'Remember why it mattered.', 'See what comes next.'],
-    closer: 'No bloated CRM. No unnecessary complexity.',
+    beats: ['Connections in one place', 'Statuses and tags', 'Interaction history', 'Portable ownership of your data'],
+    closer: 'Your network is an asset. Make it visible.',
+    cta: 'Build your network',
     accent: 'secondary',
   },
   {
     id: 'followup',
-    banner: 'followup',
-    kicker: 'Follow Up',
-    title: 'A connection becomes valuable when you continue it.',
-    lede: '“Let\'s keep in touch” should mean something.',
+    banner: 'Follow Up',
+    kicker: 'From introduction to action',
+    title: 'Turn “nice meeting you” into what happens next.',
+    lede: 'A relationship becomes valuable when you act on it.',
     body: [
-      "The hardest part of networking isn't meeting people. It's remembering to follow up.",
-      'DigiCon helps you turn good intentions into action.',
+      'See who needs attention, what was promised, and which connections are becoming opportunities.',
+      'DigiCon should help you remember the next action without becoming another complicated enterprise system.',
     ],
-    beats: [
-      'Add notes.',
-      'Remember conversations.',
-      'Track follow-ups.',
-      'Reconnect when the moment is right.',
-    ],
-    cta: 'Start Building Your Network',
+    beats: ['Next action', 'Follow-up status', 'Interaction history', 'Opportunities and referrals'],
+    closer: 'The best networking system is the one you actually use after the event.',
+    cta: 'Start a connection',
     accent: 'eco',
   },
 ];
 
 export const GRAPH = {
-  banner: 'graph' as BannerName,
-  kicker: 'The Connection Graph',
-  title: 'Your network is more than a list of contacts.',
-  titleAccent: "It's a living map of relationships.",
+  banner: 'Your network',
+  kicker: 'Connection graph',
+  title: 'Your network becomes',
+  titleAccent: 'visible.',
   body: [
-    'Every scan tells a story. Every connection adds context. Every interaction creates another point in your professional world.',
-    'Over time, DigiCon can help you see something a conventional business card never could: the shape of your network.',
+    'A thousand names do not necessarily make a valuable network. Meaningful relationships, context and follow-through do.',
+    'DigiCon can grow from a card into a living map of the people, organizations and opportunities around your professional life.',
   ],
   facets: [
-    { title: 'Who you meet', desc: 'The people behind every introduction, held in one place.' },
-    { title: 'Where connections begin', desc: 'The event, the meeting, the moment that started it.' },
-    { title: 'Which relationships grow', desc: 'The threads that keep moving, and the ones going quiet.' },
-    { title: 'Where opportunities emerge', desc: 'The conversations worth returning to next.' },
+    { title: 'People', desc: 'Know who you met and what connects you.' },
+    { title: 'Context', desc: 'Remember where the relationship started.' },
+    { title: 'Momentum', desc: 'See which relationships are moving forward.' },
+    { title: 'Opportunity', desc: 'Turn introductions into partnerships, clients and referrals.' },
   ],
-  closer:
-    'Your network becomes more valuable because it becomes more understandable.',
+  closer: 'The goal is not to collect more contacts. It is to create more possibilities between people.',
 } as const;
 
-export type Audience = {
-  id: string;
-  banner: BannerName;
-  kicker: string;
-  title: string;
-  lede: string;
-  body: string[];
-  points: string[];
-  closer: string;
-  cta: string;
-  accent: 'gold' | 'eco' | 'secondary';
-};
-
-export const AUDIENCES: Audience[] = [
+export const AUDIENCES: readonly Audience[] = [
   {
     id: 'professionals',
-    banner: 'professionals',
-    kicker: 'For Professionals',
-    title: 'Your work is bigger than your job title.',
-    lede: 'For people whose opportunities begin with a conversation.',
+    banner: 'For Professionals',
+    kicker: 'People who build through relationships',
+    title: 'For people whose next opportunity starts with a conversation.',
+    lede: 'Consultants, founders, sales professionals, recruiters, freelancers and independent professionals.',
     body: [
-      'Whether you are an entrepreneur, consultant, freelancer, salesperson, advisor, creator or business development professional, your reputation travels through relationships.',
-      'DigiCon gives that reputation a place to live.',
+      'You meet people everywhere. DigiCon gives those introductions a home and a next step.',
+      'Keep your professional identity ready and your valuable connections from disappearing into chat threads and screenshots.',
     ],
-    points: [
-      'Entrepreneurs and consultants',
-      'Freelancers and creators',
-      'Sales and business development',
-      'Advisors and community leaders',
-    ],
-    closer: 'Your reputation travels through relationships. Give it somewhere to live.',
-    cta: 'Build My Professional Identity',
-    accent: 'gold',
+    points: ['Share in seconds', 'Keep your identity current', 'Capture the context behind connections', 'Follow up when it matters'],
+    closer: 'Your next connection could matter more than you think.',
+    cta: 'Create your identity',
+    accent: 'info',
   },
   {
     id: 'teams',
-    banner: 'teams',
-    kicker: 'For Startups & Teams',
-    title: 'When your people connect, your organization connects.',
-    lede: 'Individual presence. Collective intelligence.',
+    banner: 'For Startups & Teams',
+    kicker: 'A consistent team presence',
+    title: 'Give every team member a professional identity that stays connected.',
+    lede: 'Useful for startups, agencies, sales teams, community teams and growing businesses.',
     body: [
-      'Your team meets customers. Your salespeople meet prospects. Your founders meet partners. Your staff meet communities.',
-      'DigiCon gives every member of your organization a professional identity while giving the organization a more connected view of its network.',
+      'People move. Relationships should not disappear with them.',
+      'DigiCon can help teams create a consistent way to share identity and capture the relationships created through events, partnerships and everyday work.',
     ],
-    points: [
-      'A consistent identity for every team member',
-      'Shared visibility of the network you build together',
-      'Connections captured as they happen, not weeks later',
-      'Onboarding a new colleague takes minutes',
-    ],
-    closer: 'Individual presence. Collective intelligence.',
-    cta: 'Explore Team DigiCon',
-    accent: 'eco',
+    points: ['Consistent team identity', 'Faster introductions', 'Shared relationship context', 'A network that survives organizational change'],
+    closer: 'Your team’s network is an organizational asset.',
+    cta: 'Explore team use',
+    accent: 'violet',
   },
   {
     id: 'organizations',
-    banner: 'organizations',
-    kicker: 'For Organizations',
-    title: 'Turn networking into organizational memory.',
-    lede: "Your organization's network is an asset. Make it visible. Make it useful. Make it last.",
+    banner: 'For Organizations',
+    kicker: 'Relationship infrastructure',
+    title: 'Make the relationships around your organization more visible and useful.',
+    lede: 'For organizations that depend on programs, partnerships, communities and stakeholder networks.',
     body: [
-      "Events end. Projects change. People move. But relationships shouldn't disappear with them.",
-      'DigiCon can help organizations create a more consistent, connected way to manage professional relationships across teams, programs, events and partnerships.',
+      'DigiCon can create a more consistent, connected way to manage professional relationships across teams, programs, events and partnerships.',
+      'The long-term opportunity is organizational memory without turning every relationship into a complicated CRM record.',
     ],
-    points: [
-      'Relationships that survive staff turnover',
-      'A connected view across teams and programs',
-      'Event and partnership networks retained',
-      'Consistent professional presence, org-wide',
-    ],
-    closer: 'Relationships should outlast the people who made them.',
+    points: ['Professional identity at scale', 'Connection capture', 'Relationship context', 'A network that becomes organizational memory'],
+    closer: 'Make it visible. Make it useful. Make it last.',
     cta: 'Talk to DigiCon',
-    accent: 'secondary',
+    accent: 'primary',
   },
 ];
 
 export const SIMPLICITY = {
-  banner: 'simplicity' as BannerName,
-  kicker: 'Simplicity',
-  title: "Powerful doesn't have to mean complicated.",
-  body: [
-    'Most tools keep adding features. DigiCon starts somewhere else:',
-  ],
-  question: 'What do people actually need to build better relationships?',
-  needs: [
-    'A beautiful identity.',
-    'An effortless introduction.',
-    'A remembered connection.',
-    'Useful context.',
-    'A simple way to follow up.',
-  ],
-  thatsIt: "That's it.",
+  banner: 'Simplicity',
+  kicker: 'Powerful does not have to mean complicated',
+  title: 'Start with what people actually need.',
+  body: ['Most tools keep adding features. DigiCon starts with the relationship.'],
+  question: 'What do people need to build better relationships?',
+  needs: ['A beautiful identity.', 'An effortless introduction.', 'A remembered connection.', 'Useful context.', 'A simple way to follow up.'],
+  thatsIt: 'That’s it.',
   closer: ['Technology should disappear into the experience.', 'The relationship should remain.'],
 } as const;
 
 export const PRIVACY = {
-  banner: 'privacy' as BannerName,
-  kicker: 'Privacy & Trust',
-  title: 'Your network belongs to you.',
+  banner: 'Privacy & Trust',
+  kicker: 'Your network belongs to you',
+  title: 'Connect openly. Share intentionally. Stay in control.',
   body: [
-    'Relationships are personal. Your information should never feel like something you have surrendered just to participate.',
+    'Relationships are personal. Your information should never feel like something you surrendered just to participate.',
     'DigiCon is built around transparency and control — helping you decide what you share, what others can see, and how your information is used.',
   ],
   pillars: [
-    { title: 'Connect openly', desc: 'Share your identity with anyone, on any device, without friction.' },
-    { title: 'Share intentionally', desc: 'Field-level visibility and consent on every exchange.' },
-    { title: 'Stay in control', desc: 'Clear settings, transparent analytics, export and deletion.' },
+    { title: 'Share intentionally', desc: 'Put the right information in the right context.' },
+    { title: 'Know what is visible', desc: 'Public-card information should be deliberate and understandable.' },
+    { title: 'Keep control', desc: 'Your identity, your contacts and your data should remain yours.' },
   ],
 } as const;
 
 export const WHY = {
   kicker: 'Why DigiCon?',
-  title: "Because networking isn't about collecting people.",
-  titleAccent: "It's about creating possibilities between people.",
-  lead: "A thousand contacts don't necessarily create a valuable network.",
+  title: 'Networking is not about',
+  titleAccent: 'collecting people.',
+  lead: 'It is about creating possibilities between people.',
   moments: [
     'One meaningful relationship can change a career.',
     'One introduction can create a company.',
@@ -365,97 +294,57 @@ export const WHY = {
 } as const;
 
 export const PHILOSOPHY = {
-  kicker: 'The DigiCon Philosophy',
-  title: "People don't remember business cards.",
-  titleAccent: 'They remember people.',
-  remembered: [
-    'The conversation.',
-    'The idea.',
-    'The kindness.',
-    'The opportunity.',
-    'The person who listened.',
-    'The person who helped.',
-  ],
-  quote: 'I think we should work together.',
-  quoteLead: 'The person who said:',
-  closer: "DigiCon exists to make sure those moments don't disappear.",
+  kicker: 'The DigiCon philosophy',
+  title: 'People do not remember',
+  titleAccent: 'business cards.',
+  remembered: ['The conversation', 'The idea', 'The kindness', 'The opportunity', 'The person who listened', 'The person who helped', 'The person who said “let’s work together.”'],
+  quoteLead: 'What DigiCon exists to protect',
+  quote: 'People remember people.',
+  closer: 'DigiCon exists to make sure the moments that create relationships do not disappear.',
 } as const;
 
 export const HOW_IT_WORKS = {
-  kicker: 'How It Works',
-  title: 'Six steps, and the last one never ends.',
+  kicker: 'How it works',
+  title: 'From identity to relationship.',
   steps: [
-    { step: '01', title: 'Create', desc: 'Build your professional digital identity.' },
-    { step: '02', title: 'Share', desc: 'Exchange your DigiCon through QR, link, NFC, email, chat or wallet.' },
-    { step: '03', title: 'Connect', desc: 'Let people share their details with you.' },
-    { step: '04', title: 'Remember', desc: 'Capture the context behind the connection.' },
-    { step: '05', title: 'Follow Up', desc: 'Turn an introduction into an ongoing relationship.' },
+    { step: '01', title: 'Create', desc: 'Build your focused professional digital identity.' },
+    { step: '02', title: 'Share', desc: 'Exchange it through QR, link, NFC, chat, email or Wallet.' },
+    { step: '03', title: 'Connect', desc: 'Let the person you meet share their details back.' },
+    { step: '04', title: 'Remember', desc: 'Capture the context that makes the connection meaningful.' },
+    { step: '05', title: 'Follow Up', desc: 'Know what should happen next and who needs attention.' },
     { step: '06', title: 'Grow', desc: 'Build a network that becomes more valuable over time.' },
   ],
 } as const;
 
+export const FAQ = [
+  { q: 'Is DigiCon just a digital business card?', a: 'No. The digital card is the entry point. DigiCon is designed to turn introductions into connections, context and follow-up.' },
+  { q: 'Do people need a DigiCon account to view my card?', a: 'No. Your public card is designed to open from a stable link such as digicon.cards/c/{cardId}.' },
+  { q: 'Can I share my card by QR?', a: 'Yes. The QR should point to your canonical public card URL, not to an authentication session or the homepage.' },
+  { q: 'Can I use Apple or Google Wallet?', a: 'DigiCon supports Wallet distribution through its existing Apple and Google Wallet endpoints.' },
+  { q: 'Does DigiCon require a bio?', a: 'No. DigiCon intentionally keeps the professional identity focused. Your card should not become a résumé.' },
+  { q: 'What happens after someone connects with me?', a: 'The product direction is to capture the connection and its context so you can organize it and follow up rather than losing it in a contact list.' },
+] as const;
+
 export const FINAL_CTA = {
-  banner: 'cta' as BannerName,
-  title: "Don't just exchange contacts.",
+  banner: 'The next connection',
+  title: 'Do not just exchange contacts.',
   titleAccent: 'Create connections that last.',
   body: [
-    "The world doesn't need another place to store names.",
+    'The world does not need another place to store names.',
     'It needs better ways for people to remember why they met.',
-    'DigiCon turns the fleeting moment of an introduction into the beginning of something more:',
+    'DigiCon turns the fleeting moment of an introduction into the beginning of something more.',
   ],
-  becomes: ['a conversation.', 'a collaboration.', 'a partnership.', 'an opportunity.', 'a relationship.'],
+  becomes: ['A conversation', 'A collaboration', 'A partnership', 'An opportunity', 'A relationship'],
   kicker: 'Your next connection could matter more than you think.',
   cta: 'Create Your DigiCon',
   signoff: ['More than a digital business card.', 'A better way to build relationships.'],
 } as const;
 
-/**
- * The DigiCon vocabulary.
- *
- * Generic SaaS labels on the left, DigiCon language on the right. This map is
- * the reference the whole product is written against — surfaced on the landing
- * page so the language is visible, and used verbatim in the app navigation.
- */
-export const VOCABULARY: Array<{ generic: string; digicon: string }> = [
-  { generic: 'Create Card', digicon: 'Create Your Identity' },
-  { generic: 'Share Card', digicon: 'Make an Introduction' },
+export const VOCABULARY = [
   { generic: 'Contacts', digicon: 'Connections' },
-  { generic: 'Add Contact', digicon: 'Capture Connection' },
-  { generic: 'Contact Details', digicon: 'Their Details' },
-  { generic: 'Notes', digicon: 'Remember the Moment' },
-  { generic: 'CRM', digicon: 'Relationship Workspace' },
-  { generic: 'Leads', digicon: 'Opportunities' },
-  { generic: 'Analytics', digicon: 'Connection Insights' },
-  { generic: 'Reminders', digicon: 'Follow-Up' },
-  { generic: 'Profile', digicon: 'Professional Identity' },
-  { generic: 'Dashboard', digicon: 'My Network' },
-  { generic: 'Add User', digicon: 'Invite Your Team' },
-  { generic: 'Contact List', digicon: 'Connection Map' },
-];
-
-export const FAQ: Array<{ q: string; a: string }> = [
-  {
-    q: 'How is this different from a digital business card?',
-    a: 'A card is a moment; a connection is a journey. Most digital cards stop at sharing your details. DigiCon captures what happened around the exchange — where you met, what you discussed, what comes next — so the introduction has somewhere to go.',
-  },
-  {
-    q: 'Does the person I meet need a DigiCon account?',
-    a: 'No. They can open your identity, save your details and choose to share their own without signing up for anything. Connection begins when information moves both ways, and that should never require an account.',
-  },
-  {
-    q: 'Is this going to feel like another CRM I have to maintain?',
-    a: 'No. DigiCon asks what you want to remember about a person rather than forcing a pipeline schema on you. The relationship record emerges from networking behaviour instead of being configured up front.',
-  },
-  {
-    q: 'Who owns my connections and my data?',
-    a: 'You do. Your identity, your card, your connections, your notes. You decide what you share, what others can see, and how your information is used — including exporting it or deleting it entirely.',
-  },
-  {
-    q: 'What happens to my QR code if I change jobs?',
-    a: 'Nothing. Your QR points to a stable identity, not to a snapshot. Change your name, role, company, photo, links or design and every code you have ever shared keeps working.',
-  },
-  {
-    q: 'Can I use DigiCon offline?',
-    a: 'Yes. DigiCon installs to your home screen as an app, opens instantly, and keeps working when the signal does not — which is exactly when you tend to be at an event.',
-  },
-];
+  { generic: 'Leads', digicon: 'Relationships' },
+  { generic: 'Pipeline', digicon: 'Follow-up' },
+  { generic: 'Profile', digicon: 'Identity' },
+  { generic: 'CRM', digicon: 'Relationship workspace' },
+  { generic: 'Views', digicon: 'Introductions' },
+] as const;
