@@ -9,7 +9,7 @@
   # Aligned with package.json engines (">=22.0.0 <25.0.0"). The previous value
   # of "24.x" was inside that range but pinned to a floating major; 22 is the
   # active LTS line and matches local development.
-  NODE_VERSION = "22"
+  NODE_VERSION = "24"
   NPM_FLAGS = "--include=dev"
 
 # ---------------------------------------------------------------------------
