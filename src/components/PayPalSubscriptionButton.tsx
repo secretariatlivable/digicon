@@ -25,6 +25,8 @@ type PayPalActions = {
     create: (options: {
       plan_id: string;
       quantity?: number;
+      /** Supabase user id, echoed back on every webhook event. */
+      custom_id?: string;
     }) => Promise<string>;
   };
 };
@@ -255,9 +257,17 @@ export function PayPalSubscriptionButton({
           },
 
           createSubscription: async (_data, actions) => {
+            /*
+             * `custom_id` carries the Supabase user id to PayPal and back out
+             * on every webhook event. Without it, paypal-webhook cannot resolve
+             * an account for a *first* subscription (there is no prior row to
+             * fall back to), so it logs `unresolved_user` and the buyer is
+             * charged without ever receiving the plan.
+             */
             return actions.subscription.create({
               plan_id: plan.paypalPlanId as string,
               quantity: 1,
+              custom_id: session.user.id,
             });
           },
 
