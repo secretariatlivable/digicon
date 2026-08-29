@@ -128,7 +128,7 @@ export function GlassLabel({
   ...props 
 }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
-    <label className={`block text-sm font-medium text-white/70 mb-2 ${className}`} {...props}>
+    <label className={`block text-sm font-medium text-ink-2 mb-2 ${className}`} {...props}>
       {children}
     </label>
   );
@@ -153,7 +153,7 @@ export function Badge({
     orange: 'bg-digicon-warning/20 text-digicon-warning border-digicon-warning/30',
     red: 'bg-digicon-error/20 text-digicon-error border-digicon-error/30',
     purple: 'bg-digicon-secondary/20 text-digicon-secondary border-digicon-secondary/30',
-    gray: 'bg-white/10 text-white/60 border-white/20',
+    gray: 'bg-white/10 text-ink-2 border-white/20',
   };
 
   return (
@@ -194,11 +194,11 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-16 h-16 rounded-glass-xl glass-thin flex items-center justify-center mb-4 text-white/40">
+      <div className="w-16 h-16 rounded-glass-xl glass-thin flex items-center justify-center mb-4 text-ink-3">
         {icon}
       </div>
       <h3 className="text-lg font-semibold text-white/90 mb-2">{title}</h3>
-      <p className="text-white/50 max-w-md mb-6">{description}</p>
+      <p className="text-ink-3 max-w-md mb-6">{description}</p>
       {action}
     </div>
   );
