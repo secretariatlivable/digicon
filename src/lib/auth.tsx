@@ -210,13 +210,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /* -------------------------------------------------------------- */
 
   const value = useMemo<AuthContextType>(() => {
-    const isActiveSubscription = subscription?.status === 'active';
+    /*
+     * Compared case-insensitively on purpose.
+     *
+     * The subscriptions table shipped with an UPPERCASE status constraint in
+     * one migration and a lowercase one in the next, and the second used
+     * CREATE TABLE IF NOT EXISTS — so projects created before the fix still
+     * hold rows like 'ACTIVE'. A strict === comparison read those as inactive
+     * and silently dropped a paying customer to the free tier, which is how a
+     * live Starter subscriber lost wallet passes.
+     *
+     * 20260830000000_normalize_subscription_status.sql repairs the data; this
+     * makes the client resilient regardless of what is already stored.
+     */
+    const normalizedStatus = subscription?.status?.trim().toLowerCase();
+    const isActiveSubscription = normalizedStatus === 'active';
+    const normalizedPlan = subscription?.plan?.trim().toLowerCase() as
+      | PlanId
+      | undefined;
 
     return {
       session,
       profile,
       subscription,
-      plan: isActiveSubscription ? subscription.plan : 'startup',
+      plan: isActiveSubscription && normalizedPlan ? normalizedPlan : 'startup',
       isActiveSubscription,
       loading: !sessionResolved || !accountResolved,
       signIn,
