@@ -1,8 +1,9 @@
 import type { Accent } from '@/components/ui/Tiles';
+import type { BannerName } from '@/components/ui/SectionBanner';
 
 export type Movement = {
   id: string;
-  banner: string;
+  banner: BannerName;
   kicker: string;
   title: string;
   lede: string;
@@ -15,7 +16,7 @@ export type Movement = {
 
 type Audience = {
   id: 'professionals' | 'teams' | 'organizations';
-  banner: string;
+  banner: BannerName;
   kicker: string;
   title: string;
   lede: string;
@@ -55,7 +56,7 @@ export const HERO = {
 } as const;
 
 export const PROBLEM = {
-  banner: 'The problem',
+  banner: 'problem',
   kicker: 'Networking is full of moments we lose',
   title: 'The introduction is easy.',
   titleAccent: 'Remembering why it mattered is hard.',
@@ -73,7 +74,7 @@ export const PROBLEM = {
 } as const;
 
 export const BIG_IDEA = {
-  banner: 'The big idea',
+  banner: 'bigidea',
   kicker: 'From identity to relationship',
   title: 'The card is the entry point.',
   titleAccent: 'The relationship is the product.',
@@ -87,7 +88,7 @@ export const BIG_IDEA = {
 } as const;
 
 export const WHAT_IS = {
-  banner: 'What is DigiCon?',
+  banner: 'platform',
   kicker: 'Digital Connections',
   title: 'Your professional identity, connected to your network.',
   body: [
@@ -101,7 +102,7 @@ export const WHAT_IS = {
 export const MOVEMENTS: readonly Movement[] = [
   {
     id: 'create',
-    banner: 'Create',
+    banner: 'create',
     kicker: 'Digital identity',
     title: 'Build the professional identity people actually need.',
     lede: 'Simple enough to finish. Strong enough to represent you.',
@@ -115,7 +116,7 @@ export const MOVEMENTS: readonly Movement[] = [
   },
   {
     id: 'share',
-    banner: 'Share',
+    banner: 'share',
     kicker: 'Effortless introduction',
     title: 'Share your identity wherever the conversation happens.',
     lede: 'One card. Multiple ways to introduce yourself.',
@@ -129,7 +130,7 @@ export const MOVEMENTS: readonly Movement[] = [
   },
   {
     id: 'connect',
-    banner: 'Connect',
+    banner: 'connect',
     kicker: 'Two-way connection',
     title: 'Turn a one-way card into a two-way exchange.',
     lede: 'The person you meet should have an easy way to connect back.',
@@ -143,7 +144,7 @@ export const MOVEMENTS: readonly Movement[] = [
   },
   {
     id: 'capture',
-    banner: 'Remember',
+    banner: 'capture',
     kicker: 'Relationship context',
     title: 'Remember the conversation, not just the contact.',
     lede: 'Context is what makes a connection actionable.',
@@ -157,7 +158,7 @@ export const MOVEMENTS: readonly Movement[] = [
   },
   {
     id: 'manage',
-    banner: 'Organize',
+    banner: 'manage',
     kicker: 'Your network',
     title: 'Make your network visible and useful.',
     lede: 'The value compounds when relationships stop living in disconnected tools.',
@@ -172,7 +173,7 @@ export const MOVEMENTS: readonly Movement[] = [
   },
   {
     id: 'followup',
-    banner: 'Follow Up',
+    banner: 'followup',
     kicker: 'From introduction to action',
     title: 'Turn “nice meeting you” into what happens next.',
     lede: 'A relationship becomes valuable when you act on it.',
@@ -188,7 +189,7 @@ export const MOVEMENTS: readonly Movement[] = [
 ];
 
 export const GRAPH = {
-  banner: 'Your network',
+  banner: 'graph',
   kicker: 'Connection graph',
   title: 'Your network becomes',
   titleAccent: 'visible.',
@@ -208,7 +209,7 @@ export const GRAPH = {
 export const AUDIENCES: readonly Audience[] = [
   {
     id: 'professionals',
-    banner: 'For Professionals',
+    banner: 'professionals',
     kicker: 'People who build through relationships',
     title: 'For people whose next opportunity starts with a conversation.',
     lede: 'Consultants, founders, sales professionals, recruiters, freelancers and independent professionals.',
@@ -223,7 +224,7 @@ export const AUDIENCES: readonly Audience[] = [
   },
   {
     id: 'teams',
-    banner: 'For Startups & Teams',
+    banner: 'teams',
     kicker: 'A consistent team presence',
     title: 'Give every team member a professional identity that stays connected.',
     lede: 'Useful for startups, agencies, sales teams, community teams and growing businesses.',
@@ -238,7 +239,7 @@ export const AUDIENCES: readonly Audience[] = [
   },
   {
     id: 'organizations',
-    banner: 'For Organizations',
+    banner: 'organizations',
     kicker: 'Relationship infrastructure',
     title: 'Make the relationships around your organization more visible and useful.',
     lede: 'For organizations that depend on programs, partnerships, communities and stakeholder networks.',
@@ -254,7 +255,7 @@ export const AUDIENCES: readonly Audience[] = [
 ];
 
 export const SIMPLICITY = {
-  banner: 'Simplicity',
+  banner: 'simplicity',
   kicker: 'Powerful does not have to mean complicated',
   title: 'Start with what people actually need.',
   body: ['Most tools keep adding features. DigiCon starts with the relationship.'],
@@ -265,7 +266,7 @@ export const SIMPLICITY = {
 } as const;
 
 export const PRIVACY = {
-  banner: 'Privacy & Trust',
+  banner: 'privacy',
   kicker: 'Your network belongs to you',
   title: 'Connect openly. Share intentionally. Stay in control.',
   body: [
@@ -326,7 +327,7 @@ export const FAQ = [
 ] as const;
 
 export const FINAL_CTA = {
-  banner: 'The next connection',
+  banner: 'cta',
   title: 'Do not just exchange contacts.',
   titleAccent: 'Create connections that last.',
   body: [

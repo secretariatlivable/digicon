@@ -194,7 +194,11 @@ export function SiteFooter() {
 }
 
 /** Small marquee of the DigiCon vocabulary, used above the footer. */
-export function VocabularyMarquee({ items }: { items: Array<{ generic: string; digicon: string }> }) {
+export function VocabularyMarquee({
+  items,
+}: {
+  items: ReadonlyArray<{ readonly generic: string; readonly digicon: string }>;
+}) {
   const doubled = [...items, ...items];
   return (
     <div className="relative overflow-hidden border-y border-white/[0.06] py-4" aria-hidden="true">
