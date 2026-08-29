@@ -16,22 +16,21 @@ import {
   Download,
   Edit3,
   ExternalLink,
-  Mail,
-  MapPin,
-  Phone,
   Plus,
   QrCode,
   Share2,
   Trash2,
   Upload,
   Wallet,
-  X,
   Zap,
   Palette,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase, type BusinessCard } from "@/lib/supabase";
 import { addToAppleWallet, addToGoogleWallet } from "@/lib/wallet";
+import { DigiConCard } from "@/components/card/DigiConCard";
+import { Modal } from "@/components/ui/Modal";
+import { Collapsible } from "@/components/ui/Collapsible";
 import {
   checkCreateCardEntitlement,
   checkEditCardEntitlement,
@@ -48,6 +47,7 @@ import {
   GlassInput,
   GlassLabel,
   GlassSelect,
+  GlassTextarea,
   Spinner,
 } from "@/components/ui/GlassCard";
 
@@ -61,6 +61,7 @@ type CardForm = {
   email: string;
   website: string;
   address: string;
+  bio: string;
   card_color: string;
   accent_color: string;
   design_template: DesignTemplate;
@@ -102,6 +103,7 @@ const DEFAULT_FORM: CardForm = {
   email: "",
   website: "",
   address: "",
+  bio: "",
   card_color: "#007AFF",
   accent_color: "#5856D6",
   design_template: "professional",
@@ -145,79 +147,43 @@ function safeFileName(value: string) {
   return cleaned || "digicon-card";
 }
 
+/**
+ * Thin adapter over the shared portrait card.
+ *
+ * The editor preview and the card list previously rendered their own landscape
+ * markup, separate again from the public page — so what you designed was never
+ * quite what your contact saw. All three now render the same component, which
+ * also means the QR and the uploaded photo show up in the preview instead of
+ * appearing for the first time on the public card.
+ */
 function CardPreview({
   card,
   large = false,
+  shareUrl,
 }: {
   card: CardForm | BusinessCard;
   large?: boolean;
+  shareUrl?: string;
 }) {
-  const color = card.card_color || "#007AFF";
-  const accent = card.accent_color || color;
-  const template = (card.design_template || "professional") as DesignTemplate;
-  const photo = card.photo_url || "";
-  const name = card.full_name || "Your Name";
-
   return (
-    <div
-      className="relative overflow-hidden rounded-[28px] border border-white/10 shadow-2xl"
-      style={{
-        background:
-          template === "simple"
-            ? "#1C1C1E"
-            : `linear-gradient(135deg, ${color}, ${
-                template === "futuristic" || template === "custom" ? accent : `${color}dd`
-              })`,
+    <DigiConCard
+      card={{
+        full_name: card.full_name || 'Your name',
+        job_title: card.job_title,
+        company: card.company,
+        bio: card.bio,
+        email: card.email,
+        phone: card.phone,
+        website: card.website,
+        address: card.address,
+        photo_url: card.photo_url,
+        card_color: card.card_color,
+        accent_color: card.accent_color,
       }}
-    >
-      <div className={`${large ? "p-8" : "p-6"} relative z-10`}>
-        <div className="mb-8 flex justify-end">
-          {photo ? (
-            <img
-              src={photo}
-              alt={`${name} profile`}
-              className={`${large ? "h-24 w-24" : "h-16 w-16"} rounded-full object-cover ring-2 ring-white/40`}
-              onError={(event) => {
-                event.currentTarget.style.display = "none";
-              }}
-            />
-          ) : (
-            <div
-              className={`${large ? "h-24 w-24 text-3xl" : "h-16 w-16 text-xl"} flex items-center justify-center rounded-full bg-white/15 font-bold text-white`}
-            >
-              {name.charAt(0).toUpperCase()}
-            </div>
-          )}
-        </div>
-
-        <p className="mb-1 text-xs uppercase tracking-[0.2em] text-white/50">
-          DigiCon · Digital Connections
-        </p>
-        <h3
-          className={`${large ? "text-3xl" : "text-xl"} font-bold text-white`}
-          style={{ fontFamily: card.font_family || "Inter" }}
-        >
-          {name}
-        </h3>
-        {card.job_title && <p className="mt-1 text-white/80">{card.job_title}</p>}
-        {card.company && <p className="text-sm text-white/60">{card.company}</p>}
-
-        <div className="mt-6 space-y-2 text-sm text-white/75">
-          {card.email && (
-            <p className="flex items-center gap-2"><Mail className="h-4 w-4" />{card.email}</p>
-          )}
-          {card.phone && (
-            <p className="flex items-center gap-2"><Phone className="h-4 w-4" />{card.phone}</p>
-          )}
-          {card.website && (
-            <p className="flex items-center gap-2 truncate"><ExternalLink className="h-4 w-4 shrink-0" />{card.website}</p>
-          )}
-          {card.address && (
-            <p className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0" />{card.address}</p>
-          )}
-        </div>
-      </div>
-    </div>
+      shareUrl={shareUrl}
+      variant="preview"
+      className={large ? '' : 'max-w-[19rem]'}
+    />
   );
 }
 
@@ -314,6 +280,7 @@ export function CardsPage() {
       design_template: (card.design_template as DesignTemplate) || "professional",
       font_family: card.font_family || "Inter",
       photo_url: card.photo_url || "",
+      bio: card.bio || "",
     });
     setError(null);
     setShowForm(true);
@@ -355,7 +322,21 @@ export function CardsPage() {
       setForm((current) => ({ ...current, photo_url: data.publicUrl }));
     } catch (cause) {
       console.error("DigiCon photo upload failed:", cause);
-      setError(cause instanceof Error ? cause.message : "Unable to upload photo.");
+      /*
+       * "new row violates row-level security policy" is what Supabase Storage
+       * returns when the `card-photos` bucket or its policies do not exist —
+       * it reads like the upload was forbidden, when in fact there is nothing
+       * to upload into. The bucket is created in
+       * 20260828120000_fix_rls_billing_and_counters.sql.
+       */
+      const raw = cause instanceof Error ? cause.message : "";
+      const bucketMissing =
+        /row-level security|bucket not found|violates row-level/i.test(raw);
+      setError(
+        bucketMissing
+          ? "Photo storage is not set up on this deployment yet. The card-photos bucket and its policies ship in the latest migration — run `supabase db push`, then try again."
+          : raw || "Unable to upload photo.",
+      );
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
@@ -387,6 +368,7 @@ export function CardsPage() {
       website: normalizeWebsite(form.website),
       address: form.address.trim(),
       photo_url: form.photo_url.trim(),
+      bio: form.bio.trim(),
       card_color: form.card_color,
       accent_color: form.accent_color,
       design_template: form.design_template,
@@ -549,7 +531,22 @@ export function CardsPage() {
       if (kind === "apple") await addToAppleWallet(card.id);
       else await addToGoogleWallet(card.id);
     } catch (cause) {
-      setWalletError(cause instanceof Error ? cause.message : "Wallet export failed.");
+      /*
+       * Wallet passes need signing credentials the app cannot see, so a
+       * failure here is almost always configuration rather than anything the
+       * person did. Name the likely cause instead of surfacing a raw error.
+       */
+      const raw = cause instanceof Error ? cause.message : "";
+      const notDeployed = /not found|404|failed to fetch|failed to send/i.test(raw);
+      const notConfigured = /not configured|missing|credential|certificate|issuer/i.test(raw);
+
+      setWalletError(
+        notDeployed
+          ? `The ${kind === "apple" ? "Apple" : "Google"} Wallet function is not deployed on this project yet. Run: supabase functions deploy ${kind}-wallet-pass`
+          : notConfigured
+            ? `${kind === "apple" ? "Apple" : "Google"} Wallet passes need signing credentials set as Supabase secrets before they can be issued. See .env.example for the required keys.`
+            : raw || "Wallet export failed.",
+      );
     } finally {
       setWalletLoading(null);
     }
@@ -609,7 +606,7 @@ export function CardsPage() {
               return (
                 <GlassCard key={card.id} variant="regular" className="overflow-hidden">
                   <div className="p-5">
-                    <CardPreview card={card} />
+                    <CardPreview card={card} shareUrl={publicCardUrl(card.id)} />
                     <div className="mt-5 flex flex-wrap gap-2">
                       <Badge color={card.is_active ? "green" : "gray"}>
                         {card.is_active ? "Active" : "Inactive"}
@@ -653,30 +650,14 @@ export function CardsPage() {
         )}
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 p-4 backdrop-blur-md">
-          <div className="mx-auto max-w-5xl py-8">
-            <GlassCard variant="thick" className="overflow-hidden">
-              <div className="flex items-center justify-between border-b border-white/10 p-5">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-digicon-primary">
-                    DigiCon · Digital Connections
-                  </p>
-                  <h2 className="mt-1 text-2xl font-bold text-white">
-                    {editingCard ? "Refine your digital identity" : "Create your digital identity"}
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <form onSubmit={saveCard} className="grid gap-6 p-5 lg:grid-cols-[1fr_360px]">
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        size="xl"
+        eyebrow="DigiCon · Digital Connections"
+        title={editingCard ? "Refine your digital identity" : "Create your digital identity"}
+      >
+        <form onSubmit={saveCard} className="grid gap-6 lg:grid-cols-[1fr_360px]">
                 <div className="space-y-6">
                   {error && (
                     <div className="rounded-xl border border-digicon-error/30 bg-digicon-error/10 p-3 text-sm text-digicon-error">
@@ -755,6 +736,32 @@ export function CardsPage() {
                           onChange={(e) => setForm({ ...form, address: e.target.value })}
                           placeholder="City, Philippines"
                         />
+                      </div>
+
+                      {/* Optional and folded away by default. A card that takes
+                          two minutes gets finished; one that opens with a blank
+                          essay box does not. It only renders on the card when
+                          it has actually been filled in. */}
+                      <div className="sm:col-span-2">
+                        <Collapsible
+                          dense
+                          defaultOpen={Boolean(form.bio)}
+                          label="Add a line about your work (optional)"
+                        >
+                          <label htmlFor="card-bio" className="sr-only">
+                            A line about your work
+                          </label>
+                          <GlassTextarea
+                            id="card-bio"
+                            value={form.bio}
+                            maxLength={200}
+                            onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                            placeholder="Development Management · Systems Innovation · Community Resilience."
+                          />
+                          <p className="mt-1.5 text-right text-xs text-ink-3">
+                            {form.bio.length}/200
+                          </p>
+                        </Collapsible>
                       </div>
                     </div>
                   </section>
@@ -928,44 +935,80 @@ export function CardsPage() {
                   </div>
                 </div>
 
-                <aside className="lg:sticky lg:top-6 lg:self-start">
-                  <p className="mb-3 text-xs uppercase tracking-widest text-white/40">
+                <aside className="space-y-4 lg:sticky lg:top-2 lg:self-start">
+                  <p className="text-xs uppercase tracking-widest text-ink-3">
                     Live preview
                   </p>
-                  <CardPreview card={form} large />
+                  <CardPreview
+                    card={form}
+                    large
+                    shareUrl={editingCard ? publicCardUrl(editingCard.id) : undefined}
+                  />
+
+                  {/* Wallet passes were only reachable after opening Share, so
+                      most people never found them. An identity you can carry in
+                      Apple/Google Wallet is a headline capability — it belongs
+                      beside the card while you are building it. */}
+                  {editingCard && (
+                    <div className="rounded-glass-lg border border-line/40 bg-surface-2/40 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-ink-3">
+                        Wallet passes
+                      </p>
+                      <p className="mt-1.5 text-xs text-ink-3">
+                        Keep this identity one swipe away on your phone.
+                      </p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <GlassButton
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={walletLoading !== null}
+                          onClick={() => void handleWalletExport("apple", editingCard)}
+                        >
+                          {walletLoading === "apple" ? (
+                            <Spinner className="mr-2 h-4 w-4" />
+                          ) : (
+                            <Wallet className="mr-2 h-4 w-4" aria-hidden="true" />
+                          )}
+                          Apple Wallet
+                        </GlassButton>
+                        <GlassButton
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={walletLoading !== null}
+                          onClick={() => void handleWalletExport("google", editingCard)}
+                        >
+                          {walletLoading === "google" ? (
+                            <Spinner className="mr-2 h-4 w-4" />
+                          ) : (
+                            <Wallet className="mr-2 h-4 w-4" aria-hidden="true" />
+                          )}
+                          Google Wallet
+                        </GlassButton>
+                      </div>
+                      {walletError && (
+                        <p role="alert" className="mt-2 text-xs text-digicon-error">
+                          {walletError}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </aside>
-              </form>
-            </GlassCard>
-          </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {shareCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-md">
-          <GlassCard variant="thick" className="w-full max-w-lg p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <Badge color="green">
-                  <Check className="h-3 w-3" />Connection ready
-                </Badge>
-                <h2 className="mt-3 text-2xl font-bold text-white">
-                  Share {shareCard.full_name}
-                </h2>
-                <p className="mt-1 text-sm text-white/50">
-                  Share this identity now. It is the starting point for a DigiCon relationship.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShareCard(null)}
-                className="rounded-full p-2 text-white/60 hover:bg-white/10"
-                aria-label="Close share dialog"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="mt-6 flex justify-center rounded-3xl bg-white p-5">
+        <Modal
+          open
+          onClose={() => setShareCard(null)}
+          size="sm"
+          eyebrow="Connection ready"
+          title={`Share ${shareCard.full_name}`}
+          description="Share this identity now. It is the starting point for a DigiCon relationship."
+        >
+          <div>
+            <div className="flex justify-center rounded-3xl bg-white p-5">
               <QRCodeSVG
                 value={publicCardUrl(shareCard.id)}
                 size={240}
@@ -1041,10 +1084,12 @@ export function CardsPage() {
             </div>
 
             {walletError && (
-              <p className="mt-3 text-sm text-digicon-error">{walletError}</p>
+              <p role="alert" className="mt-3 text-sm text-digicon-error">
+                {walletError}
+              </p>
             )}
-          </GlassCard>
-        </div>
+          </div>
+        </Modal>
       )}
 
       <UpgradeRequiredDialog

@@ -3,18 +3,14 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  ExternalLink,
-  Mail,
-  MapPin,
-  Phone,
   Share2,
   UserPlus,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
 import { supabase, type PublicBusinessCard } from "@/lib/supabase";
 import { GlassButton, GlassCard, GlassInput, GlassLabel, Spinner } from "@/components/ui/GlassCard";
 import { DigiConLogo } from "@/components/brand/DigiConLogo";
+import { DigiConCard } from "@/components/card/DigiConCard";
 
 const PUBLIC_ORIGIN =
   (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined)?.trim().replace(/\/$/, "") ||
@@ -79,7 +75,22 @@ export function PublicCardPage() {
 
       if (dbError) {
         console.error("Public DigiCon card lookup failed:", dbError);
-        setError("We could not load this card right now.");
+        /*
+         * Distinguish a genuinely missing card from a backend that has not had
+         * its migrations applied. `public_business_cards` is created in
+         * 20260828120000_fix_rls_billing_and_counters.sql; without it Postgres
+         * reports an undefined table (42P01) and the old code showed
+         * "this card may have been deactivated" — sending you to look at the
+         * card when the problem is the database.
+         */
+        const undefinedTable =
+          dbError.code === "42P01" ||
+          /relation .* does not exist/i.test(dbError.message ?? "");
+        setError(
+          undefinedTable
+            ? "This DigiCon deployment is not finished setting up. The public card view is missing — run `supabase db push`."
+            : "We could not load this card right now.",
+        );
         setCard(null);
       } else if (!data) {
         setNotFound(true);
@@ -192,7 +203,7 @@ export function PublicCardPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-black">
+      <main className="flex min-h-screen items-center justify-center bg-surface">
         <Spinner className="h-9 w-9" />
       </main>
     );
@@ -200,10 +211,10 @@ export function PublicCardPage() {
 
   if (notFound || !card) {
     return (
-      <main id="main" className="flex min-h-screen items-center justify-center bg-black px-4">
+      <main id="main" className="flex min-h-screen items-center justify-center bg-surface px-4">
         <div className="metal w-full max-w-md p-8 text-center">
-          <h1 className="text-2xl font-bold text-white">This card isn&rsquo;t available</h1>
-          <p className="mt-3 text-white/50">
+          <h1 className="text-2xl font-bold text-ink">This card isn&rsquo;t available</h1>
+          <p className="mt-3 text-ink-3">
             It may have been deactivated, or the link may be incomplete.
           </p>
           <Link to="/" className="mt-6 inline-block">
@@ -220,7 +231,7 @@ export function PublicCardPage() {
   const url = publicCardUrl(card.id);
 
   return (
-    <main id="main" className="relative min-h-screen bg-black px-4 py-8 text-white">
+    <main id="main" className="relative min-h-screen bg-surface px-4 py-8 text-ink">
       {/* ambient wash picked up from the card owner's own colour */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         <div
@@ -240,43 +251,13 @@ export function PublicCardPage() {
           </GlassButton>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
-          <div
-            className="overflow-hidden rounded-[inherit]"
-            style={{
-              background: `linear-gradient(135deg, ${card.card_color || "#007AFF"}, ${card.accent_color || "#5856D6"})`,
-            }}
-          >
-            <GlassCard variant="thick" className="relative overflow-hidden bg-transparent">
-              <div
-                className="pointer-events-none absolute inset-0 opacity-40"
-                style={{ background: "var(--metal-sheen)" }}
-                aria-hidden="true"
-              />
-            <div className="p-7 sm:p-10">
-              <div className="flex justify-end">
-                {card.photo_url ? (
-                  <img src={card.photo_url} alt={card.full_name} className="h-28 w-28 rounded-full object-cover ring-2 ring-white/50" />
-                ) : (
-                  <div className="flex h-28 w-28 items-center justify-center rounded-full bg-white/15 text-4xl font-bold">
-                    {card.full_name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-
-              <p className="mt-10 text-xs uppercase tracking-[.25em] text-white/50">DigiCon Digital Card</p>
-              <h1 className="mt-2 text-4xl font-bold">{card.full_name}</h1>
-              {card.job_title && <p className="mt-2 text-lg text-white/80">{card.job_title}</p>}
-              {card.company && <p className="text-white/60">{card.company}</p>}
-
-              <div className="mt-8 space-y-3">
-                {card.email && <a className="flex items-center gap-3 text-white/80 hover:text-white" href={`mailto:${card.email}`}><Mail className="h-5 w-5" />{card.email}</a>}
-                {card.phone && <a className="flex items-center gap-3 text-white/80 hover:text-white" href={`tel:${card.phone}`}><Phone className="h-5 w-5" />{card.phone}</a>}
-                {card.website && <a className="flex items-center gap-3 text-white/80 hover:text-white" href={normalizeWebsite(card.website)} target="_blank" rel="noreferrer"><ExternalLink className="h-5 w-5" />Website</a>}
-                {card.address && <p className="flex items-center gap-3 text-white/70"><MapPin className="h-5 w-5" />{card.address}</p>}
-              </div>
-
-              <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mx-auto max-w-md">
+          <DigiConCard
+            card={card}
+            shareUrl={url}
+            variant="live"
+            footer={
+              <div className="grid grid-cols-2 gap-2">
                 <GlassButton onClick={downloadVCard}>
                   <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
                   Save my card
@@ -286,48 +267,34 @@ export function PublicCardPage() {
                   Pass it on
                 </GlassButton>
               </div>
-            </div>
-            </GlassCard>
-          </div>
+            }
+          />
 
-          <GlassCard variant="regular" className="p-6">
-            <div className="flex justify-center rounded-3xl bg-white p-5">
-              <QRCodeSVG value={url} size={220} level="H" includeMargin />
-            </div>
-
-            <h2 className="mt-6 text-xl font-semibold">
-              Want to share yours?
-            </h2>
-            <p className="mt-2 text-sm text-white/50">
+          {/* The reciprocal half — offered after the card, never as a gate */}
+          <GlassCard variant="regular" className="mt-4 p-6">
+            <h2 className="text-lg font-semibold text-ink">Want to share yours?</h2>
+            <p className="mt-1.5 text-sm text-ink-3">
               Optional, and no DigiCon account needed. {card.full_name.split(" ")[0]}{" "}
               will remember where this started.
             </p>
 
-            <form onSubmit={saveContact} className="mt-6 space-y-4">
+            <form onSubmit={saveContact} className="mt-5 space-y-4">
               <div>
                 <GlassLabel htmlFor="public-name">Your name *</GlassLabel>
-                <GlassInput id="public-name" required value={contact.full_name} onChange={(e) => setContact({ ...contact, full_name: e.target.value })} placeholder="Your name" />
+                <GlassInput id="public-name" required autoComplete="name" value={contact.full_name} onChange={(e) => setContact({ ...contact, full_name: e.target.value })} placeholder="Your name" />
               </div>
               <div>
                 <GlassLabel htmlFor="public-email">Your email *</GlassLabel>
-                <GlassInput id="public-email" type="email" required value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} placeholder="you@example.com" />
+                <GlassInput id="public-email" type="email" required autoComplete="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} placeholder="you@example.com" />
               </div>
               <div>
                 <GlassLabel htmlFor="public-phone">Phone</GlassLabel>
-                <GlassInput id="public-phone" type="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} placeholder="+63..." />
+                <GlassInput id="public-phone" type="tel" autoComplete="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} placeholder="+63..." />
               </div>
 
-              {error && (
-                <p role="alert" className="text-sm text-digicon-error">
-                  {error}
-                </p>
-              )}
+              {error && <p role="alert" className="text-sm text-digicon-error">{error}</p>}
               {saved && (
-                <p
-                  role="status"
-                  aria-live="polite"
-                  className="flex items-center gap-2 text-sm text-digicon-eco"
-                >
+                <p role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-digicon-eco">
                   <Check className="h-4 w-4" aria-hidden="true" />
                   You&rsquo;re connected.
                 </p>
@@ -347,10 +314,10 @@ export function PublicCardPage() {
           >
             <DigiConLogo size="sm" showText={false} />
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-white">
+              <span className="block text-sm font-semibold text-ink">
                 Create your own DigiCon
               </span>
-              <span className="block text-xs text-white/45">
+              <span className="block text-xs text-ink-3">
                 Turn introductions into relationships.
               </span>
             </span>

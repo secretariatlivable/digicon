@@ -323,11 +323,15 @@ export function AuthPage() {
             )}
           </div>
 
-          <div className="mt-6 flex items-start gap-3 rounded-glass-sm border border-white/10 bg-white/5 p-4">
-            <ShieldCheck className="h-5 w-5 flex-shrink-0 text-digicon-primary" />
-            <p className="text-xs text-white/60">
-              Credentials are handled by Supabase Auth over TLS and are never
-              stored by the DigiCon browser application.
+          {/* Reassurance a person actually benefits from. The previous copy
+              named our auth vendor and the transport protocol — implementation
+              detail that tells a visitor nothing about their own position, and
+              quietly invites the question "why are you telling me this?". */}
+          <div className="mt-6 flex items-start gap-3 rounded-glass-sm border border-line/40 bg-surface-2/50 p-4">
+            <ShieldCheck className="h-5 w-5 flex-shrink-0 text-digicon-eco" aria-hidden="true" />
+            <p className="text-xs leading-relaxed text-ink-3">
+              Your network belongs to you. You decide what each card shows, who
+              can see it, and you can export or delete everything at any time.
             </p>
           </div>
         </GlassCard>

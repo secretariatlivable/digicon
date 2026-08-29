@@ -7,7 +7,9 @@ import {
 import { useAuth, useLanguage } from '@/lib/auth';
 import { translate, type TranslationKey } from '@/lib/i18n';
 import { PayPalSubscriptionButton } from '@/components/PayPalSubscriptionButton';
+import { StripeCheckoutButton } from '@/components/StripeCheckoutButton';
 import { DIGICON_PAYPAL_PLANS, type DigiConPlanId } from '@/config/paypalPlans';
+import { isStripePlanId } from '@/config/stripePlans';
 import { GlassButton, GlassCard } from '@/components/ui/GlassCard';
 import { Section, SectionHeading, Hl, Pullquote } from '@/components/ui/Section';
 import { SectionBanner } from '@/components/ui/SectionBanner';
@@ -279,13 +281,11 @@ function MovementSection({ item, index }: { item: Movement; index: number }) {
  * from `@/config/paypalPlans` is what actually takes the payment.
  */
 function Pricing() {
-  const { session } = useAuth();
   const navigate = useNavigate();
   const [lang] = useLanguage();
   const t = (key: TranslationKey) => translate(key, lang);
 
-  /* `startup` is the free tier and has no PayPal plan, so the paid ids are
-     narrowed here to match what PayPalSubscriptionButton accepts. */
+  /* `startup` is the free tier and has no billing plan on either rail. */
   const plans: Array<{
     id: Exclude<DigiConPlanId, 'startup'>;
     nameKey: TranslationKey;
@@ -380,6 +380,27 @@ function Pricing() {
               <div className="mt-8 space-y-3">
                 {plan.selfServe ? (
                   <>
+                    {/* Stripe is the primary rail: card, wallet and bank in one
+                        hosted flow. PayPal stays available underneath — both
+                        write to the same `subscriptions` table, so entitlements
+                        are identical whichever the buyer picks. */}
+                    {isStripePlanId(plan.id) && (
+                      <StripeCheckoutButton
+                        planId={plan.id}
+                        onError={(error) => {
+                          console.error('DigiCon Stripe checkout error:', error);
+                        }}
+                      />
+                    )}
+
+                    <div className="flex items-center gap-3 py-1" aria-hidden="true">
+                      <span className="h-px flex-1 bg-white/10" />
+                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/30">
+                        or
+                      </span>
+                      <span className="h-px flex-1 bg-white/10" />
+                    </div>
+
                     <PayPalSubscriptionButton
                       planId={plan.id}
                       onApproved={(subscriptionId) => {
@@ -390,13 +411,6 @@ function Pricing() {
                         console.error('DigiCon PayPal subscription error:', error);
                       }}
                     />
-                    <GlassButton
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => navigate(session ? '/dashboard' : '/auth?mode=signup')}
-                    >
-                      Create Your DigiCon
-                    </GlassButton>
                   </>
                 ) : (
                   <GlassButton
