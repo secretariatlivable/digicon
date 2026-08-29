@@ -145,7 +145,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <div className="w-10" />
         </header>
 
-        <main className="relative z-10 p-4 lg:p-8 max-w-7xl mx-auto">
+        {/* No z-index here: `relative z-10` opened a stacking context that
+            trapped every dialog below the z-40 sidebar. */}
+        <main className="relative p-4 lg:p-8 max-w-7xl mx-auto">
           {children}
         </main>
       </div>
