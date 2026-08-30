@@ -1,4 +1,9 @@
-import { supabase, type BusinessCard, type DigiConCapability } from '@/lib/supabase';
+import {
+  checkServerCapability,
+  supabase,
+  type BusinessCard,
+  type DigiConCapability,
+} from '@/lib/supabase';
 
 export type CardMutationInput = {
   full_name: string;
@@ -20,10 +25,7 @@ export type CardMutationResult =
   | { ok: true; card: BusinessCard }
   | {
       ok: false;
-      code:
-        | 'authentication_required'
-        | 'capability_denied'
-        | 'mutation_failed';
+      code: 'authentication_required' | 'capability_denied' | 'mutation_failed';
       message: string;
     };
 
@@ -47,25 +49,9 @@ async function requireServerCapability(
   capability: DigiConCapability,
   resourceId?: string,
 ): Promise<CardMutationResult | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const result = await checkServerCapability(capability, resourceId);
 
-  if (!user) {
-    return {
-      ok: false,
-      code: 'authentication_required',
-      message: 'Your session has expired. Please sign in again.',
-    };
-  }
-
-  const { data, error } = await supabase.rpc('digicon_check_capability', {
-    p_capability: capability,
-    p_resource_id: resourceId ?? null,
-  });
-
-  if (error) {
-    console.error('[DigiCon] Server capability check failed:', error);
+  if (!result) {
     return {
       ok: false,
       code: 'mutation_failed',
@@ -73,14 +59,12 @@ async function requireServerCapability(
     };
   }
 
-  const verdict = Array.isArray(data) ? data[0] : data;
-
-  if (!verdict?.allowed) {
+  if (!result.allowed) {
     return {
       ok: false,
       code: 'capability_denied',
       message:
-        verdict?.code === 'paid_plan_required'
+        result.code === 'paid_plan_required'
           ? 'This capability requires an active paid DigiCon plan.'
           : 'This action is not available under your current DigiCon entitlement.',
     };
@@ -89,39 +73,55 @@ async function requireServerCapability(
   return null;
 }
 
+async function invokeCardRpc(
+  functionName: 'create_business_card' | 'update_business_card',
+  params: Record<string, unknown>,
+): Promise<CardMutationResult> {
+  const { data, error } = await supabase.rpc(functionName, params);
+
+  if (error || !data) {
+    const message = normalizeMutationError(
+      error?.message || `Unable to ${functionName === 'create_business_card' ? 'create' : 'update'} the DigiCon card.`,
+    );
+
+    console.error(`[DigiCon] ${functionName} failed:`, error);
+    return { ok: false, code: 'mutation_failed', message };
+  }
+
+  const card = (Array.isArray(data) ? data[0] : data) as BusinessCard | undefined;
+
+  if (!card) {
+    return {
+      ok: false,
+      code: 'mutation_failed',
+      message: 'The card operation completed without returning the saved card.',
+    };
+  }
+
+  return { ok: true, card };
+}
+
 export async function createBusinessCard(
   input: CardMutationInput,
 ): Promise<CardMutationResult> {
   const denied = await requireServerCapability('card.create');
   if (denied) return denied;
 
-  const { data, error } = await supabase
-    .rpc('create_business_card', {
-      p_full_name: input.full_name.trim(),
-      p_job_title: input.job_title.trim(),
-      p_company: input.company.trim(),
-      p_phone: input.phone.trim(),
-      p_email: input.email.trim(),
-      p_website: input.website.trim(),
-      p_address: input.address.trim(),
-      p_bio: input.bio.trim(),
-      p_card_color: input.card_color,
-      p_accent_color: input.accent_color,
-      p_design_template: input.design_template,
-      p_font_family: input.font_family,
-      p_photo_url: input.photo_url.trim(),
-    })
-    .single();
-
-  if (error || !data) {
-    const message = normalizeMutationError(
-      error?.message || 'Unable to create the DigiCon card.',
-    );
-    console.error('[DigiCon] create_business_card failed:', error);
-    return { ok: false, code: 'mutation_failed', message };
-  }
-
-  return { ok: true, card: data as BusinessCard };
+  return invokeCardRpc('create_business_card', {
+    p_full_name: input.full_name.trim(),
+    p_job_title: input.job_title.trim(),
+    p_company: input.company.trim(),
+    p_phone: input.phone.trim(),
+    p_email: input.email.trim(),
+    p_website: input.website.trim(),
+    p_address: input.address.trim(),
+    p_bio: input.bio.trim(),
+    p_card_color: input.card_color,
+    p_accent_color: input.accent_color,
+    p_design_template: input.design_template,
+    p_font_family: input.font_family,
+    p_photo_url: input.photo_url.trim(),
+  });
 }
 
 export async function updateBusinessCard(
@@ -131,32 +131,20 @@ export async function updateBusinessCard(
   const denied = await requireServerCapability('card.edit', cardId);
   if (denied) return denied;
 
-  const { data, error } = await supabase
-    .rpc('update_business_card', {
-      p_card_id: cardId,
-      p_full_name: input.full_name.trim(),
-      p_job_title: input.job_title.trim(),
-      p_company: input.company.trim(),
-      p_phone: input.phone.trim(),
-      p_email: input.email.trim(),
-      p_website: input.website.trim(),
-      p_address: input.address.trim(),
-      p_bio: input.bio.trim(),
-      p_card_color: input.card_color,
-      p_accent_color: input.accent_color,
-      p_design_template: input.design_template,
-      p_font_family: input.font_family,
-      p_photo_url: input.photo_url.trim(),
-    })
-    .single();
-
-  if (error || !data) {
-    const message = normalizeMutationError(
-      error?.message || 'Unable to update the DigiCon card.',
-    );
-    console.error('[DigiCon] update_business_card failed:', error);
-    return { ok: false, code: 'mutation_failed', message };
-  }
-
-  return { ok: true, card: data as BusinessCard };
+  return invokeCardRpc('update_business_card', {
+    p_card_id: cardId,
+    p_full_name: input.full_name.trim(),
+    p_job_title: input.job_title.trim(),
+    p_company: input.company.trim(),
+    p_phone: input.phone.trim(),
+    p_email: input.email.trim(),
+    p_website: input.website.trim(),
+    p_address: input.address.trim(),
+    p_bio: input.bio.trim(),
+    p_card_color: input.card_color,
+    p_accent_color: input.accent_color,
+    p_design_template: input.design_template,
+    p_font_family: input.font_family,
+    p_photo_url: input.photo_url.trim(),
+  });
 }
