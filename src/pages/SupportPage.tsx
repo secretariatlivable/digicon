@@ -830,7 +830,7 @@ function StillStuck() {
 /* ------------------------------------------------------------------ page */
 
 export function SupportPage() {
-  const landOnHash = useHashLanding();
+  useHashLanding();
 
   /* One search across the whole page, owned here so the sections it filters
      stay presentational. */
@@ -840,12 +840,12 @@ export function SupportPage() {
   // What is left here is the hash destination — /support#billing — and the
   // document title.
   useEffect(() => {
-    landOnHash();
     document.title = 'Support · DigiCon';
+
     return () => {
       document.title = 'DigiCon';
     };
-  }, [landOnHash]);
+  }, []);
 
   return (
     /* Art-directed dark: the banners are dark photography in both themes,

@@ -368,61 +368,47 @@ if (existsSync(bannerRegistry)) {
   const start = text.indexOf('export const BANNERS');
 
   /*
-   * The original implementation assumed the closing text:
+   * SectionBanner uses the registry KEYS to construct image paths:
    *
-   *   } as const;
+   *   hero: 'descriptive accessibility text'
    *
-   * If the component is reformatted, that exact sequence may disappear.
+   * becomes:
    *
-   * Therefore, when possible, inspect the complete file rather than
-   * failing simply because the registry formatting changed.
+   *   /media/banners/hero-2400.jpg
+   *   /media/banners/hero-1200.jpg
+   *
+   * The registry VALUES are alt descriptions, not filenames.
+   * Never use them to construct runtime asset paths.
    */
-  const registryText =
-    start >= 0 ? text.slice(start) : text;
+  if (start >= 0) {
+    const registryStart = text.indexOf('{', start);
+    const registryEnd = text.indexOf('} as const', registryStart);
 
-  /*
-   * Existing DigiCon banner convention:
-   *
-   *   slug: 'something'
-   *
-   * produces:
-   *
-   *   /media/banners/something-2400.jpg
-   *   /media/banners/something-1200.jpg
-   */
-  for (const match of registryText.matchAll(
-    /^\s{2,}([A-Za-z0-9_-]+)\s*:\s*['"]([^'"]+)['"]/gm,
-  )) {
-    const value = match[2];
+    if (registryStart >= 0 && registryEnd > registryStart) {
+      const registryText = text.slice(
+        registryStart + 1,
+        registryEnd,
+      );
 
-    /*
-     * If the registry value already looks like a path or filename,
-     * don't manufacture another path from it.
-     */
-    if (
-      value.includes('/') ||
-      /\.(?:jpg|jpeg|png|webp|avif)$/i.test(value)
-    ) {
-      addAsset(assets, value);
-      continue;
+      for (const match of registryText.matchAll(
+        /^\s{2}([A-Za-z0-9_-]+)\s*:/gm,
+      )) {
+        const name = match[1];
+
+        addAsset(
+          assets,
+          `/media/banners/${name}-2400.jpg`,
+        );
+
+        addAsset(
+          assets,
+          `/media/banners/${name}-1200.jpg`,
+        );
+      }
     }
-
-    /*
-     * Standard DigiCon banner convention.
-     */
-    addAsset(
-      assets,
-      `/media/banners/${value}-2400.jpg`,
-    );
-
-    addAsset(
-      assets,
-      `/media/banners/${value}-1200.jpg`,
-    );
   }
 }
 
-/* -------------------------------------------------------------------------- */
 /* 3b. manifest.json and sw.js                                                */
 /* -------------------------------------------------------------------------- */
 
@@ -642,4 +628,3 @@ if (assetProblems.length) {
 /* -------------------------------------------------------------------------- */
 
 process.exit(1);
-```
