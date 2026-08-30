@@ -1,791 +1,701 @@
-# DigiCon
+# DigiCon — Digital Connections
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript)](https://www.typescriptlang.org)
-[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite)](https://vitejs.dev)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss)](https://tailwindcss.com)
-[![Supabase](https://img.shields.io/badge/Supabase-2.57-3ECF8E?logo=supabase)](https://supabase.com)
+> **Your digital identity. Your connections. Your network.**
 
-> **DigiCon** is an all-in-one digital business card and CRM platform built for Philippine SMEs and startups.
+DigiCon turns the business card from a static identity page into a practical relationship-management tool for professionals, startups, SMEs, and growing organizations.
 
-DigiCon replaces traditional paper business cards with beautiful, shareable digital cards while capturing leads into a lightweight CRM.
+DigiCon is built around one outcome:
 
-The platform helps users:
+> **Never lose a valuable connection again.**
 
-- Create professional digital business cards
-- Share cards through QR codes, links, SMS, and other channels
-- Capture and manage contacts
-- Track networking and lead-generation activity
-- Monitor environmental impact
-- Earn eco-badges through sustainable networking
-- Manage business connections through a centralized dashboard
-- Save digital cards to supported mobile wallets
+The product journey is intentionally broader than a digital-card generator:
 
----
+```text
+Identity → Share → Connect → Capture → Organize → Follow up → Measure → Grow
+```
 
-## Table of Contents
+The current application implements the first layers of that journey through digital cards, public identities, contact capture, relationship-oriented contact states, analytics, subscription entitlements, wallet/PWA support, accessibility, and a Supabase backend.
 
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Application Architecture](#application-architecture)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Variables](#environment-variables)
-- [Project Structure](#project-structure)
-- [Routes](#routes)
-- [Available Scripts](#available-scripts)
-- [Database Schema](#database-schema)
-- [Security](#security)
-- [Deployment](#deployment)
-  - [Vercel](#vercel-recommended)
-  - [Manual Build](#manual-build)
-- [Contributing](#contributing)
-- [Code Standards](#code-standards)
-- [License](#license)
+## 1. Product thesis
 
----
+A digital business card is the entry point, not the destination.
 
-## Features
+DigiCon is designed for people who meet people whose relationships matter: SME owners, founders, consultants, freelancers, sales and business-development professionals, recruiters, agency owners, real-estate professionals, community leaders, and other frequent networkers.
 
-| Feature | Description |
+The product should help a user move from:
+
+> “Nice meeting you.”
+
+to:
+
+> **“This person is now a structured, actionable relationship in my network.”**
+
+That principle should guide new features, schema changes, UX decisions, analytics, and monetization.
+
+## 2. What DigiCon is — and is not
+
+### DigiCon is
+
+- A professional digital identity layer.
+- A fast sharing and connection layer.
+- A lightweight networking CRM.
+- A place to capture and organize relationships.
+- An analytics surface for networking activity and outcomes.
+- A foundation for follow-up, relationship intelligence, and network growth.
+
+### DigiCon is not
+
+- Merely a prettier QR business card.
+- A full enterprise CRM replacement.
+- A collection of disconnected templates and vanity metrics.
+
+The strategic category is the **missing middle between the digital business card and heavyweight CRM**.
+
+## 3. Current product capabilities
+
+| Capability | Current direction |
 |---|---|
-| **Smart Digital Cards** | Create branded digital business cards with QR codes, NFC-compatible sharing, SMS, and link sharing. |
-| **CRM Automation** | Capture leads, manage contacts, export contact data, and support CRM workflows. |
-| **Analytics Dashboard** | Track leads, contact activity, networking performance, and environmental impact. |
-| **Eco Gamification** | Track paper saved, trees saved, and carbon reduction while earning sustainability badges. |
-| **Multi-language Support** | Support for English and Filipino (Tagalog) localization. |
-| **Glassmorphism UI** | Apple-inspired liquid-glass visual design system with responsive and accessibility-conscious components. |
-| **Wallet Integration** | Support for vCard downloads and server-generated Apple Wallet and Google Wallet passes. |
-| **Public Digital Cards** | Shareable public business-card pages using `/c/:cardId`. |
-| **Authentication** | Supabase authentication with protected application routes. |
-| **Team Collaboration** | Multi-seat access for supported Growth and Enterprise plans. |
-| **Responsive Design** | Optimized for desktop, tablet, and mobile devices. |
-| **Progressive Web App** | PWA manifest and mobile installation support. |
+| Digital identity | Branded cards, profile data, photos, QR/share URLs |
+| Sharing | Public card links, QR codes, native share/clipboard, vCard |
+| Connection capture | Public-card contact capture and owner-scoped contact records |
+| Contact management | Search, filtering, statuses, notes, consent, CSV export |
+| Networking analytics | Card shares, captured contacts, conversion rate and dashboards |
+| Entitlements | Free Startup limits and paid-plan capability checks |
+| Billing | Provider adapters for Stripe and PayPal feeding a canonical subscription model |
+| Public identity | `/c/:cardId` shareable card pages with a constrained public projection |
+| Wallet | vCard plus Apple/Google Wallet integration path |
+| PWA | Install prompt handling, iOS guidance, service-worker registration |
+| Accessibility | Accessibility provider, skip link, user-facing accessibility tools |
+| Localization | English and Filipino/Tagalog support infrastructure |
+| Sustainability | Eco-impact tracking and badges |
+| Quality controls | Typecheck, lint, build preflight, migration/RLS assertions in CI |
 
----
+Some capabilities described in product or architecture documentation are still evolving. Treat the implementation in `src/`, `supabase/`, and deployment configuration as the executable source of truth.
 
-## Tech Stack
+## 4. Architecture at a glance
+
+```text
+                          DIGICON
+                   Digital Connections
+
+      ┌───────────────────────┼───────────────────────┐
+      │                       │                       │
+   Identity                Connection             Relationship
+      │                       │                       │
+   Cards/Profile         QR / Link / Share       Contacts
+   Public Identity       Contact Capture         Notes/Status
+   Wallet/PWA             Consent                 Follow-up
+      │                       │                       │
+      └───────────────────────┼───────────────────────┘
+                              │
+                       Relationship Data
+                              │
+                 ┌────────────┼────────────┐
+                 │            │            │
+              Insights    Automation    Analytics
+                 │            │            │
+             Network       Reminders       ROI
+              quality       Tasks        Conversion
+                 │            │            │
+                 └────────────┼────────────┘
+                              │
+                             Growth
+```
 
 ### Frontend
 
-- React 18
-- TypeScript
-- Vite
-- React Router
-- Tailwind CSS
-- Custom CSS design system
-- Lucide React
+```text
+index.html
+  ↓
+src/main.tsx
+  ↓
+src/App.tsx
+  ├── A11yProvider
+  ├── ThemeProvider
+  ├── BrowserRouter
+  ├── AuthProvider
+  ├── Public routes
+  └── Protected routes
+       ↓
+    AppLayout
+       ├── Dashboard
+       ├── Cards
+       ├── Contacts
+       ├── Analytics
+       ├── Eco
+       └── Settings
+```
+
+Authenticated pages are route-level lazy loaded so public-card and first-visit paths do not pay the cost of authenticated application chunks until needed.
 
 ### Backend
 
-- Supabase
-  - PostgreSQL
-  - Authentication
-  - Row Level Security
-  - Storage
-  - Realtime capabilities
+Supabase provides:
 
-### Application Libraries
+- PostgreSQL data storage.
+- Authentication.
+- Row Level Security (RLS).
+- Storage for card photos.
+- SQL functions/RPCs for trusted mutations and counters.
+- Edge Functions for provider-backed operations such as payment webhooks and wallet services.
 
-- Recharts — analytics and data visualization
-- `qrcode.react` — QR-code generation
-- React Router — client-side routing
+### Architectural boundary
 
-### Deployment
+The browser is responsible for presentation, interaction, optimistic UX, and public-safe calls.
 
-- Vercel
-- GitHub
-- Vite production build
+The backend is authoritative for:
 
----
+- identity ownership;
+- authorization;
+- row visibility;
+- paid-plan state;
+- entitlement enforcement;
+- provider webhook state;
+- mutation integrity;
+- security-sensitive counters and operations.
 
-## Application Architecture
+Client-side entitlement checks exist to guide UX; they are not a security boundary.
 
-DigiCon uses a React application architecture where the root `index.html` loads the Vite entry point, `main.tsx` bootstraps React, and `App.tsx` manages application providers and routing.
-
-```text
-index.html
-    │
-    ▼
-src/main.tsx
-    │
-    ▼
-src/App.tsx
-    │
-    ├── ThemeProvider
-    │
-    ├── AuthProvider
-    │
-    └── BrowserRouter
-          │
-          ▼
-       AppRoutes
-          │
-          ├── LandingPage
-          ├── AuthPage
-          ├── PublicCardPage
-          │
-          └── Protected Routes
-                │
-                ▼
-             AppLayout
-                │
-                ├── DashboardPage
-                ├── CardsPage
-                ├── ContactsPage
-                ├── AnalyticsPage
-                ├── EcoPage
-                └── SettingsPage
-````
-
-### Application Entry Point
-
-The root `index.html` loads:
-
-```html
-<script type="module" src="/src/main.tsx"></script>
-```
-
-React dependencies should be imported through `main.tsx` and the application's TypeScript modules rather than directly from `index.html`.
-
-For example:
+## 5. Repository structure
 
 ```text
-index.html
-    ↓
-main.tsx
-    ↓
-App.tsx
-    ↓
-AppLayout
-    ↓
-Application pages
+.
+├── .github/
+│   └── workflows/
+│       └── verify.yml
+├── public/
+│   ├── manifest.json
+│   ├── sw.js
+│   └── media/...
+├── scripts/
+│   └── preflight.mjs
+├── src/
+│   ├── a11y/
+│   ├── components/
+│   │   ├── brand/
+│   │   ├── card/
+│   │   ├── layout/
+│   │   ├── pwa/
+│   │   └── ui/
+│   ├── config/
+│   ├── content/
+│   ├── lib/
+│   ├── pages/
+│   ├── App.tsx
+│   ├── index.css
+│   └── main.tsx
+├── supabase/
+│   ├── migrations/
+│   ├── functions/
+│   └── tests/
+├── .env.example
+├── netlify.toml
+├── vercel.json
+├── package.json
+└── README.md
 ```
 
----
+### Where to put new code
 
-## Getting Started
+- **Page-level user journeys:** `src/pages/`
+- **Reusable UI primitives:** `src/components/ui/`
+- **DigiCon-specific domain components:** `src/components/card/`, or another domain folder under `src/components/`
+- **Cross-cutting application services:** `src/lib/`
+- **Browser-safe configuration:** `src/config/`
+- **Product copy/content:** `src/content/`
+- **Database changes:** `supabase/migrations/`
+- **Trusted server operations:** `supabase/functions/` and SQL RPCs
+- **Database behavior tests:** `supabase/tests/`
+- **Build/deployment checks:** `scripts/` and `.github/workflows/`
 
-### Prerequisites
+Avoid putting business rules directly inside large page components when a rule can be expressed as a reusable domain contract.
 
-Make sure the following are installed:
+## 6. Routes
 
-* [Node.js](https://nodejs.org/) `>= 18.0.0`
-* [npm](https://www.npmjs.com/) `>= 9.0.0`
-* A [Supabase](https://supabase.com/) project
-* Git
-* A modern web browser
+| Route | Access | Purpose |
+|---|---|---|
+| `/` | Public | Landing experience |
+| `/auth` | Public | Sign in, sign up, password reset |
+| `/c/:cardId` | Public | Public DigiCon identity |
+| `/dashboard` | Authenticated | Networking overview and KPIs |
+| `/cards` | Authenticated | Create, edit, share and manage cards |
+| `/contacts` | Authenticated | Manage captured relationships |
+| `/analytics` | Authenticated | Networking analytics |
+| `/eco` | Authenticated | Environmental impact and badges |
+| `/settings` | Authenticated | Account and subscription settings |
 
----
+Protected pages are wrapped by `ProtectedRoute` and `AppLayout`.
 
-### Installation
+Unknown routes currently redirect to `/`.
 
-#### 1. Clone the repository
+## 7. Core domain model
+
+### Identity
+
+A `business_cards` row represents a professional identity that can be rendered publicly and shared through a stable URL.
+
+### Contact
+
+A `contacts` row represents a person captured into the user's relationship space. It currently stores identity information, relationship status, notes, source, consent, and CRM synchronization state.
+
+### Connection
+
+The current system captures the result of a connection but does not yet model every interaction as a first-class append-only event.
+
+The preferred future model is:
+
+```text
+relationship_events
+-------------------
+id
+user_id
+contact_id
+card_id
+event_type
+event_time
+metadata
+created_at
+```
+
+Candidate event types:
+
+```text
+card_shared
+card_viewed
+contact_captured
+contact_saved
+note_added
+status_changed
+followup_created
+followup_completed
+meeting_recorded
+email_clicked
+phone_clicked
+website_clicked
+```
+
+This event layer should become the foundation for analytics, reminders, auditability, and relationship intelligence.
+
+### Relationship
+
+The product direction is to evolve from a flat contact record toward a relationship record containing:
+
+- how and where the people met;
+- interaction history;
+- relationship status;
+- ownership;
+- notes/context;
+- next action;
+- last interaction;
+- future follow-up.
+
+This is the core product differentiator.
+
+## 8. Entitlements and monetization
+
+The current entitlement policy lives in `src/lib/entitlements.ts`.
+
+The current free Startup policy is:
+
+- up to two cards;
+- two completed edits per card;
+- wallet export requires an active paid plan;
+- active paid plans bypass Startup limits.
+
+The architectural rule is:
+
+> **The client can explain a capability; the server must enforce it.**
+
+### Canonical subscription vocabulary
+
+```text
+plan:
+  startup | starter | growth | enterprise
+
+status:
+  active | approval_pending | suspended | cancelled | expired
+```
+
+Stripe and PayPal provider-specific states should be normalized before entering the application subscription model.
+
+## 9. API and backend contracts
+
+DigiCon does not currently expose a single standalone REST API specification.
+
+The backend contract is composed of:
+
+- Supabase table/view access;
+- SQL RPCs;
+- Edge Functions.
+
+For that reason, API documentation belongs in the developer documentation, but it must document the **real current contract** rather than invent an OpenAPI API that does not exist.
+
+See:
+
+- [`docs/DEVELOPER.md`](docs/DEVELOPER.md)
+- [`docs/API.md`](docs/API.md)
+
+### API design rule
+
+When a capability changes system state, prefer:
+
+```text
+UI
+ ↓
+Domain contract
+ ↓
+Trusted RPC / Edge Function
+ ↓
+Database mutation
+```
+
+Security-sensitive business logic must not live only inside React components.
+
+### Public versus authenticated data
+
+Public card reads should use the constrained public-card projection.
+
+Authenticated queries remain owner-scoped and protected by RLS.
+
+## 10. Security model
+
+DigiCon treats security as a system property.
+
+### Browser environment
+
+Only `VITE_*` variables are exposed to the browser bundle.
+
+Never expose:
+
+- service-role keys;
+- wallet signing keys;
+- payment-provider secrets;
+- other server-only credentials.
+
+### Authentication
+
+Supabase Auth is the canonical application identity provider.
+
+### Row Level Security
+
+RLS forms part of the authorization model.
+
+Security tests should execute under the role being tested; superuser/table-owner execution can bypass policies and create false confidence.
+
+### Storage
+
+Card-photo paths should be owner-scoped.
+
+### Public data
+
+Anonymous users should see only the intended public-card projection.
+
+### CSV export
+
+CSV output must safely escape quotes and guard against spreadsheet formula injection because contact fields are user-controlled.
+
+### HTTP security
+
+Deployment configuration includes baseline security headers and CSP. Changes to third-party integrations must be reflected in CSP and verified in production.
+
+## 11. Accessibility and UX principles
+
+DigiCon optimizes for clarity, confidence, and speed at the moment of connection.
+
+The preferred UX progression is:
+
+```text
+Create identity
+   ↓
+Share
+   ↓
+Capture connection
+   ↓
+Organize relationship
+   ↓
+Take next action
+   ↓
+Measure outcome
+```
+
+Advanced functionality should appear progressively rather than overwhelming the first interaction.
+
+Every new flow should preserve:
+
+- keyboard accessibility;
+- visible focus states;
+- semantic controls;
+- accessible labels;
+- meaningful status announcements;
+- readable contrast;
+- mobile touch targets;
+- clear error recovery;
+- reduced-motion accommodation where relevant.
+
+## 12. Environment variables
+
+Start from `.env.example`.
+
+### Browser configuration
+
+| Variable | Required | Purpose |
+|---|---:|---|
+| `VITE_SUPABASE_URL` | Yes | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase public/anonymous key |
+| `VITE_PUBLIC_APP_URL` | No | Canonical origin for share URLs and QR codes |
+| `VITE_PAYPAL_CLIENT_ID` | No | Public PayPal client identifier |
+| `VITE_PAYPAL_ENVIRONMENT` | No | PayPal environment selector |
+| `VITE_SENTRY_DSN` | No | Client error tracking |
+| `VITE_GA_MEASUREMENT_ID` | No | Analytics measurement identifier |
+| `VITE_APP_ENV` | No | Environment marker |
+
+### Server-only configuration
+
+Keep these in Supabase Edge Function secrets or the equivalent secure secret store:
+
+```text
+SUPABASE_SERVICE_ROLE_KEY
+PUBLIC_APP_URL
+WALLET_ALLOWED_ORIGINS
+
+PAYPAL_CLIENT_ID
+PAYPAL_CLIENT_SECRET
+PAYPAL_ENVIRONMENT
+PAYPAL_WEBHOOK_ID
+PAYPAL_STARTER_PLAN_ID
+PAYPAL_GROWTH_PLAN_ID
+PAYPAL_ENTERPRISE_PLAN_ID
+
+APPLE_PASS_TYPE_IDENTIFIER
+APPLE_TEAM_IDENTIFIER
+APPLE_CERTIFICATE_PEM
+APPLE_PRIVATE_KEY_PEM
+APPLE_WWDR_CERTIFICATE_PEM
+
+GOOGLE_WALLET_ISSUER_ID
+GOOGLE_WALLET_CLASS_ID
+GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL
+GOOGLE_WALLET_PRIVATE_KEY
+```
+
+## 13. Local development
+
+The repository currently targets Node 22+ and npm 10+.
 
 ```bash
 git clone https://github.com/secretariatlivable/digicon.git
 cd digicon
-```
-
-#### 2. Install dependencies
-
-```bash
-npm install
-```
-
-#### 3. Configure environment variables
-
-Create your local environment file:
-
-```bash
+npm ci
 cp .env.example .env
-```
-
-Then edit `.env` and provide the required Supabase configuration.
-
-#### 4. Start the development server
-
-```bash
 npm run dev
 ```
 
-The application will normally be available at:
-
-```text
-http://localhost:5173
-```
-
----
-
-## Environment Variables
-
-Create a `.env` file based on `.env.example`.
-
-| Variable                 | Required | Description                                                                 |
-| ------------------------ | -------- | --------------------------------------------------------------------------- |
-| `VITE_SUPABASE_URL`      | Yes      | Supabase project URL.                                                       |
-| `VITE_SUPABASE_ANON_KEY` | Yes      | Supabase anonymous/public key.                                              |
-| `VITE_SENTRY_DSN`        | No       | Sentry DSN for client-side error tracking.                                  |
-| `VITE_GA_MEASUREMENT_ID` | No       | Google Analytics 4 measurement ID.                                          |
-| `VITE_APP_ENV`           | No       | Application environment, such as `development`, `staging`, or `production`. |
-
-### Security Note
-
-Only variables prefixed with `VITE_` are exposed to the Vite client bundle.
-
-Never commit your `.env` file to Git.
-
-The Supabase anonymous key is designed for client-side use when Supabase Row Level Security is correctly configured. It must still be protected from accidental exposure through source-control files, logs, or configuration commits.
-
-Never place Supabase service-role keys, private API keys, wallet signing credentials, or other server-side secrets in variables exposed to the browser.
-
----
-
-## Project Structure
-
-The expected project structure is:
-
-```text
-digicon/
-├── public/
-│   ├── favicon.ico
-│   ├── manifest.json
-│   └── ...static assets
-│
-├── src/
-│   ├── components/
-│   │   ├── brand/
-│   │   │   └── ...brand components
-│   │   │
-│   │   ├── AppLayout.tsx
-│   │   ├── theme-provider.tsx
-│   │   │
-│   │   └── ui/
-│   │       ├── GlassCard.tsx
-│   │       └── ...UI components
-│   │
-│   ├── lib/
-│   │   ├── auth.tsx
-│   │   ├── i18n.ts
-│   │   ├── supabase.ts
-│   │   ├── wallet.ts
-│   │   └── ...shared services
-│   │
-│   ├── pages/
-│   │   ├── LandingPage.tsx
-│   │   ├── AuthPage.tsx
-│   │   ├── DashboardPage.tsx
-│   │   ├── CardsPage.tsx
-│   │   ├── ContactsPage.tsx
-│   │   ├── AnalyticsPage.tsx
-│   │   ├── EcoPage.tsx
-│   │   ├── SettingsPage.tsx
-│   │   └── PublicCardPage.tsx
-│   │
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-│
-├── .env.example
-├── .gitignore
-├── index.html
-├── package.json
-├── tailwind.config.js
-├── tsconfig.json
-├── vercel.json
-└── vite.config.ts
-```
-
-> **Note:** If your repository uses `src/components/pages/LandingPage.tsx` instead of `src/pages/LandingPage.tsx`, update the import in `App.tsx` accordingly. The import path must match the actual repository structure.
-
----
-
-## Routes
-
-DigiCon uses React Router for client-side navigation.
-
-### Public Routes
-
-| Route        | Component        | Access |
-| ------------ | ---------------- | ------ |
-| `/`          | `LandingPage`    | Public |
-| `/auth`      | `AuthPage`       | Public |
-| `/c/:cardId` | `PublicCardPage` | Public |
-
-### Protected Routes
-
-Authenticated users can access:
-
-| Route        | Component       | Access        |
-| ------------ | --------------- | ------------- |
-| `/dashboard` | `DashboardPage` | Authenticated |
-| `/cards`     | `CardsPage`     | Authenticated |
-| `/contacts`  | `ContactsPage`  | Authenticated |
-| `/analytics` | `AnalyticsPage` | Authenticated |
-| `/eco`       | `EcoPage`       | Authenticated |
-| `/settings`  | `SettingsPage`  | Authenticated |
-
-Unauthenticated users attempting to access protected routes are redirected to:
-
-```text
-/auth
-```
-
-Unknown routes are redirected to:
-
-```text
-/
-```
-
----
-
-## Available Scripts
-
-| Command             | Description                                          |
-| ------------------- | ---------------------------------------------------- |
-| `npm run dev`       | Start the Vite development server.                   |
-| `npm run build`     | Type-check and build the application for production. |
-| `npm run preview`   | Preview the production build locally.                |
-| `npm run lint`      | Run ESLint.                                          |
-| `npm run lint:fix`  | Run ESLint and automatically fix supported issues.   |
-| `npm run typecheck` | Run the TypeScript compiler without emitting files.  |
-
-### Development
+Useful commands:
 
 ```bash
 npm run dev
-```
-
-### Production Build
-
-```bash
-npm run build
-```
-
-### Preview Production Build
-
-```bash
-npm run preview
-```
-
-### Lint
-
-```bash
-npm run lint
-```
-
-### Type Check
-
-```bash
-npm run typecheck
-```
-
----
-
-## Database Schema
-
-DigiCon uses Supabase PostgreSQL tables.
-
-### `profiles`
-
-| Column         | Type   | Notes                                                   |
-| -------------- | ------ | ------------------------------------------------------- |
-| `id`           | `uuid` | Primary key; references `auth.users`.                   |
-| `email`        | `text` | User email address.                                     |
-| `full_name`    | `text` | User's full name.                                       |
-| `company_name` | `text` | Company or organization name.                           |
-| `language`     | `text` | Supported values include `en` and `fil`.                |
-| `region`       | `text` | User's region.                                          |
-| `role`         | `text` | Application role such as `owner`, `admin`, or `member`. |
-
-### `business_cards`
-
-| Column            | Type      | Notes                         |
-| ----------------- | --------- | ----------------------------- |
-| `id`              | `uuid`    | Primary key.                  |
-| `user_id`         | `uuid`    | Foreign key to `profiles`.    |
-| `full_name`       | `text`    | Card owner's name.            |
-| `job_title`       | `text`    | Professional title.           |
-| `company`         | `text`    | Company name.                 |
-| `email`           | `text`    | Business email.               |
-| `phone`           | `text`    | Business telephone number.    |
-| `website`         | `text`    | Website URL.                  |
-| `address`         | `text`    | Business address.             |
-| `bio`             | `text`    | Short professional biography. |
-| `photo_url`       | `text`    | Supabase Storage URL.         |
-| `card_color`      | `text`    | Primary card color.           |
-| `accent_color`    | `text`    | Accent color.                 |
-| `design_template` | `text`    | Card design template.         |
-| `font_family`     | `text`    | Card typography selection.    |
-| `is_active`       | `boolean` | Whether the card is active.   |
-| `share_count`     | `integer` | Number of recorded shares.    |
-
-### `contacts`
-
-| Column          | Type      | Notes                                                         |
-| --------------- | --------- | ------------------------------------------------------------- |
-| `id`            | `uuid`    | Primary key.                                                  |
-| `user_id`       | `uuid`    | Foreign key to the owning user.                               |
-| `full_name`     | `text`    | Contact name.                                                 |
-| `email`         | `text`    | Contact email.                                                |
-| `phone`         | `text`    | Contact phone number.                                         |
-| `company`       | `text`    | Contact company.                                              |
-| `job_title`     | `text`    | Contact job title.                                            |
-| `notes`         | `text`    | Additional notes.                                             |
-| `status`        | `text`    | `new`, `follow_up`, `converted`, or `archived`.               |
-| `source`        | `text`    | `qr`, `link`, `sms`, or `manual`.                             |
-| `consent_given` | `boolean` | Consent status for data processing.                           |
-| `synced_to_crm` | `boolean` | Whether the contact has been synchronized to an external CRM. |
-
-### `eco_stats`
-
-| Column              | Type      | Notes                                    |
-| ------------------- | --------- | ---------------------------------------- |
-| `user_id`           | `uuid`    | Primary key / user reference.            |
-| `cards_shared`      | `integer` | Number of cards shared.                  |
-| `contacts_saved`    | `integer` | Number of contacts saved.                |
-| `paper_saved_sqm`   | `float`   | Estimated paper saved in square meters.  |
-| `trees_saved`       | `float`   | Estimated trees saved.                   |
-| `carbon_reduced_kg` | `float`   | Estimated carbon reduction in kilograms. |
-
-### Badges and User Badges
-
-DigiCon also supports gamification through badge definitions and user-earned badge relationships.
-
-Typical responsibilities include:
-
-* Defining available sustainability badges
-* Recording earned badges
-* Associating badges with users
-* Displaying progress and achievements
-
-The exact columns should be kept synchronized with the actual Supabase schema.
-
----
-
-## Wallet Integration
-
-DigiCon supports digital wallet functionality for business cards.
-
-The application should distinguish between:
-
-### vCard
-
-A `.vcf` file can be generated client-side and imported into compatible contacts applications.
-
-### Apple Wallet
-
-Apple Wallet passes require a properly signed `.pkpass` package.
-
-A plain JSON file renamed to `.pkpass` or a `.pkpass.json` file is **not** a valid Apple Wallet pass.
-
-Production Apple Wallet generation should therefore be performed by a trusted server-side service or Supabase Edge Function capable of:
-
-1. Building the pass payload.
-2. Including the required pass assets.
-3. Signing the pass with the appropriate Apple-issued certificate.
-4. Returning the generated `.pkpass` file to the client.
-
-### Google Wallet
-
-Google Wallet passes should similarly be generated using Google's Wallet API and appropriate server-side credentials.
-
-Private Google service-account credentials must never be included in the browser bundle.
-
-Wallet-related client functionality should use the application's wallet service rather than exposing signing credentials or private keys.
-
----
-
-## Security
-
-DigiCon follows several security practices.
-
-### Environment-Based Configuration
-
-Credentials and environment-specific configuration are loaded through environment variables.
-
-Never commit `.env` files or server-side secrets.
-
-### Supabase Row Level Security
-
-Supabase Row Level Security should be enabled for application tables containing user-specific information.
-
-Policies should ensure that users can only access data they are authorized to access.
-
-### Authentication
-
-Protected routes use the application's authentication provider and redirect unauthenticated users to `/auth`.
-
-### Input Validation
-
-Forms should use appropriate validation for:
-
-* Required fields
-* Email addresses
-* URLs
-* File uploads
-* Maximum text lengths
-* User-generated content
-
-### File Upload Security
-
-Uploaded profile images should be validated for:
-
-* File type
-* File size
-* Acceptable image formats
-
-Server-side validation should also be applied where appropriate.
-
-### Wallet Credentials
-
-Apple Wallet signing certificates and Google Wallet service-account credentials must remain server-side.
-
-They must never be stored in:
-
-```text
-src/
-public/
-index.html
-```
-
-or any other client-accessible location.
-
-### Security Headers
-
-Vercel deployment configuration may include security headers such as:
-
-* `X-Content-Type-Options`
-* `X-Frame-Options`
-* `Referrer-Policy`
-* Strict Transport Security
-
-These should be reviewed before production deployment to ensure they are compatible with all required DigiCon services.
-
----
-
-## Deployment
-
-## Vercel (Recommended)
-
-DigiCon is designed to be deployed on Vercel.
-
-### 1. Push the repository to GitHub
-
-```bash
-git add .
-git commit -m "Prepare DigiCon for production"
-git push origin main
-```
-
-### 2. Import the repository into Vercel
-
-Connect the GitHub repository to your Vercel project.
-
-### 3. Configure environment variables
-
-Add the required production environment variables in the Vercel project settings.
-
-At minimum:
-
-```text
-VITE_SUPABASE_URL
-VITE_SUPABASE_ANON_KEY
-```
-
-Add optional variables when their corresponding services are configured:
-
-```text
-VITE_SENTRY_DSN
-VITE_GA_MEASUREMENT_ID
-VITE_APP_ENV
-```
-
-### 4. Build
-
-The standard Vite production build is:
-
-```bash
-npm run build
-```
-
-The generated production files are normally placed in:
-
-```text
-dist/
-```
-
-### 5. SPA Routing
-
-Because DigiCon uses React Router, Vercel must rewrite application routes to the root application entry point.
-
-The project includes:
-
-```text
-vercel.json
-```
-
-for SPA routing configuration.
-
-Static assets such as JavaScript, CSS, images, fonts, manifests, and favicons should not be rewritten to the SPA entry point.
-
----
-
-## Manual Build
-
-Build the production application:
-
-```bash
-npm run build
-```
-
-The resulting production files are generated in:
-
-```text
-dist/
-```
-
-You can preview the generated application locally:
-
-```bash
-npm run preview
-```
-
-For deployment to another static hosting provider, deploy the contents of `dist/` according to that provider's Vite/SPA deployment requirements.
-
----
-
-## Production Checklist
-
-Before deploying DigiCon to production, verify:
-
-* [ ] `npm install` completes successfully.
-* [ ] `npm run typecheck` passes.
-* [ ] `npm run lint` passes.
-* [ ] `npm run build` succeeds.
-* [ ] Supabase production environment variables are configured.
-* [ ] Supabase Row Level Security policies are enabled and tested.
-* [ ] Authentication redirects work correctly.
-* [ ] Public digital cards work at `/c/:cardId`.
-* [ ] Protected routes redirect unauthenticated users to `/auth`.
-* [ ] QR codes resolve correctly.
-* [ ] Profile image uploads work correctly.
-* [ ] Contact creation and management work correctly.
-* [ ] Analytics load without errors.
-* [ ] Eco statistics are calculated correctly.
-* [ ] vCard downloads work.
-* [ ] Apple Wallet generation is connected to a real pass-generation service.
-* [ ] Google Wallet generation is connected to a real Wallet API integration.
-* [ ] No wallet signing credentials are exposed client-side.
-* [ ] PWA manifest loads correctly.
-* [ ] Favicon and Apple touch icon load correctly.
-* [ ] Open Graph metadata is correct.
-* [ ] Canonical URL is correct.
-* [ ] Google Analytics configuration is correct.
-* [ ] Security headers are reviewed.
-* [ ] Vercel SPA rewrites are tested.
-* [ ] Mobile responsiveness is tested.
-* [ ] Production domain and HTTPS are working.
-
----
-
-## Contributing
-
-Contributions are welcome.
-
-### 1. Fork the repository
-
-Create your own fork of the DigiCon repository.
-
-### 2. Create a feature branch
-
-```bash
-git checkout -b feature/your-feature-name
-```
-
-### 3. Make your changes
-
-Keep changes focused and consistent with the existing architecture.
-
-### 4. Run validation
-
-Before submitting a pull request:
-
-```bash
 npm run typecheck
 npm run lint
 npm run build
+npm run verify
 ```
 
-### 5. Commit your changes
+`npm run verify` is the broad local quality gate.
 
-Use a clear commit message:
+## 14. Database development
+
+Database changes belong in versioned migrations under `supabase/migrations/`.
+
+Migrations should be:
+
+- deterministic;
+- idempotent where practical;
+- forward-compatible with existing data;
+- explicit about constraints;
+- paired with behavioral tests when changing authorization, visibility, entitlements, or mutation integrity.
+
+Run the migration/RLS suite locally with PostgreSQL:
 
 ```bash
-git add .
-git commit -m "Add your feature description"
+PGHOST=localhost PGPORT=5432 PGUSER=postgres ./supabase/tests/run.sh
 ```
 
-### 6. Push your branch
+See [`supabase/tests/README.md`](supabase/tests/README.md).
+
+## 15. CI and quality gates
+
+GitHub Actions verifies the frontend and database layers.
+
+```text
+frontend
+  ├── npm ci
+  ├── TypeScript typecheck
+  ├── ESLint
+  └── Vite build
+
+migrations
+  └── PostgreSQL migration + RLS assertions
+```
+
+The preflight script also detects unresolved aliased imports and missing runtime assets.
+
+## 16. Deployment
+
+DigiCon is a Vite SPA.
+
+The repository currently contains both Netlify and Vercel deployment definitions. The project should designate **one canonical production platform** and treat other deployment definitions as explicitly secondary.
+
+Before deployment:
 
 ```bash
-git push origin feature/your-feature-name
+npm run verify
 ```
 
-### 7. Open a Pull Request
+Confirm:
 
-Provide:
+1. hosting environment variables are configured;
+2. migrations have been applied;
+3. storage buckets and policies exist;
+4. Edge Function secrets are configured;
+5. billing webhooks point to the correct environment;
+6. wallet credentials are server-only;
+7. CSP matches actual third-party integrations;
+8. `/c/:cardId` works anonymously;
+9. protected routes require authentication;
+10. entitlement limits cannot be bypassed through direct client calls.
 
-* A clear description of the change
-* The reason for the change
-* Testing performed
-* Screenshots where applicable
-* Any migration or configuration requirements
+## 17. Operational readiness
 
----
+Production readiness means more than a successful build.
 
-## Code Standards
+Failures should be distinguishable as:
 
-DigiCon follows these development principles:
-
-* TypeScript strict mode should remain enabled.
-* Use functional React components.
-* Prefer React hooks for component state and lifecycle behavior.
-* Follow ESLint and React Hooks rules.
-* Use the existing `@/` path aliases where configured.
-* Reuse existing UI components where possible.
-* Keep user-facing text compatible with the existing localization system.
-* Avoid hardcoded credentials or secrets.
-* Validate user input.
-* Handle asynchronous operations and errors explicitly.
-* Keep components focused and maintainable.
-* Avoid unnecessary duplication.
-* Keep production and development configuration clearly separated.
-
-### Imports
-
-Use consistent absolute imports where the project's TypeScript configuration supports them:
-
-```tsx
-import AppLayout from '@/components/AppLayout';
-import { AuthProvider } from '@/lib/auth';
-import { DashboardPage } from '@/pages/DashboardPage';
+```text
+configuration failure
+        ↓
+authentication failure
+        ↓
+authorization/RLS failure
+        ↓
+business-rule/entitlement failure
+        ↓
+provider/webhook failure
+        ↓
+UI/network failure
 ```
 
-Use relative imports when they are more appropriate within a local component hierarchy.
+User-facing errors should be actionable without leaking infrastructure details or secrets.
 
----
+## 18. Product architecture roadmap
 
-## License
+### P0 — Authoritative domain boundaries
 
-Copyright 2026 ASilva Innovations.
+- Enforce card creation/edit limits server-side.
+- Centralize subscription-to-entitlement resolution.
+- Keep Stripe/PayPal provider states behind billing adapters.
+- Keep public-card access behind a constrained projection.
 
-Licensed under the Apache License, Version 2.0.
+### P1 — Relationship infrastructure
 
-You may obtain a copy of the license at:
+- Introduce `relationship_events`.
+- Add relationship timeline.
+- Add “how we met” context.
+- Add next action/follow-up.
+- Track last interaction.
+- Track relationship state transitions.
 
-[https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
+### P1 — Outcome-centered analytics
 
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Evolve from activity-only metrics toward:
+
+```text
+connections
+→ qualified relationships
+→ follow-ups due
+→ follow-ups completed
+→ opportunities
+→ conversions
+```
+
+### P2 — Network intelligence
+
+- Relationship health.
+- Follow-up suggestions.
+- Event mode.
+- Shared relationship ownership.
+- Offline-first connection capture and synchronization.
+
+## 19. Architecture protection rules
+
+### Rule 1 — One domain concept, one canonical vocabulary
+
+Do not introduce provider-specific synonyms into the domain model.
+
+### Rule 2 — Client checks are UX, not security
+
+Anything affecting access, money, or protected data must be enforced by trusted backend logic.
+
+### Rule 3 — Prefer events over counters for business history
+
+Counters are derived metrics. Capture the underlying interaction whenever future analytics or auditability matter.
+
+### Rule 4 — Keep public identity deliberately narrow
+
+A field being present in a user's profile does not mean it should be anonymously queryable.
+
+### Rule 5 — Avoid duplicate identity representations
+
+The same identity should render consistently across editor preview, card list, public card, sharing surfaces, and wallet representations.
+
+### Rule 6 — Design for recovery
+
+Authentication, billing, uploads, connectivity, and provider failures must produce understandable recovery paths.
+
+### Rule 7 — Document architectural decisions
+
+Significant architectural changes should update ADRs/developer documentation instead of relying solely on implementation comments.
+
+## 20. Contribution workflow
+
+Before opening a pull request:
+
+```bash
+npm ci
+npm run verify
+```
+
+For schema/security changes:
+
+```bash
+PGHOST=localhost PGPORT=5432 PGUSER=postgres ./supabase/tests/run.sh
+```
+
+A PR should explain:
+
+- the user/business outcome;
+- the changed domain contract;
+- data/API/RLS implications;
+- how behavior was tested;
+- whether documentation or environment configuration changed.
+
+Prefer small, coherent changes that preserve a green verification pipeline.
+
+## 21. Documentation map
+
+| Document | Purpose |
+|---|---|
+| `README.md` | Product, architecture, setup, quality and contribution overview |
+| `docs/DEVELOPER.md` | Detailed developer handbook and architecture conventions |
+| `docs/API.md` | Current backend/API/RPC/Edge Function contract |
+| `supabase/tests/README.md` | Database/RLS testing methodology |
+| `supabase/migrations/` | Executable database history |
+| `.env.example` | Browser/server environment boundary |
+| `.github/workflows/verify.yml` | CI quality gates |
+
+## Final principle
+
+DigiCon should not try to win by becoming another generic digital-business-card clone.
+
+It should win by owning what happens **after the card is shared**:
+
+> **Capture the connection. Understand the relationship. Remember the next step. Measure what matters. Grow the network.**
