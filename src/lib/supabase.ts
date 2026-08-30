@@ -198,3 +198,63 @@ export type Subscription = {
   created_at: string;
   updated_at: string;
 };
+
+/* ------------------------------------------------------------------ */
+/*  Server-authoritative capabilities                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Capability names accepted by `public.digicon_has_capability`.
+ *
+ * Kept in sync with
+ * supabase/migrations/20260830010000_server_authoritative_capabilities.sql.
+ */
+export type DigiConCapability = 'card.create' | 'card.edit' | 'wallet.export';
+
+/** One row of `public.digicon_check_capability`. */
+export type DigiConCapabilityCheck = {
+  capability: string;
+  allowed: boolean;
+  plan: PlanId;
+  code:
+    | 'allowed'
+    | 'authentication_required'
+    | 'invalid_capability'
+    | 'paid_plan_required'
+    | 'limit_reached_or_forbidden'
+    | 'capability_not_available';
+};
+
+/**
+ * Ask the database whether the current user may perform `capability`.
+ *
+ * The entitlement helpers in `@/lib/entitlements` exist to shape the UI; they
+ * are advisory only, because anything computed in the browser can be edited by
+ * the person holding the browser. This RPC is the authoritative check and runs
+ * `SECURITY DEFINER` against the caller's `auth.uid()`.
+ *
+ * Returns `null` when the check could not be completed (network failure, RPC
+ * error, or an empty result set). Callers must treat `null` as "unknown" and
+ * refuse the action rather than assuming it is permitted.
+ */
+export async function checkServerCapability(
+  capability: DigiConCapability,
+  resourceId?: string,
+): Promise<DigiConCapabilityCheck | null> {
+  const { data, error } = await supabase.rpc('digicon_check_capability', {
+    p_capability: capability,
+    p_resource_id: resourceId ?? null,
+  });
+
+  if (error) {
+    console.error('[DigiCon] digicon_check_capability failed:', error);
+    return null;
+  }
+
+  // The function `RETURNS TABLE`, so supabase-js yields an array of rows.
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | DigiConCapabilityCheck
+    | undefined;
+
+  return row ?? null;
+}

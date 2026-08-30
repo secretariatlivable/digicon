@@ -11,8 +11,8 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { ThemeProvider } from '@/components/theme-provider';
 import { A11yProvider } from '@/lib/a11y';
 import { registerServiceWorker } from '@/lib/pwa';
-import { AccessibilityTools, SkipLink } from '@/components/a11y/AccessibilityTools';
-import { InstallBar } from '@/components/pwa/InstallBar';
+import { AccessibilityTools, SkipLink } from '@/a11y/AccessibilityTools';
+import { InstallBar } from '@/pwa/InstallBar';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { isSupabaseConfigured, missingSupabaseConfig } from '@/lib/supabase';
 

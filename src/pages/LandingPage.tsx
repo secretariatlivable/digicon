@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Bell, Check, Compass, Contact, Eye, Handshake, Heart, Layers, Lightbulb, Link2,
@@ -443,8 +442,7 @@ export function LandingPage() {
 
   // Arriving from another route's nav — "/#privacy" — the browser never fires
   // its native fragment scroll, because React Router owns the URL.
-  const landOnHash = useHashLanding();
-  useEffect(landOnHash, [landOnHash]);
+  useHashLanding();
 
   return (
     /* Art-directed dark: the banners are dark photography in both themes,

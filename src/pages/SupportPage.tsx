@@ -830,22 +830,21 @@ function StillStuck() {
 /* ------------------------------------------------------------------ page */
 
 export function SupportPage() {
-  const landOnHash = useHashLanding();
+  useHashLanding();
 
   /* One search across the whole page, owned here so the sections it filters
      stay presentational. */
   const search = useSupportSearch();
 
-  // Scroll reset is handled once, for every route, by `ScrollToTop` in App.
-  // What is left here is the hash destination — /support#billing — and the
-  // document title.
+  // Scroll reset is handled once, for every route, by `ScrollToTop` in App,
+  // and the hash destination — /support#billing — by `useHashLanding` above.
+  // What is left here is the document title.
   useEffect(() => {
-    landOnHash();
     document.title = 'Support · DigiCon';
     return () => {
       document.title = 'DigiCon';
     };
-  }, [landOnHash]);
+  }, []);
 
   return (
     /* Art-directed dark: the banners are dark photography in both themes,
