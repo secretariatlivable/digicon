@@ -1,153 +1,645 @@
-#!/usr/bin/env node
 /**
- * DigiCon build preflight.
+ * DigiCon build preflight
+ * -----------------------
  *
- * Catches the two failure modes that a plain `vite build` will not:
+ * Purpose:
+ *   Catch repository-integrity problems before TypeScript/Vite runs.
  *
- *  1. **A source module that exists locally but was never committed.**
- *     `tsc` does report these, but only once the build reaches Netlify — a
- *     30-second round trip per attempt. This resolves every `@/…` import in
- *     `src/` against the filesystem and fails immediately with the exact list.
+ * Checks:
+ *   1. @/* source imports resolve against src/.
+ *   2. manifest.json and sw.js exist when referenced.
+ *   3. Runtime assets referenced by those files exist in public/.
+ *   4. DigiCon banner assets referenced by SectionBanner exist.
+ *   5. Hero-loop assets referenced by the application exist.
  *
- *  2. **A runtime asset that was never committed.** This one is worse, because
- *     nothing catches it: the build succeeds and production quietly 404s every
- *     banner, the hero video and the PWA icons. Here we verify each asset the
- *     banner registry, the manifest and the service-worker precache reference.
+ * Important:
+ *   This script checks the filesystem only.
+ *   It MUST NOT claim that a missing file is "uncommitted", because
+ *   filesystem existence does not prove Git tracking state.
  *
- * Dependency-free and filesystem-based, so it behaves identically on a
- * developer machine and on a fresh CI clone.
+ * Alias contract:
+ *   @/* -> src/*
+ *
+ * This must remain consistent with:
+ *   - tsconfig.app.json
+ *   - vite.config.ts
+ *
+ * The script intentionally has no npm dependencies so it works on a
+ * fresh Netlify/CI checkout.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+} from 'node:fs';
+
+import {
+  dirname,
+  extname,
+  join,
+  relative,
+  resolve,
+} from 'node:path';
+
 import { fileURLToPath } from 'node:url';
+
+/* -------------------------------------------------------------------------- */
+/* Paths                                                                      */
+/* -------------------------------------------------------------------------- */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'src');
 const PUBLIC = join(ROOT, 'public');
 
-const RESOLVE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.css', '.json'];
+const ALIAS_PREFIX = '@/';
 
-/** Every file under a directory, recursively. */
+const RESOLVE_EXTENSIONS = [
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.css',
+  '.json',
+];
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Recursively return every file beneath a directory.
+ */
 function walk(dir, out = []) {
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) walk(full, out);
-    else out.push(full);
+  if (!existsSync(dir)) return out;
+
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      walk(full, out);
+    } else if (entry.isFile()) {
+      out.push(full);
+    }
   }
+
   return out;
 }
 
-/** Mirrors the `@/* -> src/*` alias in tsconfig.app.json and vite.config.ts. */
-function resolveAlias(spec) {
-  const base = join(SRC, spec.slice(2));
-  if (existsSync(base) && statSync(base).isFile()) return base;
-  for (const ext of RESOLVE_EXTENSIONS) {
-    if (existsSync(base + ext)) return base + ext;
+/**
+ * Resolve an @/* import using the DigiCon alias:
+ *
+ *   @/foo/bar
+ *       ↓
+ *   src/foo/bar
+ *
+ * Supports:
+ *   src/foo/bar
+ *   src/foo/bar.ts
+ *   src/foo/bar.tsx
+ *   src/foo/bar/index.ts
+ *   etc.
+ */
+function resolveAlias(specifier) {
+  if (
+    typeof specifier !== 'string' ||
+    !specifier.startsWith(ALIAS_PREFIX)
+  ) {
+    return null;
   }
-  for (const ext of RESOLVE_EXTENSIONS) {
-    const indexed = join(base, `index${ext}`);
-    if (existsSync(indexed)) return indexed;
+
+  const relativePath = specifier.slice(ALIAS_PREFIX.length);
+
+  if (!relativePath || relativePath.startsWith('/')) {
+    return null;
   }
+
+  const base = join(SRC, relativePath);
+
+  /*
+   * Protect the alias resolver from paths escaping src/.
+   */
+  const normalizedBase = resolve(base);
+  const normalizedSrc = resolve(SRC);
+
+  if (
+    normalizedBase !== normalizedSrc &&
+    !normalizedBase.startsWith(`${normalizedSrc}/`)
+  ) {
+    return null;
+  }
+
+  /*
+   * Direct file:
+   *
+   * @/foo/bar
+   * -> src/foo/bar
+   */
+  if (existsSync(base) && statSync(base).isFile()) {
+    return base;
+  }
+
+  /*
+   * File with an extension:
+   *
+   * @/foo/bar
+   * -> src/foo/bar.ts
+   * -> src/foo/bar.tsx
+   * etc.
+   */
+  for (const extension of RESOLVE_EXTENSIONS) {
+    const candidate = `${base}${extension}`;
+
+    if (existsSync(candidate) && statSync(candidate).isFile()) {
+      return candidate;
+    }
+  }
+
+  /*
+   * Directory index:
+   *
+   * @/foo/bar
+   * -> src/foo/bar/index.ts
+   * -> src/foo/bar/index.tsx
+   * etc.
+   */
+  for (const extension of RESOLVE_EXTENSIONS) {
+    const candidate = join(base, `index${extension}`);
+
+    if (existsSync(candidate) && statSync(candidate).isFile()) {
+      return candidate;
+    }
+  }
+
   return null;
 }
 
+/**
+ * Convert an absolute repository path into a readable relative path.
+ */
+function displayPath(file) {
+  return relative(ROOT, file).replaceAll('\\', '/');
+}
+
+/**
+ * Convert a public URL path into a filesystem path.
+ *
+ * Example:
+ *
+ *   /media/hero.jpg
+ *       ↓
+ *   public/media/hero.jpg
+ */
+function publicPath(urlPath) {
+  if (
+    typeof urlPath !== 'string' ||
+    !urlPath.startsWith('/')
+  ) {
+    return null;
+  }
+
+  const relativePath = urlPath.slice(1);
+
+  if (!relativePath) return null;
+
+  const candidate = resolve(PUBLIC, relativePath);
+  const normalizedPublic = resolve(PUBLIC);
+
+  /*
+   * Prevent references such as:
+   *
+   *   /../secret.txt
+   */
+  if (
+    candidate !== normalizedPublic &&
+    !candidate.startsWith(`${normalizedPublic}/`)
+  ) {
+    return null;
+  }
+
+  return candidate;
+}
+
+/**
+ * Extract source import specifiers.
+ *
+ * Handles:
+ *
+ *   import X from '@/foo';
+ *   import { X } from '@/foo';
+ *   export { X } from '@/foo';
+ *   import('@/foo');
+ *   import type { X } from '@/foo';
+ *
+ * It intentionally focuses on @/* imports because that is the contract
+ * this preflight is responsible for validating.
+ */
+function extractAliasImports(text) {
+  const imports = new Set();
+
+  const patterns = [
+    /\bfrom\s*['"](@\/[^'"]+)['"]/g,
+    /\bimport\s*['"](@\/[^'"]+)['"]/g,
+    /\bimport\s*\(\s*['"](@\/[^'"]+)['"]\s*\)/g,
+  ];
+
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      const specifier = match[1];
+
+      if (specifier) {
+        imports.add(specifier);
+      }
+    }
+  }
+
+  return [...imports];
+}
+
+/**
+ * Add a runtime asset URL to the set while rejecting malformed references.
+ */
+function addAsset(assets, value) {
+  if (
+    typeof value !== 'string' ||
+    !value.startsWith('/')
+  ) {
+    return;
+  }
+
+  /*
+   * Ignore URLs that are clearly external.
+   */
+  if (
+    value.startsWith('//') ||
+    /^\/https?:\/\//i.test(value)
+  ) {
+    return;
+  }
+
+  assets.add(value);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Problems                                                                   */
+/* -------------------------------------------------------------------------- */
+
 const problems = [];
 
-/* ---------------------------------------------- 1. source modules ------- */
-const sourceFiles = walk(SRC).filter((f) => /\.(tsx?|jsx?)$/.test(f));
-const importPattern = /(?:from\s+|import\s*\(\s*)['"](@\/[^'"]+)['"]/g;
-const seen = new Set();
+/* -------------------------------------------------------------------------- */
+/* 1. Validate source directory                                               */
+/* -------------------------------------------------------------------------- */
+
+if (!existsSync(SRC) || !statSync(SRC).isDirectory()) {
+  problems.push({
+    kind: 'source',
+    message: `Source directory does not exist: ${displayPath(SRC)}`,
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* 2. Validate @/* imports                                                    */
+/* -------------------------------------------------------------------------- */
+
+const sourceFiles = walk(SRC).filter((file) =>
+  /\.(?:ts|tsx|js|jsx|mjs|cjs)$/.test(file),
+);
+
+const seenImports = new Set();
 
 for (const file of sourceFiles) {
-  const text = readFileSync(file, 'utf8');
-  for (const [, spec] of text.matchAll(importPattern)) {
-    const key = `${file}::${spec}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    if (!resolveAlias(spec)) {
+  let text;
+
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch (error) {
+    problems.push({
+      kind: 'source',
+      message: `Unable to read ${displayPath(file)}: ${error.message}`,
+    });
+
+    continue;
+  }
+
+  for (const specifier of extractAliasImports(text)) {
+    const key = `${displayPath(file)}::${specifier}`;
+
+    if (seenImports.has(key)) {
+      continue;
+    }
+
+    seenImports.add(key);
+
+    const resolved = resolveAlias(specifier);
+
+    if (!resolved) {
       problems.push({
         kind: 'module',
-        spec,
-        from: relative(ROOT, file),
+        specifier,
+        from: displayPath(file),
       });
     }
   }
 }
 
-/* ---------------------------------------------- 2. runtime assets ------- */
+/* -------------------------------------------------------------------------- */
+/* 3. Runtime assets                                                           */
+/* -------------------------------------------------------------------------- */
+
 const assets = new Set();
 
-// Banner registry — slugs are expanded into the -2400/-1200 pair the
-// SectionBanner component builds at runtime.
-const bannerRegistry = join(SRC, 'components/ui/SectionBanner.tsx');
+/* -------------------------------------------------------------------------- */
+/* 3a. Section banner registry                                                 */
+/* -------------------------------------------------------------------------- */
+
+const bannerRegistry = join(
+  SRC,
+  'components',
+  'ui',
+  'SectionBanner.tsx',
+);
+
 if (existsSync(bannerRegistry)) {
   const text = readFileSync(bannerRegistry, 'utf8');
-  const block = text.slice(text.indexOf('export const BANNERS'), text.indexOf('} as const;'));
-  for (const [, slug] of block.matchAll(/^\s{2}(\w+):\s*'/gm)) {
-    assets.add(`/media/banners/${slug}-2400.jpg`);
-    assets.add(`/media/banners/${slug}-1200.jpg`);
+
+  const start = text.indexOf('export const BANNERS');
+
+  /*
+   * The original implementation assumed the closing text:
+   *
+   *   } as const;
+   *
+   * If the component is reformatted, that exact sequence may disappear.
+   *
+   * Therefore, when possible, inspect the complete file rather than
+   * failing simply because the registry formatting changed.
+   */
+  const registryText =
+    start >= 0 ? text.slice(start) : text;
+
+  /*
+   * Existing DigiCon banner convention:
+   *
+   *   slug: 'something'
+   *
+   * produces:
+   *
+   *   /media/banners/something-2400.jpg
+   *   /media/banners/something-1200.jpg
+   */
+  for (const match of registryText.matchAll(
+    /^\s{2,}([A-Za-z0-9_-]+)\s*:\s*['"]([^'"]+)['"]/gm,
+  )) {
+    const value = match[2];
+
+    /*
+     * If the registry value already looks like a path or filename,
+     * don't manufacture another path from it.
+     */
+    if (
+      value.includes('/') ||
+      /\.(?:jpg|jpeg|png|webp|avif)$/i.test(value)
+    ) {
+      addAsset(assets, value);
+      continue;
+    }
+
+    /*
+     * Standard DigiCon banner convention.
+     */
+    addAsset(
+      assets,
+      `/media/banners/${value}-2400.jpg`,
+    );
+
+    addAsset(
+      assets,
+      `/media/banners/${value}-1200.jpg`,
+    );
   }
 }
 
-// Anything the manifest and the service worker promise to serve.
-for (const file of ['manifest.json', 'sw.js']) {
-  const full = join(PUBLIC, file);
+/* -------------------------------------------------------------------------- */
+/* 3b. manifest.json and sw.js                                                */
+/* -------------------------------------------------------------------------- */
+
+for (const filename of ['manifest.json', 'sw.js']) {
+  const full = join(PUBLIC, filename);
+
   if (!existsSync(full)) {
-    problems.push({ kind: 'asset', path: `/${file}`, from: 'public/' });
+    /*
+     * A missing manifest is relevant to a PWA build.
+     *
+     * A missing service worker is only an error if the project expects one.
+     * DigiCon currently treats both as expected public files, so retain the
+     * check but report it accurately.
+     */
+    problems.push({
+      kind: 'asset',
+      path: `/${filename}`,
+      from: `public/${filename}`,
+    });
+
     continue;
   }
-  const text = readFileSync(full, 'utf8');
-  for (const [, ref] of text.matchAll(/["'](\/[\w\-./]+\.(?:png|jpg|jpeg|svg|ico|webm|mp4|json))["']/g)) {
-    assets.add(ref);
+
+  let text;
+
+  try {
+    text = readFileSync(full, 'utf8');
+  } catch (error) {
+    problems.push({
+      kind: 'asset',
+      path: `/${filename}`,
+      from: `public/${filename}`,
+      message: error.message,
+    });
+
+    continue;
+  }
+
+  /*
+   * Look for root-relative static assets:
+   *
+   * /icons/icon-192.png
+   * /media/foo.jpg
+   * /images/logo.svg
+   * etc.
+   */
+  const assetPattern =
+    /["'`](\/[\w@%+~:.,\-./]+\.(?:png|jpg|jpeg|webp|avif|svg|ico|webm|mp4|json))["'`]/gi;
+
+  for (const match of text.matchAll(assetPattern)) {
+    addAsset(assets, match[1]);
   }
 }
 
-// The hero loop is assembled from a base name, so it never appears as a literal.
-for (const ext of ['mp4', 'webm']) assets.add(`/media/hero-loop.${ext}`);
-assets.add('/media/hero-loop-poster.jpg');
+/* -------------------------------------------------------------------------- */
+/* 3c. Known hero assets                                                       */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * DigiCon's hero implementation assembles these names dynamically, so they
+ * cannot necessarily be discovered through literal-string scanning.
+ */
+addAsset(assets, '/media/hero-loop.mp4');
+addAsset(assets, '/media/hero-loop.webm');
+addAsset(assets, '/media/hero-loop-poster.jpg');
+
+/* -------------------------------------------------------------------------- */
+/* 4. Verify runtime assets                                                    */
+/* -------------------------------------------------------------------------- */
 
 for (const asset of [...assets].sort()) {
-  if (!existsSync(join(PUBLIC, asset))) {
-    problems.push({ kind: 'asset', path: asset, from: 'public/' });
+  const filesystemPath = publicPath(asset);
+
+  if (!filesystemPath) {
+    problems.push({
+      kind: 'asset',
+      path: asset,
+      from: 'public/',
+      message: 'Invalid public asset path',
+    });
+
+    continue;
+  }
+
+  if (
+    !existsSync(filesystemPath) ||
+    !statSync(filesystemPath).isFile()
+  ) {
+    problems.push({
+      kind: 'asset',
+      path: asset,
+      from: 'public/',
+    });
   }
 }
 
-/* ---------------------------------------------- report ------------------ */
+/* -------------------------------------------------------------------------- */
+/* 5. Report                                                                   */
+/* -------------------------------------------------------------------------- */
+
 if (problems.length === 0) {
   console.log(
-    `✓ preflight: ${seen.size} aliased imports resolve, ${assets.size} runtime assets present`,
+    `✓ DigiCon preflight passed: ` +
+      `${seenImports.size} aliased imports resolve; ` +
+      `${assets.size} runtime assets present.`,
   );
+
   process.exit(0);
 }
 
-const modules = problems.filter((p) => p.kind === 'module');
-const missingAssets = problems.filter((p) => p.kind === 'asset');
+/* -------------------------------------------------------------------------- */
+/* Categorize problems                                                         */
+/* -------------------------------------------------------------------------- */
+
+const sourceProblems = problems.filter(
+  (problem) => problem.kind === 'source',
+);
+
+const moduleProblems = problems.filter(
+  (problem) => problem.kind === 'module',
+);
+
+const assetProblems = problems.filter(
+  (problem) => problem.kind === 'asset',
+);
+
+/* -------------------------------------------------------------------------- */
+/* Header                                                                      */
+/* -------------------------------------------------------------------------- */
 
 console.error('\n✗ DigiCon preflight failed.\n');
 
-if (modules.length) {
-  console.error('  Unresolvable module imports:\n');
-  for (const p of modules) console.error(`    ${p.spec}\n      imported by ${p.from}`);
-  console.error(
-    '\n  These files exist in the working tree on a developer machine but are\n' +
-      '  absent here. The usual cause is a NEW DIRECTORY that was never staged —\n' +
-      '  `git commit -a` stages modified tracked files, never new ones.\n\n' +
-      '  Fix:  git add -A src && git status --short\n',
-  );
+/* -------------------------------------------------------------------------- */
+/* Source problems                                                             */
+/* -------------------------------------------------------------------------- */
+
+if (sourceProblems.length) {
+  console.error('  Source filesystem problems:\n');
+
+  for (const problem of sourceProblems) {
+    console.error(`    ${problem.message}`);
+  }
+
+  console.error();
 }
 
-if (missingAssets.length) {
-  console.error(`  Missing runtime assets (${missingAssets.length}):\n`);
-  for (const p of missingAssets.slice(0, 12)) console.error(`    public${p.path}`);
-  if (missingAssets.length > 12) {
-    console.error(`    …and ${missingAssets.length - 12} more`);
-  }
+/* -------------------------------------------------------------------------- */
+/* Module problems                                                             */
+/* -------------------------------------------------------------------------- */
+
+if (moduleProblems.length) {
   console.error(
-    '\n  These would not fail the build — the site would deploy and then 404\n' +
-      '  every banner and the hero video.\n\n' +
-      '  Fix:  git add -A public && git status --short\n',
+    `  Unresolvable @/* module imports (${moduleProblems.length}):\n`,
   );
+
+  for (const problem of moduleProblems) {
+    console.error(
+      `    ${problem.specifier}\n` +
+        `      imported by ${problem.from}`,
+    );
+  }
+
+  console.error(
+    '\n  The import path does not resolve against the repository filesystem.\n' +
+      '  Verify that the import path matches the actual file location and\n' +
+      '  filename casing, and that the file is included in the Git commit\n' +
+      '  being deployed.\n',
+  );
+
+  console.error(
+    '  Useful Git check:\n' +
+      '    git status --short\n' +
+      '    git ls-files src\n',
+  );
+
+  console.error();
 }
+
+/* -------------------------------------------------------------------------- */
+/* Asset problems                                                              */
+/* -------------------------------------------------------------------------- */
+
+if (assetProblems.length) {
+  console.error(
+    `  Missing runtime assets (${assetProblems.length}):\n`,
+  );
+
+  for (const problem of assetProblems.slice(0, 20)) {
+    console.error(
+      `    public${problem.path}` +
+        (problem.message ? ` — ${problem.message}` : ''),
+    );
+  }
+
+  if (assetProblems.length > 20) {
+    console.error(
+      `    …and ${assetProblems.length - 20} more`,
+    );
+  }
+
+  console.error(
+    '\n  These files are expected to exist in public/ at build/deploy time.\n' +
+      '  Verify their paths, filename casing, and Git tracking.\n',
+  );
+
+  console.error(
+    '  Useful Git check:\n' +
+      '    git status --short\n' +
+      '    git ls-files public\n',
+  );
+
+  console.error();
+}
+
+/* -------------------------------------------------------------------------- */
+/* Exit                                                                       */
+/* -------------------------------------------------------------------------- */
 
 process.exit(1);
+```
