@@ -362,62 +362,103 @@ const bannerRegistry = join(
   'SectionBanner.tsx',
 );
 
-if (existsSync(bannerRegistry)) {
-  const text = readFileSync(bannerRegistry, 'utf8');
+/*
+ * Extract the object literal that follows `export const BANNERS`.
+ *
+ * The scan is string-aware and brace-counted rather than anchored to the
+ * exact closing text `} as const;`, so reformatting the component does not
+ * break it. Bounding the scan matters: `bannerSrc()` further down the same
+ * file also contains string properties (`sizes: '100vw'`) which would
+ * otherwise be read as banner entries.
+ */
+function extractRegistryLiteral(text) {
+  const marker = text.indexOf('export const BANNERS');
 
-  const start = text.indexOf('export const BANNERS');
+  if (marker < 0) {
+    return null;
+  }
 
-  /*
-   * The original implementation assumed the closing text:
-   *
-   *   } as const;
-   *
-   * If the component is reformatted, that exact sequence may disappear.
-   *
-   * Therefore, when possible, inspect the complete file rather than
-   * failing simply because the registry formatting changed.
-   */
-  const registryText =
-    start >= 0 ? text.slice(start) : text;
+  const open = text.indexOf('{', marker);
 
-  /*
-   * Existing DigiCon banner convention:
-   *
-   *   slug: 'something'
-   *
-   * produces:
-   *
-   *   /media/banners/something-2400.jpg
-   *   /media/banners/something-1200.jpg
-   */
-  for (const match of registryText.matchAll(
-    /^\s{2,}([A-Za-z0-9_-]+)\s*:\s*['"]([^'"]+)['"]/gm,
-  )) {
-    const value = match[2];
+  if (open < 0) {
+    return null;
+  }
 
-    /*
-     * If the registry value already looks like a path or filename,
-     * don't manufacture another path from it.
-     */
-    if (
-      value.includes('/') ||
-      /\.(?:jpg|jpeg|png|webp|avif)$/i.test(value)
-    ) {
-      addAsset(assets, value);
+  let depth = 0;
+  let quote = null;
+
+  for (let index = open; index < text.length; index += 1) {
+    const char = text[index];
+
+    if (quote) {
+      if (char === '\\') {
+        index += 1;
+      } else if (char === quote) {
+        quote = null;
+      }
+
       continue;
     }
 
-    /*
-     * Standard DigiCon banner convention.
-     */
+    if (char === "'" || char === '"' || char === '`') {
+      quote = char;
+      continue;
+    }
+
+    if (char === '{') {
+      depth += 1;
+      continue;
+    }
+
+    if (char === '}') {
+      depth -= 1;
+
+      if (depth === 0) {
+        return text.slice(open + 1, index);
+      }
+    }
+  }
+
+  return null;
+}
+
+if (existsSync(bannerRegistry)) {
+  const text = readFileSync(bannerRegistry, 'utf8');
+
+  const registryText = extractRegistryLiteral(text);
+
+  if (registryText === null) {
+    problems.push({
+      kind: 'source',
+      message:
+        `Could not locate the BANNERS registry in ${relative(ROOT, bannerRegistry)}. ` +
+        'Banner assets were not verified.',
+    });
+  }
+
+  /*
+   * Each registry entry maps a banner name to its alt text:
+   *
+   *   hero: 'Light trails converging across a dark field, ...'
+   *
+   * The *key* is the filename slug. bannerSrc() derives:
+   *
+   *   /media/banners/hero-2400.jpg
+   *   /media/banners/hero-1200.jpg
+   */
+  for (const match of (registryText ?? '').matchAll(
+    /^[ \t]+['"]?([A-Za-z0-9_$-]+)['"]?\s*:\s*['"`]/gm,
+  )) {
+    const name = match[1];
+
     addAsset(
       assets,
-      `/media/banners/${value}-2400.jpg`,
+      `/media/banners/${name}-2400.jpg`,
     );
 
     addAsset(
       assets,
-      `/media/banners/${value}-1200.jpg`,
+      `/media/banners/${name}-1200.jpg`,
     );
   }
 }
@@ -642,4 +683,3 @@ if (assetProblems.length) {
 /* -------------------------------------------------------------------------- */
 
 process.exit(1);
-```

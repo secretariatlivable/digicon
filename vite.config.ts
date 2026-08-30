@@ -31,10 +31,23 @@ export default defineConfig({
          * Splitting the heavy, rarely-changing vendors lets them cache
          * independently of application deploys.
          */
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-charts': ['recharts'],
+        manualChunks(id) {
+          const path = id.replace(/\\/g, '/');
+          if (!path.includes('/node_modules/')) return;
+
+          if (/\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(path)) {
+            return 'vendor-react';
+          }
+          if (path.includes('/node_modules/@supabase/')) {
+            return 'vendor-supabase';
+          }
+          if (
+            /\/node_modules\/(recharts|victory-vendor|d3-[^/]+|internmap|decimal\.js-light|fast-equals)\//.test(
+              path,
+            )
+          ) {
+            return 'vendor-charts';
+          }
         },
       },
     },
