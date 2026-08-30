@@ -6,16 +6,20 @@
   publish = "dist"
 
 [build.environment]
-  # Aligned with package.json engines (">=22.0.0 <25.0.0"). The previous value
-  # of "24.x" was inside that range but pinned to a floating major; 22 is the
-  # active LTS line and matches local development.
+  # DigiCon is standardized on the current Node 24 LTS build line.
+  # Netlify resolves "24" to the latest available Node 24.x release.
   NODE_VERSION = "24"
+
+  # Keep the npm version aligned with the Node 24 build environment and
+  # package.json packageManager field.
+  NPM_VERSION = "11.19.0"
+
+  # Vite, TypeScript and ESLint are devDependencies and are required during
+  # the production build. Explicitly include them during Netlify install.
   NPM_FLAGS = "--include=dev"
 
 # ---------------------------------------------------------------------------
 # SPA fallback for React Router.
-# Hashed assets are matched by the more specific rules above this one, so the
-# catch-all only ever serves real application routes.
 # ---------------------------------------------------------------------------
 [[redirects]]
   from = "/*"
@@ -54,15 +58,6 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     Cross-Origin-Opener-Policy = "same-origin"
 
-    # Content-Security-Policy was absent entirely. This policy allows only the
-    # third parties the application actually loads:
-    #   - Supabase   REST, Realtime (wss), Storage, Edge Functions
-    #   - PayPal     Checkout SDK + its iframe
-    #   - Secure Privacy  consent banner in index.html
-    #
-    # 'unsafe-inline' remains on style-src because Tailwind and the card
-    # builder set inline style attributes for user-chosen colours. Replace the
-    # Supabase wildcard with your own project ref to tighten this further.
     Content-Security-Policy = """
       default-src 'self';
       script-src 'self' https://www.paypal.com https://*.paypal.com https://app.secureprivacy.ai;
@@ -75,5 +70,5 @@
       base-uri 'self';
       object-src 'none';
       frame-ancestors 'none';
-      upgrade-insecure-requests
-      """
+      upgrade-insecure-requests;
+    """
