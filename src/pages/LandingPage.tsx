@@ -11,6 +11,7 @@ import { PayPalSubscriptionButton } from '@/components/PayPalSubscriptionButton'
 import { StripeCheckoutButton } from '@/components/StripeCheckoutButton';
 import { DIGICON_PAYPAL_PLANS, type DigiConPlanId } from '@/config/paypalPlans';
 import { isStripePlanId } from '@/config/stripePlans';
+import { ThemeProvider } from '@/components/theme-provider';
 import { GlassButton, GlassCard } from '@/components/ui/GlassCard';
 import { Section, SectionHeading, Hl, Pullquote } from '@/components/ui/Section';
 import { SectionBanner } from '@/components/ui/SectionBanner';
