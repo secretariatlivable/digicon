@@ -4,10 +4,6 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-/* ------------------------------------------------------------------ */
-/*  Root Error Boundary                                               */
-/* ------------------------------------------------------------------ */
-
 class RootErrorBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean; error?: Error }
@@ -22,7 +18,6 @@ class RootErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // In production, send to Sentry or similar
     console.error('[DigiCon Fatal]', error, info);
   }
 
@@ -49,17 +44,13 @@ class RootErrorBoundary extends Component<
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  Mount                                                             */
-/* ------------------------------------------------------------------ */
-
 const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('Root element #root not found');
 
 createRoot(rootEl).render(
   <StrictMode>
     <RootErrorBoundary>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <App />
       </BrowserRouter>
     </RootErrorBoundary>
