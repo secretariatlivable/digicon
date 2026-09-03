@@ -60,7 +60,7 @@ export default function Pricing() {
 
           <div className="metal-edge rounded-2xl p-6" data-testid="plan-pro-monthly">
             <p className="label-caps">Pro · Monthly</p>
-            <p className="metric mt-1 text-3xl gold-text">$19</p>
+            <p className="metric mt-1 text-3xl gold-text">$11</p>
             <p className="dense mt-1 text-sm text-muted-foreground">per month · billed monthly</p>
             <Link
               to={isPaid ? "/billing" : "/checkout?plan=pro_monthly"}
@@ -73,7 +73,7 @@ export default function Pricing() {
 
           <div className="glass rounded-2xl p-6" data-testid="plan-pro-yearly">
             <p className="label-caps">Pro · Yearly</p>
-            <p className="metric mt-1 text-3xl">$182</p>
+            <p className="metric mt-1 text-3xl">$111</p>
             <p className="dense mt-1 text-sm text-muted-foreground">per year · two months free</p>
             <Link
               to={isPaid ? "/billing" : "/checkout?plan=pro_yearly"}
