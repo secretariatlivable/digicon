@@ -1,13 +1,3 @@
-/**
- * DigiCon sign-in / sign-up.
- *
- * Uses Supabase Auth exclusively. The previous Auth0 implementation could
- * never grant access: `ProtectedRoute` reads the Supabase session, and every
- * RLS policy is written against `auth.uid()`, so an Auth0 identity resolved
- * to no rows. It also rendered a permanent spinner because `useAuth0()` was
- * called without an `<Auth0Provider>` in the tree.
- */
-
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -41,15 +31,18 @@ function safeReturnTo(value: string | null): string {
   return value;
 }
 
-export function AuthPage() {
+// --- CHANGED: Added defaultMode prop ---
+export function AuthPage({ defaultMode = 'signin' }: { defaultMode?: Mode } = {}) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { session, loading, signIn, signUp, sendPasswordReset } = useAuth();
 
+  // --- CHANGED: Use defaultMode if no query param is present ---
   const initialMode = useMemo<Mode>(() => {
     const raw = params.get('mode');
-    return raw === 'signup' || raw === 'reset' ? raw : 'signin';
-  }, [params]);
+    if (raw === 'signup' || raw === 'reset' || raw === 'signin') return raw;
+    return defaultMode;
+  }, [params, defaultMode]);
 
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState('');
@@ -111,7 +104,6 @@ export function AuthPage() {
       if (mode === 'signin') {
         const { error: signInError } = await signIn(trimmedEmail, password);
         if (signInError) throw new Error(signInError);
-        // Navigation is handled by the session effect above.
         return;
       }
 
@@ -323,10 +315,6 @@ export function AuthPage() {
             )}
           </div>
 
-          {/* Reassurance a person actually benefits from. The previous copy
-              named our auth vendor and the transport protocol — implementation
-              detail that tells a visitor nothing about their own position, and
-              quietly invites the question "why are you telling me this?". */}
           <div className="mt-6 flex items-start gap-3 rounded-glass-sm border border-line/40 bg-surface-2/50 p-4">
             <ShieldCheck className="h-5 w-5 flex-shrink-0 text-digicon-eco" aria-hidden="true" />
             <p className="text-xs leading-relaxed text-ink-3">
