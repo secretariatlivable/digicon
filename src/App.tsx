@@ -7,13 +7,14 @@ import InstallPrompt from "@/pwa/InstallPrompt";
 // Import the protected and public layout primitives.
 import { Protected } from "@/components/layout/Layouts";
 // Import the global accessibility and privacy interfaces.
-import { AccessibilityBar, CookieConsent } from "@/components/a11y";
+import AccessibilityBar from "@/a11y/AccessibilityBar";
+import CookieConsent from "@/a11y/CookieConsent";
 // Import all public and authenticated DigiCon pages.
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Onboarding from "@/pages/Onboarding";
-import Dashboard from "@/pages/DashboardPage";
+import Dashboard from "@/pages/Dashboard";
 import MyCards from "@/pages/MyCards";
 import CardBuilder from "@/pages/CardBuilder";
 import Share from "@/pages/Share";

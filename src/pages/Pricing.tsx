@@ -129,11 +129,15 @@ export default function Pricing() {
             {plan.description}
           </p>
 
-          <PayPalSubscriptionButton planId={planId} />
+                  <div className="text-center">
+          <SectionHeading
+            eyebrow="PayPal"
+            title="Subscribe securely with PayPal"
+          />
+          <p className="dense mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
+            Choose a DigiCon PayPal subscription and complete approval on PayPal. Your paid access is activated only after DigiCon verifies the PayPal webhook.
+          </p>
         </div>
-      );
-    })}
-  </div>
 </section>
 
         <section className="glass mt-10 overflow-x-auto rounded-2xl p-5" aria-label="Plan comparison">
