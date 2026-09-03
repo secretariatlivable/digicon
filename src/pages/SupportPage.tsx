@@ -830,7 +830,7 @@ function StillStuck() {
 /* ------------------------------------------------------------------ page */
 
 export function SupportPage() {
-  const landOnHash = useHashLanding();
+  useHashLanding();
 
   /* One search across the whole page, owned here so the sections it filters
      stay presentational. */
@@ -844,7 +844,7 @@ export function SupportPage() {
     return () => {
       document.title = 'DigiCon';
     };
-  }, [landOnHash]);
+  }, []);
 
   return (
     /* Art-directed dark: the banners are dark photography in both themes,
