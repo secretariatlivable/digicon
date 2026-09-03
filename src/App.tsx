@@ -7,7 +7,8 @@ import InstallPrompt from "@/pwa/InstallPrompt";
 // Import the protected and public layout primitives.
 import { Protected } from "@/components/layout/Layouts";
 // Import the global accessibility and privacy interfaces.
-import { AccessibilityBar, CookieConsent } from "@/components/a11y";
+import AccessibilityBar from "@/a11y/AccessibilityBar";
+import CookieConsent from "@/a11y/CookieConsent";
 // Import all public and authenticated DigiCon pages.
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
