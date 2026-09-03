@@ -201,28 +201,28 @@ SET ROLE anon;
 SELECT test.must_fail(
   'rpc: rejects a malformed email',
   $sql$SELECT capture_public_contact(
-         'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Bad Email', 'not-an-email')$sql$,
+         'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Bad Email'::text, 'not-an-email'::text, ''::text, true)$sql$,
   '22023'
 );
 
 SELECT test.must_fail(
   'rpc: rejects an empty name',
   $sql$SELECT capture_public_contact(
-         'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '   ', 'ok@example.com')$sql$,
+         'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, '   '::text, 'ok@example.com'::text, ''::text, true)$sql$,
   '22023'
 );
 
 SELECT test.must_fail(
   'rpc: rejects an inactive card',
   $sql$SELECT capture_public_contact(
-         'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'Nope', 'nope@example.com')$sql$,
+         'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid, 'Nope'::text, 'nope@example.com'::text, ''::text, true)$sql$,
   'P0002'
 );
 
 SELECT test.must_fail(
   'rpc: rejects an unknown card',
   $sql$SELECT capture_public_contact(
-         'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'Nope', 'nope2@example.com')$sql$,
+         'cccccccc-cccc-4ccc-8ccc-cccccccccccc'::uuid, 'Nope'::text, 'nope2@example.com'::text, ''::text, true)$sql$,
   'P0002'
 );
 
