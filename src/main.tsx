@@ -1,8 +1,11 @@
 import { StrictMode, Component, type ReactNode } from "react";
 import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+
+const queryClient = new QueryClient();
 
 class RootErrorBoundary extends Component<
   { children: ReactNode },
@@ -51,9 +54,11 @@ if (!rootEl) throw new Error("Root element #root not found");
 createRoot(rootEl).render(
   <StrictMode>
     <RootErrorBoundary>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <App />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
     </RootErrorBoundary>
   </StrictMode>,
 );
