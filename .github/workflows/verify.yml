@@ -17,7 +17,7 @@ jobs:
           cache: npm
       # package.json and package-lock.json are currently from different dependency generations.
       # Reconcile dependencies without requiring a clean npm-ci lockfile match.
-      - run: npm install --no-audit --no-fund --package-lock=false
+      - run: rm -f package-lock.json && npm install --no-audit --no-fund --package-lock=false
       - run: npx tsc --noEmit -p tsconfig.app.json
       - run: npx eslint .
       - run: npx vite build
