@@ -1,6 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  Globe, Linkedin, Mail, MapPin, Phone, type LucideProps,
+  Globe, Mail, MapPin, Phone, type LucideProps,
 } from 'lucide-react';
 import { type ComponentType } from 'react';
 
@@ -218,7 +218,7 @@ export function DigiConCard({
           )}
           {card.linkedin_url && (
             <ContactRow
-              icon={Linkedin}
+              icon={Globe}
               label="LinkedIn"
               href={card.linkedin_url}
               interactive={interactive}
