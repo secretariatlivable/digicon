@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Bell, Check, Compass, Contact, Eye, Handshake, Heart, Layers, Lightbulb, Link2,
@@ -11,7 +10,6 @@ import { PayPalSubscriptionButton } from '@/components/PayPalSubscriptionButton'
 import { StripeCheckoutButton } from '@/components/StripeCheckoutButton';
 import { DIGICON_PAYPAL_PLANS, type DigiConPlanId } from '@/config/paypalPlans';
 import { isStripePlanId } from '@/config/stripePlans';
-import { ThemeProvider } from '@/components/theme-provider';
 import { GlassButton, GlassCard } from '@/components/ui/GlassCard';
 import { Section, SectionHeading, Hl, Pullquote } from '@/components/ui/Section';
 import { SectionBanner } from '@/components/ui/SectionBanner';
@@ -445,7 +443,6 @@ export function LandingPage() {
   // Arriving from another route's nav — "/#privacy" — the browser never fires
   // its native fragment scroll, because React Router owns the URL.
   const landOnHash = useHashLanding();
-  useEffect(landOnHash, [landOnHash]);
 
   return (
     /* Art-directed dark: the banners are dark photography in both themes,
