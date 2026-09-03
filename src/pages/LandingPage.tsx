@@ -442,7 +442,7 @@ export function LandingPage() {
 
   // Arriving from another route's nav — "/#privacy" — the browser never fires
   // its native fragment scroll, because React Router owns the URL.
-  const landOnHash = useHashLanding();
+  useHashLanding();
 
   return (
     /* Art-directed dark: the banners are dark photography in both themes,
