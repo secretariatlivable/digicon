@@ -1,4 +1,4 @@
-import { CardContactList, CardIdentity, CardServices, CardSocials } from "@/components/cards/CardParts";
+import { CardContactList, CardIdentity, CardServices, CardSocials } from "@/components/card/CardParts";
 import type { CardInput } from "@/types";
 import { cn } from "@/lib/utils";
 
