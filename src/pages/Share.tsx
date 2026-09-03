@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Copy, Download, Link2, Mail, MessageSquare, Nfc, QrCode, Wallet } from "lucide-react";
 import { toast } from "sonner";
-import CardCanvas from "@/components/cards/CardCanvas";
+import CardCanvas from "@/components/card/CardCanvas";
 import { EmptyState, ErrorState, LoadingState, PremiumBadge, SectionHeading } from "@/components/kit";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
