@@ -1,5 +1,5 @@
-import CardCanvas from "@/components/cards/CardCanvas";
-import { ContactTab, IdentityTab, StyleTab } from "@/components/cards/BuilderTabs";
+import CardCanvas from "@/components/card/CardCanvas";
+import { ContactTab, IdentityTab, StyleTab } from "@/components/card/BuilderTabs";
 import { ErrorState, LoadingState, SectionHeading } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
