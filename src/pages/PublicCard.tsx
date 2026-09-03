@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Download, Handshake, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { DigiConLogo } from "@/components/brand/DigiConLogo";
-import CardCanvas from "@/components/cards/CardCanvas";
+import CardCanvas from "@/components/card/CardCanvas";
 import { ErrorState, LoadingState } from "@/components/kit";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
