@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { apiPost, ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import type { User } from "@/types";
+import { AuthPage } from "@/pages/AuthPage";
 
 function errorMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -23,6 +24,9 @@ function errorMessage(err: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
+export default function Login() {
+  return <AuthPage defaultMode="signin" />;
+}
 export function AuthPage({ mode }: { mode: "login" | "signup" }) {
   const isSignup = mode === "signup";
   const navigate = useNavigate();
