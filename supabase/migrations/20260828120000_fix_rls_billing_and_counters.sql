@@ -49,6 +49,9 @@ CREATE INDEX IF NOT EXISTS idx_business_cards_active
 CREATE INDEX IF NOT EXISTS idx_contacts_user_created
   ON contacts (user_id, created_at DESC);
 
+/* Ensure the base table is never publicly readable. Public cards use the restricted projection below. */
+DROP POLICY IF EXISTS "select_active_public_cards" ON public.business_cards;
+
 /* ================================================================== */
 /*  1. Public card exposure                                            */
 /* ================================================================== */
