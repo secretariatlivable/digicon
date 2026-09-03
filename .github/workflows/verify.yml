@@ -19,7 +19,7 @@ jobs:
       # Reconcile dependencies without requiring a clean npm-ci lockfile match.
       - run: rm -f package-lock.json && npm install --no-audit --no-fund --package-lock=false
       - run: npx tsc --noEmit -p tsconfig.app.json
-      - run: npx eslint .
+      - run: npm run lint
       - run: npx vite build
         env:
           # Build-time placeholders only. These are never used at runtime and
