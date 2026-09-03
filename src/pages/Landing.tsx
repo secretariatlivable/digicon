@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -15,11 +16,25 @@ import {
 import { PublicLayout } from "@/components/layout/Layouts";
 import BrandImage from "@/components/brand/BrandImage";
 import CardCanvas from "@/components/card/CardCanvas";
-import { Avatar, SectionHeading, StatusBadge } from "@/components/kit";
-import { buttonVariants } from "@/components/ui/button";
+import { Avatar, StatusBadge } from "@/components/kit";
+import { Button } from "@/components/ui/button";
+import { FlowStrip } from "@/components/ui/FlowStrip";
+import { GlassCard } from "@/components/ui/GlassCard";
+import {
+  Section,
+  SectionHeading,
+  Pullquote,
+} from "@/components/ui/Section";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useAuth } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import type { CardInput } from "@/types";
+
+const GOLD_BUTTON =
+  "min-h-[48px] border border-[#f8e49b]/80 bg-gradient-to-b from-[#fff1a4] via-[#d4af37] to-[#9c6b10] text-[#061a3a] shadow-[0_10px_28px_rgba(212,175,55,0.28)] hover:from-[#fff9c9] hover:via-[#e7c75b] hover:to-[#b57a12] hover:text-[#04142e]";
+
+const GLASS_SURFACE =
+  "border border-[#d4af37]/25 bg-gradient-to-br from-white/[0.10] via-[#123567]/35 to-[#061a3a]/80 backdrop-blur-xl";
 
 const HERO_CARD: CardInput = {
   label: "Founder",
@@ -43,29 +58,101 @@ const HERO_CARD: CardInput = {
 };
 
 const NETWORK_PREVIEW = [
-  { name: "Miguel Reyes", role: "Founder @ GreenGrid", status: "Partner", met: "Sustainability Forum 2026" },
-  { name: "Aisha Rahman", role: "HR Director @ PeopleFirst", status: "Connected", met: "Leadership Summit 2026" },
-  { name: "Jessica Chen", role: "Investor @ NextWave", status: "Opportunity", met: "Tech Leaders Roundtable" },
-  { name: "David Lim", role: "CTO @ NovaTech", status: "Follow Up", met: "Global Tech Conference 2026" },
+  {
+    name: "Miguel Reyes",
+    role: "Founder @ GreenGrid",
+    status: "Partner",
+    met: "Sustainability Forum 2026",
+  },
+  {
+    name: "Aisha Rahman",
+    role: "HR Director @ PeopleFirst",
+    status: "Connected",
+    met: "Leadership Summit 2026",
+  },
+  {
+    name: "Jessica Chen",
+    role: "Investor @ NextWave",
+    status: "Opportunity",
+    met: "Tech Leaders Roundtable",
+  },
+  {
+    name: "David Lim",
+    role: "CTO @ NovaTech",
+    status: "Follow Up",
+    met: "Global Tech Conference 2026",
+  },
 ];
 
 const JOURNEY = [
-  { icon: QrCode, title: "Identity", body: "One card, portrait or landscape, live at its own URL and QR." },
-  { icon: Share2, title: "Share", body: "QR, link, SMS, email, chat, NFC or wallet — in seconds." },
-  { icon: Users, title: "Connect", body: "An introduction becomes a captured, two-way connection." },
-  { icon: Bell, title: "Remember", body: "Where you met, what you discussed, what they need." },
-  { icon: CalendarClock, title: "Follow Up", body: "One clear next action with a due date, never a vague reminder." },
-  { icon: BarChart3, title: "Grow", body: "See health, sources, opportunities and follow-through." },
+  {
+    icon: QrCode,
+    title: "Identity",
+    href: "#create-share",
+    body: "One card, portrait or landscape, live at its own URL and QR.",
+  },
+  {
+    icon: Share2,
+    title: "Share",
+    href: "#create-share",
+    body: "QR, link, SMS, email, chat, NFC or wallet — in seconds.",
+  },
+  {
+    icon: Users,
+    title: "Connect",
+    href: "#connect",
+    body: "An introduction becomes a captured, two-way connection.",
+  },
+  {
+    icon: Bell,
+    title: "Remember",
+    href: "#remember",
+    body: "Where you met, what you discussed, and what they need.",
+  },
+  {
+    icon: CalendarClock,
+    title: "Follow Up",
+    href: "#follow-up",
+    body: "One clear next action with a due date, never a vague reminder.",
+  },
+  {
+    icon: BarChart3,
+    title: "Grow",
+    href: "#grow",
+    body: "See health, sources, opportunities, and follow-through.",
+  },
 ];
 
-const SHARE_CHANNELS = ["QR code", "Link", "NFC tap", "Email", "Chat", "Digital wallet"];
+const SHARE_CHANNELS = [
+  "QR code",
+  "Link",
+  "NFC tap",
+  "Email",
+  "Chat",
+  "Digital wallet",
+];
 
 const REMEMBER_FIELDS = [
-  { label: "Met at", value: "Global Tech Conference 2026, San Francisco" },
-  { label: "Discussed", value: "AI-powered solutions for business growth" },
-  { label: "They need", value: "Scalable marketing automation" },
-  { label: "Shared purpose", value: "Partnership opportunities" },
-  { label: "Status", value: "Follow Up" },
+  {
+    label: "Met at",
+    value: "Global Tech Conference 2026, San Francisco",
+  },
+  {
+    label: "Discussed",
+    value: "AI-powered solutions for business growth",
+  },
+  {
+    label: "They need",
+    value: "Scalable marketing automation",
+  },
+  {
+    label: "Shared purpose",
+    value: "Partnership opportunities",
+  },
+  {
+    label: "Status",
+    value: "Follow Up",
+  },
 ];
 
 const GROW_METRICS = [
@@ -76,11 +163,48 @@ const GROW_METRICS = [
 ];
 
 const PILLARS = [
-  { icon: Bell, title: "Remember", body: "Never forget a connection — the context of the conversation stays with the person." },
-  { icon: Brain, title: "Understand", body: "Capture what matters: their interest, shared purpose, and the value in play." },
-  { icon: Send, title: "Follow Up", body: "Take the right next action before the moment goes cold." },
-  { icon: Sparkles, title: "Grow", body: "Build a network that compounds instead of a contact list that decays." },
+  {
+    icon: Bell,
+    title: "Remember",
+    body: "Never forget a connection — the context of the conversation stays with the person.",
+  },
+  {
+    icon: Brain,
+    title: "Understand",
+    body: "Capture what matters: their interest, shared purpose, and the value in play.",
+  },
+  {
+    icon: Send,
+    title: "Follow Up",
+    body: "Take the right next action before the moment goes cold.",
+  },
+  {
+    icon: Sparkles,
+    title: "Grow",
+    body: "Build a network that compounds instead of a contact list that decays.",
+  },
 ];
+
+function GoldLinkButton({
+  to,
+  children,
+  testId,
+}: {
+  to: string;
+  children: ReactNode;
+  testId: string;
+}) {
+  return (
+    <Button
+      render={<Link to={to} />}
+      size="lg"
+      className={GOLD_BUTTON}
+      data-testid={testId}
+    >
+      {children}
+    </Button>
+  );
+}
 
 function StorySection({
   id,
@@ -100,27 +224,49 @@ function StorySection({
   image: "connect" | "share" | "remember" | "grow" | "male";
   alt: string;
   reverse?: boolean;
-  children?: React.ReactNode;
+  children?: ReactNode;
   testId: string;
 }) {
+  const copy = (
+    <div className="min-w-0">
+      <SectionHeading
+        id={`${id}-title`}
+        kicker={eyebrow}
+        title={title}
+        lede={lead}
+        align="left"
+      />
+      {children}
+    </div>
+  );
+
+  const media = (
+    <GlassCard
+      variant="chrome"
+      className="overflow-hidden p-1"
+      aria-label={alt}
+    >
+      <BrandImage
+        name={image}
+        alt={alt}
+        testId={`${testId}-image`}
+      />
+    </GlassCard>
+  );
+
   return (
-    <section id={id} className="py-10 sm:py-14" aria-labelledby={`${id}-title`} data-testid={testId}>
-      <div className="mx-auto grid max-w-6xl items-center gap-8 px-0 sm:px-4 lg:grid-cols-2">
-        <div className={cn("min-w-0 order-1 px-4 sm:px-0", reverse && "lg:order-2")}>
-          <p className="label-caps">{eyebrow}</p>
-          <h2 id={`${id}-title`} className="font-heading mt-1.5 text-2xl font-extrabold sm:text-3xl">
-            {title}
-          </h2>
-          <p className="dense mt-3 max-w-lg text-muted-foreground">{lead}</p>
-          {children}
-        </div>
-        <div className={cn("order-2 min-w-0", reverse && "lg:order-1")}>
-          <div className="overflow-hidden sm:rounded-2xl sm:border sm:border-border/60">
-            <BrandImage name={image} alt={alt} testId={`${testId}-image`} />
-          </div>
-        </div>
+    <Section
+      id={id}
+      size="md"
+      bordered
+      aria-labelledby={`${id}-title`}
+      data-testid={testId}
+    >
+      <div className="grid items-center gap-8 lg:grid-cols-2">
+        <div className={cn("order-1", reverse && "lg:order-2")}>{copy}</div>
+        <div className={cn("order-2", reverse && "lg:order-1")}>{media}</div>
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -130,18 +276,44 @@ export default function Landing() {
 
   return (
     <PublicLayout>
-      {/* Hero */}
-      <section className="relative overflow-hidden" aria-labelledby="hero-title">
-        <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:py-16">
+      <section
+        className="relative -mt-px overflow-hidden border-b border-[#d4af37]/30"
+        aria-label="DigiCon professional networking"
+      >
+        <BrandImage
+          name="connect"
+          priority
+          testId="landing-banner-hero"
+          alt="Professionals exchanging DigiCon cards and building relationships"
+        />
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#061a3a] via-[#061a3a]/75 to-transparent px-4 pb-6 pt-24 sm:px-8 sm:pb-10">
+          <div className="mx-auto max-w-6xl">
+            <Tooltip
+              title="Relationship memory"
+              content="DigiCon keeps the context, next action, and follow-up behind every introduction."
+            >
+              <span className="font-heading text-base font-bold text-[#f5dd8d] sm:text-2xl">
+                An introduction is easy. Remembering is what builds the
+                relationship.
+              </span>
+            </Tooltip>
+          </div>
+        </div>
+      </section>
+
+      <Section size="lg" aria-labelledby="hero-title">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="min-w-0">
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="label-caps"
+              className="label-caps text-[#f5dd8d]"
             >
               DigiCon · Digitally Connected
             </motion.p>
+
             <motion.h1
               id="hero-title"
               initial={{ opacity: 0, y: 16 }}
@@ -151,48 +323,64 @@ export default function Landing() {
               data-testid="landing-hero-heading"
             >
               More than a digital business card.
-              <span className="block text-sky">It's your relationship workspace.</span>
+              <span className="block text-[#f5dd8d]">
+                It&apos;s your relationship workspace.
+              </span>
             </motion.h1>
+
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.12 }}
               className="dense mt-5 max-w-lg text-base text-muted-foreground sm:text-lg"
             >
-              Your professional identity. Your connections. Your network. Create your identity, share
-              it instantly, capture the people you meet, and turn everyday networking into
-              relationships you can actually manage.
+              Your professional identity. Your connections. Your network.
+              Create your identity, share it instantly, capture the people you
+              meet, and turn everyday networking into relationships you can
+              actually manage.
             </motion.p>
-            <p className="font-heading mt-4 text-sm font-semibold tracking-wide text-accent">
+
+            <p className="font-heading mt-4 text-sm font-semibold tracking-wide text-[#f5dd8d]">
               Create. Share. Connect. Remember. Follow Up. Grow.
             </p>
+
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link
+              <GoldLinkButton
                 to={startHref}
-                className={cn(buttonVariants({ size: "lg" }), "min-h-[48px]")}
-                data-testid="landing-primary-cta"
+                testId="landing-primary-cta"
               >
                 Create Your DigiCon
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
-              </Link>
-              <a
-                href="#how-it-works"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "min-h-[48px]")}
+              </GoldLinkButton>
+
+              <Button
+                render={<a href="#how-it-works" />}
+                size="lg"
+                className={GOLD_BUTTON}
                 data-testid="landing-secondary-cta"
               >
                 See How It Works
-              </a>
+              </Button>
             </div>
+
             <dl className="mt-9 grid max-w-md grid-cols-3 gap-4">
               {[
-                { k: "Never lost", v: "Connections" },
-                { k: "One action", v: "Per relationship" },
-                { k: "Measurable", v: "Networking" },
-              ].map((s) => (
-                <div key={s.k} className="min-w-0">
-                  <dt className="font-heading text-sm font-bold text-sky sm:text-base">{s.k}</dt>
-                  <dd className="dense text-xs text-muted-foreground">{s.v}</dd>
-                </div>
+                { key: "Never lost", value: "Connections" },
+                { key: "One action", value: "Per relationship" },
+                { key: "Measurable", value: "Networking" },
+              ].map((stat) => (
+                <GlassCard
+                  key={stat.key}
+                  variant="thin"
+                  className="p-3"
+                >
+                  <dt className="font-heading text-sm font-bold text-[#f5dd8d] sm:text-base">
+                    {stat.key}
+                  </dt>
+                  <dd className="dense text-xs text-muted-foreground">
+                    {stat.value}
+                  </dd>
+                </GlassCard>
               ))}
             </dl>
           </div>
@@ -204,244 +392,391 @@ export default function Landing() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="mx-auto max-w-xs"
             >
-              <CardCanvas card={HERO_CARD} testId="landing-hero-card" />
+              <CardCanvas
+                card={HERO_CARD}
+                testId="landing-hero-card"
+              />
             </motion.div>
+
             <div className="mt-5 space-y-2.5">
-              {NETWORK_PREVIEW.map((p, i) => (
+              {NETWORK_PREVIEW.map((person, index) => (
                 <motion.div
-                  key={p.name}
+                  key={person.name}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.45, delay: 0.2 + i * 0.09 }}
-                  className="glass flex items-center gap-3 rounded-xl p-3"
-                  data-testid={`landing-network-card-${i}`}
+                  transition={{
+                    duration: 0.45,
+                    delay: 0.2 + index * 0.09,
+                  }}
                 >
-                  <Avatar name={p.name} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{p.name}</p>
-                    <p className="dense truncate text-xs text-muted-foreground">
-                      {p.role} · met {p.met}
-                    </p>
-                  </div>
-                  <StatusBadge status={p.status} />
+                  <GlassCard
+                    variant="chrome"
+                    className="flex items-center gap-3 p-3"
+                  >
+                    <Avatar name={person.name} size="sm" />
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
+                        {person.name}
+                      </p>
+                      <p className="dense truncate text-xs text-muted-foreground">
+                        {person.role} · met {person.met}
+                      </p>
+                    </div>
+
+                    <StatusBadge status={person.status} />
+                  </GlassCard>
                 </motion.div>
               ))}
             </div>
           </div>
         </div>
-      </section>
+      </Section>
 
-      {/* Full-bleed hero banner */}
-      <section aria-label="DigiCon in real professional use" className="relative">
-        <BrandImage
-          name="connect"
-          alt="Two professionals exchanging DigiCon digital business cards by QR code while their connections, follow-ups and relationship statuses appear as a live network around them"
-          priority
-          testId="landing-banner-hero"
-        />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-background via-background/70 to-transparent p-4 pt-16 sm:p-8">
-          <p className="font-heading mx-auto max-w-6xl text-base font-bold sm:text-2xl">
-            An introduction is easy. <span className="text-sky">Remembering is the hard part.</span>
-          </p>
-        </div>
-      </section>
-
-      {/* Journey */}
-      <section id="how-it-works" className="mx-auto max-w-6xl px-4 py-14" aria-labelledby="journey-title">
+      <Section
+        id="how-it-works"
+        size="md"
+        bordered
+        aria-labelledby="journey-title"
+      >
         <SectionHeading
-          eyebrow="How it works"
+          id="journey-title"
+          kicker="How it works"
           title="Identity → Share → Connect → Remember → Follow Up → Grow"
-          testId="landing-journey-heading"
+          lede="DigiCon makes each step of professional networking deliberate, memorable, and measurable."
         />
-        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {JOURNEY.map((j, i) => (
-            <li key={j.title} className="glass rounded-xl p-5" data-testid={`landing-journey-${i}`}>
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-sky">
-                <j.icon className="h-4.5 w-4.5" aria-hidden />
-              </span>
-              <p className="label-caps mt-3">Step {i + 1}</p>
-              <h3 className="font-heading text-base font-bold">{j.title}</h3>
-              <p className="dense mt-1.5 text-sm text-muted-foreground">{j.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
 
-      {/* Create & Share */}
+        <FlowStrip
+          className="mt-10"
+          steps={JOURNEY.map((step) => ({
+            label: step.title,
+            icon: step.icon,
+            href: step.href,
+          }))}
+        />
+
+        <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {JOURNEY.map((step, index) => {
+            const Icon = step.icon;
+
+            return (
+              <li key={step.title}>
+                <GlassCard
+                  variant="chrome"
+                  hover
+                  className={cn(GLASS_SURFACE, "h-full p-5")}
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#d4af37]/30 bg-[#d4af37]/15 text-[#f5dd8d]">
+                    <Icon className="h-5 w-5" aria-hidden />
+                  </span>
+
+                  <p className="label-caps mt-4 text-[#f5dd8d]">
+                    Step {index + 1}
+                  </p>
+
+                  <h3 className="font-heading mt-1 text-base font-bold">
+                    {step.title}
+                  </h3>
+
+                  <p className="dense mt-1.5 text-sm text-muted-foreground">
+                    {step.body}
+                  </p>
+                </GlassCard>
+              </li>
+            );
+          })}
+        </ol>
+      </Section>
+
       <StorySection
         id="create-share"
         eyebrow="Create & Share"
         title="Your identity, ready to hand over in one tap"
         lead="Build your DigiCon card once, then share it the way the moment allows — scan the QR at a booth, drop the link in chat, tap phones over NFC, or keep it in your digital wallet."
         image="share"
-        alt="DigiCon user sharing her digital business card with QR code, link, NFC, email, chat and digital wallet options alongside her live professional identity profile"
+        alt="DigiCon user sharing a digital business card through QR code, link, NFC, email, chat, and a digital wallet"
         testId="landing-section-share"
       >
-        <ul className="mt-5 flex flex-wrap gap-2" data-testid="landing-share-channels">
+        <ul
+          className="mt-6 flex flex-wrap gap-2"
+          data-testid="landing-share-channels"
+        >
           {SHARE_CHANNELS.map((channel) => (
-            <li key={channel} className="glass-soft dense rounded-full px-3 py-1.5 text-sm">
+            <li
+              key={channel}
+              className="rounded-full border border-[#d4af37]/25 bg-white/[0.06] px-3 py-1.5 text-sm text-[#f5dd8d] backdrop-blur-md"
+            >
               {channel}
             </li>
           ))}
         </ul>
-        <Link to={startHref} className={cn(buttonVariants({ size: "sm" }), "mt-6")} data-testid="landing-share-cta">
-          Create Your DigiCon
-        </Link>
+
+        <div className="mt-7">
+          <GoldLinkButton
+            to={startHref}
+            testId="landing-share-cta"
+          >
+            Create Your DigiCon
+            <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+          </GoldLinkButton>
+        </div>
       </StorySection>
 
-      {/* Connect */}
       <StorySection
         id="connect"
         eyebrow="Connect"
         title="Both sides walk away with something useful"
-        lead="When someone opens your card they can save your contact or send theirs straight back — no signup, no app install. Their details land in your workspace as a real relationship record with the context of how you met."
+        lead="When someone opens your card, they can save your contact or send theirs straight back — no signup and no app installation required. Their details land in your workspace with the context of how you met."
         image="male"
-        alt="DigiCon professional networking platform showing a digital identity profile with QR code, contact information, social links and connect options next to captured relationship cards"
+        alt="DigiCon professional networking profile with QR code, contact information, social links, and connection options"
         reverse
         testId="landing-section-connect"
       >
-        <p className="font-heading mt-5 text-lg font-bold text-sky">
+        <Pullquote className="mt-6 text-[#f5dd8d]">
           An introduction becomes a connection.
-        </p>
+        </Pullquote>
       </StorySection>
 
-      {/* Remember */}
       <StorySection
         id="remember"
         eyebrow="Remember"
         title="The conversation stays attached to the person"
-        lead="DigiCon keeps the details that actually matter when you follow up weeks later: where you met, when, what you discussed, what they need and where the relationship stands."
+        lead="DigiCon keeps the details that matter weeks after the meeting: where you met, when you met, what you discussed, what they need, and where the relationship stands."
         image="remember"
-        alt="DigiCon relationship record capturing where two professionals met, the date, what they discussed, shared purpose and the next follow-up action for a lasting business relationship"
+        alt="DigiCon relationship record showing meeting context, discussion notes, shared purpose, and a next action"
         testId="landing-section-remember"
       >
-        <dl className="mt-5 space-y-2" data-testid="landing-remember-fields">
-          {REMEMBER_FIELDS.map((f) => (
-            <div key={f.label} className="glass-soft flex flex-wrap gap-x-3 rounded-lg px-3 py-2">
-              <dt className="label-caps min-w-[7rem]">{f.label}</dt>
-              <dd className="dense min-w-0 flex-1 text-sm">{f.value}</dd>
-            </div>
+        <dl
+          className="mt-6 space-y-2"
+          data-testid="landing-remember-fields"
+        >
+          {REMEMBER_FIELDS.map((field) => (
+            <GlassCard
+              key={field.label}
+              variant="thin"
+              className="flex flex-wrap gap-x-3 rounded-lg px-3 py-2"
+            >
+              <dt className="label-caps min-w-[7rem] text-[#f5dd8d]">
+                {field.label}
+              </dt>
+              <dd className="dense min-w-0 flex-1 text-sm">
+                {field.value}
+              </dd>
+            </GlassCard>
           ))}
         </dl>
       </StorySection>
 
-      {/* Follow Up */}
-      <section className="mx-auto max-w-6xl px-4 py-10" aria-labelledby="followup-title">
-        <SectionHeading eyebrow="Follow Up" title="One clear next action, with a date" testId="landing-followup-heading" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <Section
+        id="follow-up"
+        size="md"
+        bordered
+        aria-labelledby="followup-title"
+      >
+        <SectionHeading
+          id="followup-title"
+          kicker="Follow Up"
+          title="One clear next action, with a date"
+          lede="Replace vague reminders with an intentional action that moves the relationship forward."
+        />
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { title: "Send partnership proposal", who: "David Lim · NovaTech", due: "due in 2 days", status: "Follow Up" },
-            { title: "Share portfolio & case studies", who: "Aisha Rahman · PeopleFirst", due: "due tomorrow", status: "Pending" },
-            { title: "Send updated metrics deck", who: "Jessica Chen · NextWave", due: "due in 3 days", status: "Opportunity" },
-            { title: "Plan joint webinar agenda", who: "Miguel Reyes · GreenGrid", due: "in progress", status: "Partner" },
-          ].map((f, i) => (
-            <article key={f.title} className="glass rounded-xl p-4" data-testid={`landing-followup-card-${i}`}>
-              <StatusBadge status={f.status} />
-              <h3 className="font-heading mt-2 text-sm font-bold">{f.title}</h3>
-              <p className="dense mt-1 text-xs text-muted-foreground">{f.who}</p>
-              <p className="dense mt-2 text-xs text-sky">{f.due}</p>
-            </article>
+            {
+              title: "Send partnership proposal",
+              who: "David Lim · NovaTech",
+              due: "Due in 2 days",
+              status: "Follow Up",
+            },
+            {
+              title: "Share portfolio & case studies",
+              who: "Aisha Rahman · PeopleFirst",
+              due: "Due tomorrow",
+              status: "Pending",
+            },
+            {
+              title: "Send updated metrics deck",
+              who: "Jessica Chen · NextWave",
+              due: "Due in 3 days",
+              status: "Opportunity",
+            },
+            {
+              title: "Plan joint webinar agenda",
+              who: "Miguel Reyes · GreenGrid",
+              due: "In progress",
+              status: "Partner",
+            },
+          ].map((followUp, index) => (
+            <GlassCard
+              key={followUp.title}
+              variant="chrome"
+              hover
+              className={cn(GLASS_SURFACE, "p-4")}
+              data-testid={`landing-followup-card-${index}`}
+            >
+              <StatusBadge status={followUp.status} />
+              <h3 className="font-heading mt-3 text-sm font-bold">
+                {followUp.title}
+              </h3>
+              <p className="dense mt-1 text-xs text-muted-foreground">
+                {followUp.who}
+              </p>
+              <p className="dense mt-3 text-xs text-[#f5dd8d]">
+                {followUp.due}
+              </p>
+            </GlassCard>
           ))}
         </div>
-      </section>
+      </Section>
 
-      {/* Grow */}
       <StorySection
         id="grow"
         eyebrow="Grow"
         title="See whether your network is actually growing"
-        lead="Connections, follow-ups, meetings, opportunities and relationship health — the numbers that tell you who to re-engage and where your best introductions come from."
+        lead="Connections, follow-ups, meetings, opportunities, and relationship health — the numbers that tell you who to re-engage and where your best introductions come from."
         image="grow"
-        alt="DigiCon networking analytics dashboard showing total connections, follow-ups, meetings, opportunities and relationship health for a growing professional network"
+        alt="DigiCon networking analytics dashboard showing connections, follow-ups, meetings, opportunities, and relationship health"
         reverse
         testId="landing-section-grow"
       >
-        <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4" data-testid="landing-grow-metrics">
-          {GROW_METRICS.map((m) => (
-            <div key={m.label} className="glass-soft rounded-xl p-3">
-              <dt className="label-caps">{m.label}</dt>
-              <dd className="metric mt-1 text-xl text-sky">{m.value}</dd>
-            </div>
+        <dl
+          className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4"
+          data-testid="landing-grow-metrics"
+        >
+          {GROW_METRICS.map((metric) => (
+            <GlassCard
+              key={metric.label}
+              variant="thin"
+              className="rounded-xl p-3"
+            >
+              <dt className="label-caps text-[#f5dd8d]">
+                {metric.label}
+              </dt>
+              <dd className="metric mt-1 text-xl text-white">
+                {metric.value}
+              </dd>
+            </GlassCard>
           ))}
         </dl>
       </StorySection>
 
-      {/* Difference */}
-      <section className="mx-auto max-w-6xl px-4 py-6" aria-labelledby="difference-title">
-        <div className="glass rounded-2xl p-6 sm:p-9">
+      <Section
+        size="md"
+        bordered
+        aria-labelledby="difference-title"
+      >
+        <GlassCard
+          variant="chrome"
+          className={cn(GLASS_SURFACE, "rounded-2xl p-6 sm:p-9")}
+        >
           <SectionHeading
-            eyebrow="The difference"
+            id="difference-title"
+            kicker="The difference"
             title="A connection is not just a contact"
-            testId="landing-difference-heading"
+            lede="The digital card is useful at the moment of introduction. DigiCon is useful after it."
           />
-          <div className="grid gap-6 sm:grid-cols-2">
+
+          <div className="mt-8 grid gap-6 sm:grid-cols-2">
             <div>
-              <p className="label-caps">A digital business card gives you</p>
-              <ul className="dense mt-2 space-y-1.5 text-sm text-muted-foreground">
-                <li>Name, company and links</li>
+              <p className="label-caps text-muted-foreground">
+                A digital business card gives you
+              </p>
+              <ul className="dense mt-3 space-y-2 text-sm text-muted-foreground">
+                <li>Name, company, and links</li>
                 <li>A tap or a scan</li>
                 <li>A contact saved somewhere</li>
                 <li>…and then nothing</li>
               </ul>
             </div>
+
             <div>
-              <p className="label-caps text-accent">DigiCon gives you</p>
-              <ul className="dense mt-2 space-y-1.5 text-sm">
+              <p className="label-caps text-[#f5dd8d]">
+                DigiCon gives you
+              </p>
+              <ul className="dense mt-3 space-y-2 text-sm">
                 <li>Where you met and what you discussed</li>
-                <li>What they need and what it's worth</li>
+                <li>What they need and what it is worth</li>
                 <li>One clear next action with a due date</li>
                 <li>Proof that your network is actually growing</li>
               </ul>
             </div>
           </div>
-          <p className="font-heading mt-7 text-lg font-bold sm:text-xl">
-            The card is the entry point. <span className="text-sky">The relationship is the product.</span>
-          </p>
-        </div>
-      </section>
 
-      {/* Pillars */}
-      <section className="mx-auto max-w-6xl px-4 py-14" aria-label="What DigiCon does for you">
+          <Pullquote className="mt-8 text-[#f5dd8d]">
+            The card is the entry point. The relationship is the product.
+          </Pullquote>
+        </GlassCard>
+      </Section>
+
+      <Section size="md" aria-label="DigiCon relationship benefits">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {PILLARS.map((p) => (
-            <div key={p.title} className="glass rounded-xl p-5" data-testid={`landing-pillar-${p.title.toLowerCase()}`}>
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/12 text-accent">
-                <p.icon className="h-4.5 w-4.5" aria-hidden />
-              </span>
-              <h3 className="font-heading mt-3 text-base font-bold">{p.title}</h3>
-              <p className="dense mt-1.5 text-sm text-muted-foreground">{p.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+          {PILLARS.map((pillar) => {
+            const Icon = pillar.icon;
 
-      {/* Final CTA */}
-      <section className="mx-auto max-w-4xl px-4 pb-6" aria-labelledby="final-cta-title">
-        <div className="metal-edge rounded-2xl p-8 text-center">
-          <h2 id="final-cta-title" className="font-heading text-2xl font-extrabold sm:text-3xl">
+            return (
+              <GlassCard
+                key={pillar.title}
+                variant="chrome"
+                hover
+                className={cn(GLASS_SURFACE, "p-5")}
+                data-testid={`landing-pillar-${pillar.title.toLowerCase()}`}
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d4af37]/30 bg-[#d4af37]/15 text-[#f5dd8d]">
+                  <Icon className="h-5 w-5" aria-hidden />
+                </span>
+                <h3 className="font-heading mt-4 text-base font-bold">
+                  {pillar.title}
+                </h3>
+                <p className="dense mt-2 text-sm text-muted-foreground">
+                  {pillar.body}
+                </p>
+              </GlassCard>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section size="lg" aria-labelledby="final-cta-title">
+        <GlassCard
+          variant="chrome"
+          className="border border-[#d4af37]/45 bg-[radial-gradient(circle_at_top,#264c7f_0%,#0b2451_42%,#061a3a_100%)] p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)] sm:p-12"
+        >
+          <h2
+            id="final-cta-title"
+            className="font-heading text-2xl font-extrabold sm:text-3xl"
+          >
             Every conversation can become a meaningful relationship.
           </h2>
-          <p className="dense mx-auto mt-3 max-w-lg text-muted-foreground">
-            Start free with one card and the full relationship workspace. Upgrade when DigiCon becomes
-            infrastructure for your professional identity.
+
+          <p className="dense mx-auto mt-4 max-w-lg text-muted-foreground">
+            Start free with one card and the full relationship workspace.
+            Upgrade when DigiCon becomes infrastructure for your professional
+            identity.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link
+
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <GoldLinkButton
               to={startHref}
-              className={cn(buttonVariants({ size: "lg" }), "bg-gold text-[#1a1200] hover:bg-gold-metal")}
-              data-testid="landing-footer-cta"
+              testId="landing-footer-cta"
             >
               Create Your DigiCon
-            </Link>
-            <Link to="/pricing" className={buttonVariants({ variant: "outline", size: "lg" })} data-testid="landing-pricing-cta">
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+            </GoldLinkButton>
+
+            <GoldLinkButton
+              to="/pricing"
+              testId="landing-pricing-cta"
+            >
               Explore DigiCon
-            </Link>
+            </GoldLinkButton>
           </div>
-          <p className="font-heading mt-6 text-sm font-semibold">
-            Your identity. Your connections. <span className="text-sky">Your future.</span>
+
+          <p className="font-heading mt-7 text-sm font-semibold">
+            Your identity. Your connections.{" "}
+            <span className="text-[#f5dd8d]">Your future.</span>
           </p>
-        </div>
-      </section>
+        </GlassCard>
+      </Section>
     </PublicLayout>
   );
 }
