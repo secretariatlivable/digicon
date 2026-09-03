@@ -13,11 +13,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
       # package.json and package-lock.json are currently from different dependency generations.
       # Reconcile dependencies without requiring a clean npm-ci lockfile match.
-      - run: rm -f package-lock.json && npm install --legacy-peer-deps --no-audit --no-fund --package-lock=false
+      - run: rm -f package-lock.json && npm install --no-audit --no-fund --package-lock=false
       - run: npx tsc --noEmit -p tsconfig.app.json
       - run: npx eslint .
       - run: npx vite build
