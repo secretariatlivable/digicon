@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { PublicLayout } from "@/components/layout/Layouts";
 import BrandImage from "@/components/brand/BrandImage";
-import CardCanvas from "@/components/cards/CardCanvas";
+import CardCanvas from "@/components/card/CardCanvas";
 import { Avatar, SectionHeading, StatusBadge } from "@/components/kit";
 import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/lib/session";
