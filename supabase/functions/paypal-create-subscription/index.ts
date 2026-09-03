@@ -177,6 +177,20 @@ Deno.serve(async (request) => {
       );
     }
 
+    const approvalLink = Array.isArray(subscription.links)
+      ? subscription.links.find(
+          (link: { rel?: string; href?: string }) =>
+            link.rel === "approve" && typeof link.href === "string",
+        )?.href
+      : undefined;
+
+    if (!approvalLink) {
+      return json(
+        { error: "PayPal did not return an approval URL." },
+        502,
+      );
+    }
+
     /*
      * Do not grant paid entitlements here.
      * Your verified PayPal webhook should be the source of truth for
@@ -185,6 +199,7 @@ Deno.serve(async (request) => {
     return json({
       subscriptionId: subscription.id,
       status: subscription.status,
+      approvalUrl: approvalLink,
     });
   } catch (cause) {
     console.error("paypal-create-subscription:", cause);
