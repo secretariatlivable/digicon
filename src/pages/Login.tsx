@@ -145,15 +145,6 @@ export function AuthPage({ mode }: { mode: "login" | "signup" }) {
             </Link>
           </p>
         </div>
-
-        <div className="glass-soft mt-4 rounded-xl p-4" data-testid="demo-credentials">
-          <p className="label-caps">Demo accounts</p>
-          <ul className="dense mt-2 space-y-1 text-xs text-muted-foreground">
-            <li>Pro user — maria@digicon.app / DigiCon2026!</li>
-            <li>Free user — free@digicon.app / DigiCon2026!</li>
-            <li>Super admin — admin@digicon.app / DigiCon2026!</li>
-          </ul>
-        </div>
       </div>
     </div>
   );
