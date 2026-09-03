@@ -164,7 +164,7 @@ SELECT test.must_fail(
 );
 
 SELECT capture_public_contact(
-  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Maria Santos'::text, 'maria@example.com'::text, '+639170000009'::text);
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, 'Maria Santos'::text, 'maria@example.com'::text, '+639170000009'::text, true);
 
 RESET ROLE;
 
