@@ -1,181 +1,340 @@
+/* Import the existing Tailwind CSS runtime. */
 @import "tailwindcss";
+/* Import the existing animation utilities. */
 @import "tw-animate-css";
+/* Import the existing shadcn Tailwind integration. */
 @import "shadcn/tailwind.css";
+/* Import the existing DigiCon Montserrat weights. */
 @import "@fontsource/montserrat/400.css";
+/* Import the existing DigiCon Montserrat weights. */
 @import "@fontsource/montserrat/600.css";
+/* Import the existing DigiCon Montserrat weights. */
 @import "@fontsource/montserrat/700.css";
+/* Import the existing DigiCon Montserrat weights. */
 @import "@fontsource/montserrat/800.css";
+/* Import the existing DigiCon Poppins weights. */
 @import "@fontsource/poppins/400.css";
+/* Import the existing DigiCon Poppins weights. */
 @import "@fontsource/poppins/500.css";
+/* Import the existing DigiCon Poppins weights. */
 @import "@fontsource/poppins/600.css";
+/* Import the existing DigiCon Roboto Condensed weights. */
 @import "@fontsource/roboto-condensed/400.css";
+/* Import the existing DigiCon Roboto Condensed weights. */
 @import "@fontsource/roboto-condensed/500.css";
+/* Import the existing DigiCon Roboto Condensed weights. */
 @import "@fontsource/roboto-condensed/700.css";
 
+/* Preserve the existing dark-mode variant. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Preserve the existing DigiCon theme definitions. */
 @theme inline {
+  /* Preserve the DigiCon sans-serif font family. */
   --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  /* Preserve the DigiCon heading font family. */
   --font-heading: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  /* Preserve the DigiCon compact font family. */
   --font-dense: "Roboto Condensed", ui-sans-serif, system-ui, sans-serif;
-
+  /* Preserve the existing theme colors. */
   --color-background: var(--background);
+  /* Preserve the existing foreground color. */
   --color-foreground: var(--foreground);
+  /* Preserve the existing card color. */
   --color-card: var(--card);
+  /* Preserve the existing card foreground color. */
   --color-card-foreground: var(--card-foreground);
+  /* Preserve the existing popover color. */
   --color-popover: var(--popover);
+  /* Preserve the existing popover foreground color. */
   --color-popover-foreground: var(--popover-foreground);
+  /* Preserve the existing primary color. */
   --color-primary: var(--primary);
+  /* Preserve the existing primary foreground color. */
   --color-primary-foreground: var(--primary-foreground);
+  /* Preserve the existing secondary color. */
   --color-secondary: var(--secondary);
+  /* Preserve the existing secondary foreground color. */
   --color-secondary-foreground: var(--secondary-foreground);
+  /* Preserve the existing muted color. */
   --color-muted: var(--muted);
+  /* Preserve the existing muted foreground color. */
   --color-muted-foreground: var(--muted-foreground);
+  /* Preserve the existing accent color. */
   --color-accent: var(--accent);
+  /* Preserve the existing accent foreground color. */
   --color-accent-foreground: var(--accent-foreground);
+  /* Preserve the existing destructive color. */
   --color-destructive: var(--destructive);
+  /* Preserve the existing destructive foreground color. */
   --color-destructive-foreground: var(--destructive-foreground);
+  /* Preserve the existing border color. */
   --color-border: var(--border);
+  /* Preserve the existing input color. */
   --color-input: var(--input);
+  /* Preserve the existing focus-ring color. */
   --color-ring: var(--ring);
-
+  /* Preserve the existing DigiCon brand colors. */
   --color-navy: var(--navy);
+  /* Preserve the existing DigiCon deep-navy color. */
   --color-navy-deep: var(--navy-deep);
+  /* Preserve the existing DigiCon electric-blue color. */
   --color-electric: var(--electric);
+  /* Preserve the existing DigiCon sky-blue color. */
   --color-sky: var(--sky);
+  /* Preserve the existing DigiCon cyan color. */
   --color-cyan: var(--cyan);
+  /* Preserve the existing DigiCon gold color. */
   --color-gold: var(--gold);
+  /* Preserve the existing DigiCon metallic-gold color. */
   --color-gold-metal: var(--gold-metal);
-
+  /* Preserve the existing chart colors. */
   --color-chart-1: var(--chart-1);
+  /* Preserve the existing chart colors. */
   --color-chart-2: var(--chart-2);
+  /* Preserve the existing chart colors. */
   --color-chart-3: var(--chart-3);
+  /* Preserve the existing chart colors. */
   --color-chart-4: var(--chart-4);
+  /* Preserve the existing chart colors. */
   --color-chart-5: var(--chart-5);
+  /* Preserve the existing sidebar colors. */
   --color-sidebar: var(--sidebar);
+  /* Preserve the existing sidebar foreground. */
   --color-sidebar-foreground: var(--sidebar-foreground);
+  /* Preserve the existing sidebar primary color. */
   --color-sidebar-primary: var(--sidebar-primary);
+  /* Preserve the existing sidebar primary foreground. */
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  /* Preserve the existing sidebar accent. */
   --color-sidebar-accent: var(--sidebar-accent);
+  /* Preserve the existing sidebar accent foreground. */
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  /* Preserve the existing sidebar border. */
   --color-sidebar-border: var(--sidebar-border);
+  /* Preserve the existing sidebar focus ring. */
   --color-sidebar-ring: var(--sidebar-ring);
-
+  /* Preserve the existing radius scale. */
   --radius-sm: 0.5rem;
+  /* Preserve the existing radius scale. */
   --radius-md: 0.75rem;
+  /* Preserve the existing radius scale. */
   --radius-lg: 1rem;
+  /* Preserve the existing radius scale. */
   --radius-xl: 1.5rem;
-
+  /* Preserve the existing DigiCon animations. */
   --animate-pulse-node: pulse-node 2.8s ease-in-out infinite;
+  /* Preserve the existing DigiCon animations. */
   --animate-trace: trace 3.2s ease-in-out infinite;
+  /* Preserve the existing DigiCon animations. */
   --animate-rise: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Preserve the existing DigiCon animations. */
   --animate-sheen: sheen 6s linear infinite;
 }
 
+/* Preserve the existing node animation. */
 @keyframes pulse-node {
+  /* Define the first animation state. */
   0%, 100% { opacity: 0.35; transform: scale(0.9); }
+  /* Define the middle animation state. */
   50% { opacity: 1; transform: scale(1.08); }
 }
+
+/* Preserve the existing trace animation. */
 @keyframes trace {
+  /* Define the first trace state. */
   0% { stroke-dashoffset: 320; opacity: 0.2; }
+  /* Define the middle trace state. */
   50% { opacity: 0.9; }
+  /* Define the final trace state. */
   100% { stroke-dashoffset: 0; opacity: 0.2; }
 }
+
+/* Preserve the existing rise animation. */
 @keyframes rise {
+  /* Define the initial rise state. */
   from { opacity: 0; transform: translateY(14px); }
+  /* Define the final rise state. */
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Preserve the existing sheen animation. */
 @keyframes sheen {
+  /* Define the initial sheen position. */
   0% { background-position: -200% 0; }
+  /* Define the final sheen position. */
   100% { background-position: 200% 0; }
 }
 
+/* Preserve the existing root variables and DigiCon visual identity. */
 :root {
+  /* Preserve the DigiCon deep-navy color. */
   --navy-deep: #050b1c;
+  /* Preserve the DigiCon navy color. */
   --navy: #0a1733;
+  /* Preserve the DigiCon electric color. */
   --electric: #2563eb;
+  /* Preserve the DigiCon sky color. */
   --sky: #60a5fa;
+  /* Preserve the DigiCon cyan color. */
   --cyan: #22d3ee;
+  /* Preserve the DigiCon gold color. */
   --gold: #f0b429;
+  /* Preserve the DigiCon metallic gold color. */
   --gold-metal: #d4a017;
-
+  /* Preserve the DigiCon background color. */
   --background: #050b1c;
+  /* Preserve the DigiCon foreground color. */
   --foreground: #eaf1ff;
+  /* Preserve the DigiCon card color. */
   --card: #0b1730;
+  /* Preserve the DigiCon card foreground color. */
   --card-foreground: #eaf1ff;
+  /* Preserve the DigiCon popover color. */
   --popover: #0b1730;
+  /* Preserve the DigiCon popover foreground color. */
   --popover-foreground: #eaf1ff;
+  /* Preserve the DigiCon primary color. */
   --primary: #2f7dff;
+  /* Preserve the DigiCon primary foreground color. */
   --primary-foreground: #04101f;
+  /* Preserve the DigiCon secondary color. */
   --secondary: #12233f;
+  /* Preserve the DigiCon secondary foreground color. */
   --secondary-foreground: #cddcf7;
+  /* Preserve the DigiCon muted color. */
   --muted: #10203a;
+  /* Preserve the DigiCon muted foreground color. */
   --muted-foreground: #93a7c7;
+  /* Preserve the DigiCon accent color. */
   --accent: #16ecd0;
+  /* Preserve the DigiCon accent foreground color. */
   --accent-foreground: #04101f;
+  /* Preserve the DigiCon destructive color. */
   --destructive: #f2545b;
+  /* Preserve the DigiCon destructive foreground color. */
   --destructive-foreground: #ffffff;
+  /* Preserve the DigiCon border color. */
   --border: #1d3255;
+  /* Preserve the DigiCon input color. */
   --input: #16273f;
+  /* Preserve the DigiCon focus ring color. */
   --ring: #38bdf8;
+  /* Preserve the DigiCon base radius. */
   --radius: 0.9rem;
+  /* Preserve the DigiCon chart colors. */
   --chart-1: #2f7dff;
+  /* Preserve the DigiCon chart colors. */
   --chart-2: #22d3ee;
+  /* Preserve the DigiCon chart colors. */
   --chart-3: #60a5fa;
+  /* Preserve the DigiCon chart colors. */
   --chart-4: #f0b429;
+  /* Preserve the DigiCon chart colors. */
   --chart-5: #8b5cf6;
+  /* Preserve the DigiCon sidebar background. */
   --sidebar: #071227;
+  /* Preserve the DigiCon sidebar foreground. */
   --sidebar-foreground: #eaf1ff;
+  /* Preserve the DigiCon sidebar primary color. */
   --sidebar-primary: #2f7dff;
+  /* Preserve the DigiCon sidebar primary foreground. */
   --sidebar-primary-foreground: #04101f;
+  /* Preserve the DigiCon sidebar accent color. */
   --sidebar-accent: #12233f;
+  /* Preserve the DigiCon sidebar accent foreground. */
   --sidebar-accent-foreground: #eaf1ff;
+  /* Preserve the DigiCon sidebar border color. */
   --sidebar-border: #1d3255;
+  /* Preserve the DigiCon sidebar focus ring color. */
   --sidebar-ring: #38bdf8;
 }
 
+/* Preserve the existing dark theme. */
 .dark {
+  /* Preserve the dark background. */
   --background: #050b1c;
+  /* Preserve the dark foreground. */
   --foreground: #eaf1ff;
+  /* Preserve the dark card. */
   --card: #0b1730;
+  /* Preserve the dark card foreground. */
   --card-foreground: #eaf1ff;
+  /* Preserve the dark popover. */
   --popover: #0b1730;
+  /* Preserve the dark popover foreground. */
   --popover-foreground: #eaf1ff;
+  /* Preserve the dark primary. */
   --primary: #2f7dff;
+  /* Preserve the dark primary foreground. */
   --primary-foreground: #04101f;
+  /* Preserve the dark secondary. */
   --secondary: #12233f;
+  /* Preserve the dark secondary foreground. */
   --secondary-foreground: #cddcf7;
+  /* Preserve the dark muted. */
   --muted: #10203a;
+  /* Preserve the dark muted foreground. */
   --muted-foreground: #93a7c7;
+  /* Preserve the dark accent. */
   --accent: #16ecd0;
+  /* Preserve the dark accent foreground. */
   --accent-foreground: #04101f;
+  /* Preserve the dark destructive color. */
   --destructive: #f2545b;
+  /* Preserve the dark destructive foreground. */
   --destructive-foreground: #ffffff;
+  /* Preserve the dark border. */
   --border: #1d3255;
+  /* Preserve the dark input. */
   --input: #16273f;
+  /* Preserve the dark focus ring. */
   --ring: #38bdf8;
+  /* Preserve the dark chart colors. */
   --chart-1: #2f7dff;
+  /* Preserve the dark chart colors. */
   --chart-2: #22d3ee;
+  /* Preserve the dark chart colors. */
   --chart-3: #60a5fa;
+  /* Preserve the dark chart colors. */
   --chart-4: #f0b429;
+  /* Preserve the dark chart colors. */
   --chart-5: #8b5cf6;
+  /* Preserve the dark sidebar background. */
   --sidebar: #071227;
+  /* Preserve the dark sidebar foreground. */
   --sidebar-foreground: #eaf1ff;
+  /* Preserve the dark sidebar primary. */
   --sidebar-primary: #2f7dff;
+  /* Preserve the dark sidebar primary foreground. */
   --sidebar-primary-foreground: #04101f;
+  /* Preserve the dark sidebar accent. */
   --sidebar-accent: #12233f;
+  /* Preserve the dark sidebar accent foreground. */
   --sidebar-accent-foreground: #eaf1ff;
+  /* Preserve the dark sidebar border. */
   --sidebar-border: #1d3255;
+  /* Preserve the dark sidebar focus ring. */
   --sidebar-ring: #38bdf8;
 }
 
+/* Preserve the existing base layer while adding global accessibility behavior. */
 @layer base {
+  /* Preserve the existing border token on all elements. */
   * {
     border-color: var(--border);
   }
+
+  /* Preserve the transparent tap highlight used by DigiCon. */
   html {
     -webkit-tap-highlight-color: transparent;
+    /* Prevent anchor targets from hiding beneath sticky navigation. */
+    scroll-padding-top: 5rem;
+    /* Prevent focused content from being hidden beneath bottom controls. */
+    scroll-padding-bottom: 6rem;
   }
+
+  /* Preserve the existing DigiCon body appearance. */
   body {
     background-color: var(--background);
     color: var(--foreground);
@@ -186,29 +345,100 @@
       radial-gradient(900px 520px at 92% 4%, rgba(34, 211, 238, 0.14), transparent 62%);
     background-attachment: fixed;
   }
+
+  /* Preserve the existing DigiCon heading typography. */
   h1, h2, h3, h4, h5 {
     font-family: var(--font-heading);
     font-weight: 700;
     letter-spacing: -0.015em;
   }
+
+  /* Preserve a clearly visible keyboard focus indicator. */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+
+  /* Ensure disabled controls communicate their unavailable state. */
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* Apply the user-selected larger text scale without changing layout markup. */
+  html[data-accessibility-text-size="large"] {
+    font-size: 115%;
+  }
+
+  /* Apply the maximum supported user-selected text scale. */
+  html[data-accessibility-text-size="larger"] {
+    font-size: 130%;
+  }
+
+  /* Increase contrast between foreground and the DigiCon background when requested. */
+  html[data-accessibility-high-contrast="true"] {
+    --foreground: #ffffff;
+    --muted-foreground: #d5e3fa;
+    --border: #6b86aa;
+    --ring: #8be8ff;
+    --primary: #5d9bff;
+    --secondary: #1a3157;
+  }
+
+  /* Remove decorative colour variation when grayscale is requested. */
+  html[data-accessibility-grayscale="true"] {
+    filter: grayscale(1);
+  }
+
+  /* Make links independently identifiable when requested. */
+  html[data-accessibility-underline-links="true"] a {
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.1em;
+    text-underline-offset: 0.18em;
+  }
+
+  /* Disable application transitions and animations when the explicit preference is enabled. */
+  html[data-accessibility-reduce-motion="true"] *,
+  html[data-accessibility-reduce-motion="true"] *::before,
+  html[data-accessibility-reduce-motion="true"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Preserve the browser-level reduced-motion preference. */
+  @media (prefers-reduced-motion: reduce) {
+    /* Disable decorative animation for users who request reduced motion at operating-system level. */
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
+/* Preserve the existing DigiCon component styles. */
 @layer components {
+  /* Preserve the DigiCon glass surface. */
   .glass {
     background: linear-gradient(158deg, rgba(20, 39, 74, 0.82) 0%, rgba(8, 18, 38, 0.72) 100%);
     border: 1px solid rgba(120, 165, 235, 0.16);
     backdrop-filter: blur(14px);
     box-shadow: 0 18px 44px -28px rgba(2, 8, 23, 0.95), inset 0 1px 0 rgba(190, 220, 255, 0.08);
   }
+
+  /* Preserve the DigiCon softer glass surface. */
   .glass-soft {
     background: rgba(13, 28, 54, 0.62);
     border: 1px solid rgba(120, 165, 235, 0.12);
     backdrop-filter: blur(10px);
   }
+
+  /* Preserve the DigiCon metallic border treatment. */
   .metal-edge {
     border: 1px solid transparent;
     background-image:
@@ -217,21 +447,29 @@
     background-origin: border-box;
     background-clip: padding-box, border-box;
   }
+
+  /* Preserve the DigiCon metallic text treatment. */
   .gold-text {
     background: linear-gradient(96deg, #f7d580, #f0b429 45%, #fff3d0 60%, #d4a017);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
+
+  /* Preserve the dense typography helper. */
   .dense {
     font-family: var(--font-dense);
   }
+
+  /* Preserve the metric typography helper. */
   .metric {
     font-family: var(--font-heading);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
   }
+
+  /* Preserve the uppercase label helper. */
   .label-caps {
     font-family: var(--font-dense);
     font-weight: 500;
@@ -239,13 +477,5 @@
     letter-spacing: 0.14em;
     font-size: 0.68rem;
     color: var(--muted-foreground);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
   }
 }
