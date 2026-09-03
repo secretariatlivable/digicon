@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { AuthProvider } from "@/lib/auth";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -51,12 +52,14 @@ class RootErrorBoundary extends Component<
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element #root not found");
 
-createRoot(rootEl).render(
+createRoot(rootEl!).render(
   <StrictMode>
     <RootErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
-          <App />
+          <AuthProvider> {/* WRAPPED APP */}
+            <App />
+          </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </RootErrorBoundary>
