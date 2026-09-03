@@ -1,14 +1,17 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Apple, Download, Smartphone, Wallet as WalletIcon } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorState, LoadingState, SectionHeading, UpgradeGate } from "@/components/kit";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
+import { addToAppleWallet, addToGoogleWallet } from "@/lib/wallet";
 import { useAuth } from "@/lib/session";
 import type { CardExport, DigitalCard } from "@/types";
 
 export default function WalletExport() {
   const { isPaid } = useAuth();
+  const [walletAction, setWalletAction] = useState<"apple" | "google" | null>(null);
   const cards = useQuery({ queryKey: ["cards"], queryFn: () => apiGet<DigitalCard[]>("/cards") });
   const card = cards.data?.[0];
   const exportData = useQuery({
@@ -17,6 +20,27 @@ export default function WalletExport() {
     enabled: isPaid && Boolean(card?.id),
     retry: false,
   });
+
+  const handleWalletExport = async (platform: "apple" | "google") => {
+    if (!card?.id) {
+      toast.error("No active DigiCon card is available to export.");
+      return;
+    }
+
+    setWalletAction(platform);
+    try {
+      if (platform === "apple") {
+        await addToAppleWallet(card.id);
+        toast.success("Your Apple Wallet pass is ready to add.");
+      } else {
+        await addToGoogleWallet(card.id);
+      }
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Wallet export failed.");
+    } finally {
+      setWalletAction(null);
+    }
+  };
 
   if (!isPaid) {
     return (
@@ -73,30 +97,30 @@ export default function WalletExport() {
             </a>
             <Button
               variant="outline"
-              onClick={() =>
-                toast.info("Apple Wallet passes need a signed pass certificate — add APPLE_PASS_CERT to the backend .env to enable.")
-              }
+              onClick={() => void handleWalletExport("apple")}
+              disabled={walletAction !== null}
               data-testid="wallet-apple"
+              aria-busy={walletAction === "apple"}
             >
               <Apple className="mr-2 h-4 w-4" aria-hidden />
-              Add to Apple Wallet
+              {walletAction === "apple" ? "Preparing Apple Wallet…" : "Add to Apple Wallet"}
             </Button>
             <Button
               variant="outline"
-              onClick={() =>
-                toast.info("Google Wallet passes need issuer credentials — add GOOGLE_WALLET_ISSUER_ID to the backend .env to enable.")
-              }
+              onClick={() => void handleWalletExport("google")}
+              disabled={walletAction !== null}
               data-testid="wallet-google"
+              aria-busy={walletAction === "google"}
             >
               <Smartphone className="mr-2 h-4 w-4" aria-hidden />
-              Add to Google Wallet
+              {walletAction === "google" ? "Opening Google Wallet…" : "Add to Google Wallet"}
             </Button>
           </div>
 
           <p className="dense flex items-start gap-2 text-xs text-muted-foreground">
             <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" aria-hidden />
             {exportData.data?.note ??
-              "Wallet passes are wired as a reusable integration layer — provider certificates are configured through backend environment variables."}
+              "Wallet passes are generated securely by DigiCon's Supabase Edge Functions after authentication, card ownership, and paid entitlement checks."}
           </p>
         </section>
       )}
