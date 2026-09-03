@@ -1,7 +1,9 @@
+// Import the existing pricing page dependencies.
 import { Link } from "react-router-dom";
 import { Check, Minus } from "lucide-react";
 import { PublicLayout } from "@/components/layout/Layouts";
 import { SectionHeading } from "@/components/kit";
+// Import the server-backed PayPal subscription control.
 import { PayPalSubscriptionButton } from "@/components/PayPalSubscriptionButton";
 import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/lib/session";
@@ -86,41 +88,53 @@ export default function Pricing() {
           </div>
         </div>
 
-        <section className="glass mt-10 rounded-2xl p-5" aria-labelledby="paypal-plans-title">
-          <SectionHeading
-            id="paypal-plans-title"
-            eyebrow="PayPal"
-            title="Subscribe securely with PayPal"
-            lede="Choose a DigiCon PayPal subscription and complete approval on PayPal. Your paid access is activated only after DigiCon verifies the PayPal webhook."
-          />
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {(["starter", "growth"] as const).map((planId) => {
-              const plan = {
-                starter: {
-                  name: "Starter",
-                  price: "₱199 / month",
-                  description: "Essential digital networking for individuals and small businesses.",
-                },
-                growth: {
-                  name: "Growth",
-                  price: "₱499 / month",
-                  description: "Advanced networking and CRM tools for growing SMEs and teams.",
-                },
-              }[planId];
+       // Add this section after the existing pricing cards and before the comparison table.
+<section
+  className="glass mt-10 rounded-2xl p-5"
+  aria-labelledby="paypal-plans-title"
+>
+  <SectionHeading
+    id="paypal-plans-title"
+    eyebrow="PayPal"
+    title="Subscribe securely with PayPal"
+    lede="Choose a DigiCon PayPal subscription and complete approval on PayPal. Your paid access is activated only after DigiCon verifies the PayPal webhook."
+  />
 
-              return (
-                <div key={planId} className="metal-edge rounded-2xl p-5">
-                  <p className="label-caps">{plan.name}</p>
-                  <p className="metric mt-1 text-2xl gold-text">{plan.price}</p>
-                  <p className="dense mt-1 mb-4 text-sm text-muted-foreground">
-                    {plan.description}
-                  </p>
-                  <PayPalSubscriptionButton planId={planId} />
-                </div>
-              );
-            })}
-          </div>
-        </section>
+  <div className="mt-6 grid gap-4 md:grid-cols-2">
+    {(["starter", "growth"] as const).map((planId) => {
+      const plan = {
+        starter: {
+          name: "Starter",
+          price: "₱199 / month",
+          description:
+            "Essential digital networking for individuals and small businesses.",
+        },
+        growth: {
+          name: "Growth",
+          price: "₱499 / month",
+          description:
+            "Advanced networking and CRM tools for growing SMEs and teams.",
+        },
+      }[planId];
+
+      return (
+        <div key={planId} className="metal-edge rounded-2xl p-5">
+          <p className="label-caps">{plan.name}</p>
+
+          <p className="metric mt-1 text-2xl gold-text">
+            {plan.price}
+          </p>
+
+          <p className="dense mt-1 mb-4 text-sm text-muted-foreground">
+            {plan.description}
+          </p>
+
+          <PayPalSubscriptionButton planId={planId} />
+        </div>
+      );
+    })}
+  </div>
+</section>
 
         <section className="glass mt-10 overflow-x-auto rounded-2xl p-5" aria-label="Plan comparison">
           <SectionHeading eyebrow="Compare" title="What's in each plan" />
