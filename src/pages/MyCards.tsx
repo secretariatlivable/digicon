@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, Lock, Plus, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import CardCanvas from "@/components/cards/CardCanvas";
+import CardCanvas from "@/components/card/CardCanvas";
 import { EmptyState, ErrorState, LoadingState, SectionHeading } from "@/components/kit";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
