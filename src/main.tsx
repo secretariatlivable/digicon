@@ -1,12 +1,8 @@
-import { StrictMode, Component, type ReactNode } from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
-
-/* ------------------------------------------------------------------ */
-/*  Root Error Boundary                                               */
-/* ------------------------------------------------------------------ */
+import { StrictMode, Component, type ReactNode } from "react";
+import { BrowserRouter } from "react-router-dom";
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
 
 class RootErrorBoundary extends Component<
   { children: ReactNode },
@@ -22,8 +18,7 @@ class RootErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // In production, send to Sentry or similar
-    console.error('[DigiCon Fatal]', error, info);
+    console.error("[DigiCon Fatal]", error, info);
   }
 
   render() {
@@ -33,7 +28,7 @@ class RootErrorBoundary extends Component<
           <div className="text-center max-w-md">
             <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
             <p className="text-white/60 mb-6">
-              {this.state.error?.message || 'An unexpected error occurred.'}
+              {this.state.error?.message || "An unexpected error occurred."}
             </p>
             <button
               onClick={() => window.location.reload()}
@@ -45,23 +40,20 @@ class RootErrorBoundary extends Component<
         </div>
       );
     }
+
     return this.props.children;
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  Mount                                                             */
-/* ------------------------------------------------------------------ */
-
-const rootEl = document.getElementById('root');
-if (!rootEl) throw new Error('Root element #root not found');
+const rootEl = document.getElementById("root");
+if (!rootEl) throw new Error("Root element #root not found");
 
 createRoot(rootEl).render(
   <StrictMode>
     <RootErrorBoundary>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <App />
       </BrowserRouter>
     </RootErrorBoundary>
-  </StrictMode>
+  </StrictMode>,
 );
