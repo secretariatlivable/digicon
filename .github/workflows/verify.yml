@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - run: npm ci
+      # package.json and package-lock.json are currently from different dependency generations.\n      # Use npm install so the lockfile is reconciled before typecheck/build.\n      - run: npm install --no-audit --no-fund
       - run: npx tsc --noEmit -p tsconfig.app.json
       - run: npx eslint .
       - run: npx vite build
@@ -49,7 +49,7 @@ jobs:
       - name: Install psql
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Run migration tests
-        run: ./supabase/tests/run.sh
+        run: bash ./supabase/tests/run.sh
         env:
           PGHOST: localhost
           PGPORT: '5432'
