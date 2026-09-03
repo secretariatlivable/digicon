@@ -8,7 +8,7 @@ import { type ReactNode } from 'react';
  * `srcSet`/`sizes` so phones never download the desktop file.
  *
  * Replacing the art direction later is a one-file change: drop new
- * `<slug>-2400.jpg` / `<slug>-1200.jpg` pairs into /public/media/banners and
+ * `<slug>-2400.jpg` / `<slug>-1200.jpg` pairs into /public and
  * update the `alt` text here. Nothing else in the codebase references the paths.
  */
 export const BANNERS = {
