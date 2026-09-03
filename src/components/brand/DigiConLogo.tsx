@@ -1,26 +1,58 @@
-type DigiConLogoProps = {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  showText?: boolean;
+import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
+
+/** Official DigiCon circular mark — the authoritative brand asset, never redrawn. */
+export function DigiConMark({
+  className,
+  glow = false,
+}: {
   className?: string;
-};
-
-const sizeMap = {
-  sm: { img: 'w-8 h-8', text: 'text-base' },
-  md: { img: 'w-10 h-10', text: 'text-xl' },
-  lg: { img: 'w-14 h-14', text: 'text-2xl' },
-  xl: { img: 'w-20 h-20', text: 'text-3xl' },
-};
-
-export function DigiConLogo({ size = 'md', showText = true, className = '' }: DigiConLogoProps) {
-  const s = sizeMap[size];
+  glow?: boolean;
+}) {
   return (
-    <span className={`inline-flex items-center gap-3 ${className}`}>
-      <img
-        src="/DigiCon_logo_transparent.jpg"
-        alt="DigiCon logo"
-        className={`${s.img} rounded-full object-cover ring-1 ring-white/10`}
-      />
-      {showText && <span className={`${s.text} font-bold text-white tracking-tight`}>DigiCon</span>}
-    </span>
+    <img
+      src="/icon-192.png"
+      alt=""
+      aria-hidden
+      width={40}
+      height={40}
+      className={cn(
+        "h-9 w-9 shrink-0 select-none",
+        glow && "drop-shadow-[0_0_14px_rgba(56,189,248,0.45)]",
+        className,
+      )}
+      data-testid="digicon-mark"
+    />
+  );
+}
+
+export function DigiConLogo({
+  to = "/",
+  compact = false,
+  className,
+  markClassName,
+}: {
+  to?: string;
+  compact?: boolean;
+  className?: string;
+  markClassName?: string;
+}) {
+  return (
+    <Link
+      to={to}
+      aria-label="DigiCon home"
+      className={cn(
+        "flex items-center gap-2.5 rounded-lg transition-opacity duration-200 hover:opacity-85",
+        className,
+      )}
+      data-testid="digicon-logo-link"
+    >
+      <DigiConMark className={markClassName} />
+      {!compact && (
+        <span className="font-heading text-xl font-extrabold tracking-tight text-foreground">
+          Digi<span className="text-sky">Con</span>
+        </span>
+      )}
+    </Link>
   );
 }
