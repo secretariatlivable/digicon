@@ -518,3 +518,101 @@ CREATE POLICY "card_photos_owner_delete" ON storage.objects FOR DELETE
 DROP POLICY IF EXISTS "select_all_badges" ON badges;
 CREATE POLICY "select_all_badges" ON badges FOR SELECT
   TO anon, authenticated USING (true);
+
+
+/* Finalize the public-contact RPC contract.
+ * The earlier migration installed a 5-argument consent-aware function and this
+ * migration temporarily installed a 4-argument variant. Keeping both makes
+ * calls with omitted optional arguments ambiguous in PostgreSQL.
+ */
+DROP FUNCTION IF EXISTS public.capture_public_contact(uuid, text, text, text);
+
+CREATE OR REPLACE FUNCTION public.capture_public_contact(
+  p_card_id uuid,
+  p_full_name text,
+  p_email text,
+  p_phone text DEFAULT '',
+  p_consent_given boolean DEFAULT false
+)
+RETURNS public.contacts
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_owner_id uuid;
+  v_name text := btrim(coalesce(p_full_name, ''));
+  v_email text := lower(btrim(coalesce(p_email, '')));
+  v_phone text := btrim(coalesce(p_phone, ''));
+  v_recent_count integer;
+  v_contact public.contacts;
+BEGIN
+  IF v_name = '' OR length(v_name) > 200 THEN
+    RAISE EXCEPTION 'A valid name is required.'
+      USING ERRCODE = '22023';
+  END IF;
+
+  IF v_email !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'
+     OR length(v_email) > 320 THEN
+    RAISE EXCEPTION 'A valid email is required.'
+      USING ERRCODE = '22023';
+  END IF;
+
+  IF length(v_phone) > 50 THEN
+    RAISE EXCEPTION 'That phone number is too long.'
+      USING ERRCODE = '22023';
+  END IF;
+
+  IF p_consent_given IS NOT TRUE THEN
+    RAISE EXCEPTION 'Consent is required.'
+      USING ERRCODE = '22023';
+  END IF;
+
+  SELECT user_id
+    INTO v_owner_id
+    FROM public.business_cards
+   WHERE id = p_card_id
+     AND is_active = true;
+
+  IF v_owner_id IS NULL THEN
+    RAISE EXCEPTION 'Card not found.'
+      USING ERRCODE = 'P0002';
+  END IF;
+
+  SELECT count(*)
+    INTO v_recent_count
+    FROM public.contacts
+   WHERE card_id = p_card_id
+     AND source = 'qr'
+     AND created_at > now() - interval '1 hour';
+
+  IF v_recent_count >= 60 THEN
+    RAISE EXCEPTION 'This card is receiving too many submissions. Try again later.'
+      USING ERRCODE = '53400';
+  END IF;
+
+  INSERT INTO public.contacts (
+    user_id, card_id, full_name, email, phone,
+    company, job_title, notes, consent_given, consent_date,
+    source, status, synced_to_crm
+  )
+  VALUES (
+    v_owner_id, p_card_id, v_name, v_email, v_phone,
+    '', '', 'Captured from a shared DigiCon card',
+    true, now(), 'qr', 'new', false
+  )
+  RETURNING * INTO v_contact;
+
+  INSERT INTO public.eco_stats (user_id, contacts_saved, updated_at)
+  VALUES (v_owner_id, 1, now())
+  ON CONFLICT (user_id) DO UPDATE
+    SET contacts_saved = public.eco_stats.contacts_saved + 1,
+        updated_at = now();
+
+  RETURN v_contact;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.capture_public_contact(uuid, text, text, text, boolean) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.capture_public_contact(uuid, text, text, text, boolean)
+  TO anon, authenticated;
