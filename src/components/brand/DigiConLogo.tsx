@@ -29,14 +29,24 @@ export function DigiConMark({
 export function DigiConLogo({
   to = "/",
   compact = false,
+  size = "md",
+  showText,
   className,
   markClassName,
 }: {
   to?: string;
   compact?: boolean;
+  size?: "sm" | "md" | "lg";
+  showText?: boolean;
   className?: string;
   markClassName?: string;
 }) {
+  const displayText = showText ?? !compact;
+  const markSize =
+    size === "lg" ? "h-11 w-11" : size === "sm" ? "h-8 w-8" : undefined;
+  const textSize =
+    size === "lg" ? "text-2xl" : size === "sm" ? "text-lg" : "text-xl";
+
   return (
     <Link
       to={to}
@@ -47,9 +57,9 @@ export function DigiConLogo({
       )}
       data-testid="digicon-logo-link"
     >
-      <DigiConMark className={markClassName} />
-      {!compact && (
-        <span className="font-heading text-xl font-extrabold tracking-tight text-foreground">
+      <DigiConMark className={cn(markSize, markClassName)} />
+      {displayText && (
+        <span className={cn("font-heading font-extrabold tracking-tight text-foreground", textSize)}>
           Digi<span className="text-sky">Con</span>
         </span>
       )}
