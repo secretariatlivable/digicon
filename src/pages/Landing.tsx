@@ -1,12 +1,13 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
   BarChart3,
   Bell,
   Brain,
   CalendarClock,
+  CreditCard,
   QrCode,
   Send,
   Share2,
@@ -15,7 +16,6 @@ import {
 } from "lucide-react";
 import { PublicLayout } from "@/components/layout/Layouts";
 import BrandImage from "@/components/brand/BrandImage";
-import CardCanvas from "@/components/card/CardCanvas";
 import { Avatar, StatusBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { FlowStrip } from "@/components/ui/FlowStrip";
@@ -28,7 +28,6 @@ import {
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useAuth } from "@/lib/session";
 import { cn } from "@/lib/utils";
-import type { CardInput } from "@/types";
 
 const GOLD_BUTTON =
   "min-h-[48px] border border-[#f8e49b]/80 bg-gradient-to-b from-[#fff1a4] via-[#d4af37] to-[#9c6b10] text-[#061a3a] shadow-[0_10px_28px_rgba(212,175,55,0.28)] hover:from-[#fff9c9] hover:via-[#e7c75b] hover:to-[#b57a12] hover:text-[#04142e]";
@@ -36,53 +35,132 @@ const GOLD_BUTTON =
 const GLASS_SURFACE =
   "border border-[#d4af37]/25 bg-gradient-to-br from-white/[0.10] via-[#123567]/35 to-[#061a3a]/80 backdrop-blur-xl";
 
-const HERO_CARD: CardInput = {
-  label: "Founder",
-  template: "founder",
-  orientation: "portrait",
-  accent: "#22d3ee",
-  name: "Maria Santos",
-  title: "Founder & CEO",
-  company: "Neora Solutions",
-  bio: "Building solutions that create impact.",
-  phone: "+63 917 123 4567",
-  email: "maria@neora.com",
-  website: "www.neora.com",
-  location: "Manila, Philippines",
-  avatar_url: "",
-  logo_url: "",
-  services: ["Partnerships", "Product strategy"],
-  socials: [{ label: "LinkedIn", url: "https://linkedin.com" }],
-  booking_url: "",
-  published: true,
+const HERO_CARD_IMAGE_SRC =
+  "https://raw.githubusercontent.com/secretariatlivable/digicon/main/public/digicon_dcard.png";
+
+type ActivityKind = "upgrade" | "checkout" | "engagement" | "sharing";
+
+type LiveActivityItem = {
+  name: string;
+  location: string;
+  action: string;
+  kind: ActivityKind;
 };
 
-const NETWORK_PREVIEW = [
+const LIVE_ACTIVITY: LiveActivityItem[] = [
   {
-    name: "Miguel Reyes",
-    role: "Founder @ GreenGrid",
-    status: "Partner",
-    met: "Sustainability Forum 2026",
+    name: "Priya Sharma",
+    location: "Mumbai, India",
+    action: "upgraded to DigiCon Pro",
+    kind: "upgrade",
   },
   {
-    name: "Aisha Rahman",
-    role: "HR Director @ PeopleFirst",
-    status: "Connected",
-    met: "Leadership Summit 2026",
+    name: "Kenji Tanaka",
+    location: "Tokyo, Japan",
+    action: "shared his card via QR at SmartCity Expo",
+    kind: "sharing",
   },
   {
-    name: "Jessica Chen",
-    role: "Investor @ NextWave",
-    status: "Opportunity",
-    met: "Tech Leaders Roundtable",
+    name: "Mei Ling Wong",
+    location: "Singapore",
+    action: "is checking out the Growth plan",
+    kind: "checkout",
   },
   {
-    name: "David Lim",
-    role: "CTO @ NovaTech",
-    status: "Follow Up",
-    met: "Global Tech Conference 2026",
+    name: "Budi Santoso",
+    location: "Jakarta, Indonesia",
+    action: "captured 4 new connections today",
+    kind: "engagement",
+  },
+  {
+    name: "Soo-jin Park",
+    location: "Seoul, South Korea",
+    action: "upgraded her team to Business",
+    kind: "upgrade",
+  },
+  {
+    name: "Anong Chaiya",
+    location: "Bangkok, Thailand",
+    action: "added her card to Google Wallet",
+    kind: "engagement",
+  },
+  {
+    name: "Liam Nguyen",
+    location: "Ho Chi Minh City, Vietnam",
+    action: "scheduled a follow-up with a new partner",
+    kind: "engagement",
+  },
+  {
+    name: "Grace Liu",
+    location: "Taipei, Taiwan",
+    action: "is exploring the Pro checkout",
+    kind: "checkout",
+  },
+  {
+    name: "Fatima Hassan",
+    location: "Kuala Lumpur, Malaysia",
+    action: "upgraded to DigiCon Pro",
+    kind: "upgrade",
+  },
+  {
+    name: "Jack Thompson",
+    location: "Sydney, Australia",
+    action: "reviewed his network health score",
+    kind: "engagement",
+  },
+  {
+    name: "Arjun Mehta",
+    location: "Bengaluru, India",
+    action: "is checking out team workspaces",
+    kind: "checkout",
+  },
+  {
+    name: "Chloe Tan",
+    location: "Manila, Philippines",
+    action: "sent her card via NFC tap",
+    kind: "sharing",
+  },
+  {
+    name: "Olivia Martin",
+    location: "Auckland, New Zealand",
+    action: "viewed her weekly relationship digest",
+    kind: "engagement",
+  },
+  {
+    name: "Rafiq Islam",
+    location: "Dhaka, Bangladesh",
+    action: "shared his card via link",
+    kind: "sharing",
   },
 ];
+
+const ACTIVITY_META: Record<
+  ActivityKind,
+  { icon: typeof Sparkles; label: string; badge: string }
+> = {
+  upgrade: {
+    icon: Sparkles,
+    label: "Upgrade",
+    badge: "border-[#d4af37]/40 bg-[#d4af37]/15 text-[#f5dd8d]",
+  },
+  checkout: {
+    icon: CreditCard,
+    label: "Checkout",
+    badge: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
+  },
+  engagement: {
+    icon: Users,
+    label: "Active",
+    badge: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",
+  },
+  sharing: {
+    icon: Share2,
+    label: "Sharing",
+    badge: "border-violet-400/40 bg-violet-400/10 text-violet-300",
+  },
+};
+
+const FEED_TIMES = ["just now", "2m ago", "6m ago", "12m ago"];
 
 const JOURNEY = [
   {
@@ -203,6 +281,95 @@ function GoldLinkButton({
     >
       {children}
     </Button>
+  );
+}
+
+function LiveActivityFeed() {
+  const [head, setHead] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setHead((current) => (current + 1) % LIVE_ACTIVITY.length);
+    }, 3200);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const visible = Array.from({ length: 4 }, (_, offset) => ({
+    item: LIVE_ACTIVITY[(head + offset) % LIVE_ACTIVITY.length],
+    time: FEED_TIMES[offset],
+  }));
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.25 }}
+      className="mt-5"
+      data-testid="landing-live-activity"
+      aria-label="Live DigiCon activity across Asia Pacific"
+    >
+      <div className="mb-2.5 flex items-center justify-between px-1">
+        <p className="label-caps text-[#f5dd8d]">Live across Asia Pacific</p>
+        <span className="dense flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className="relative flex h-2 w-2" aria-hidden>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+          </span>
+          Updating live
+        </span>
+      </div>
+
+      <div className="space-y-2.5">
+        <AnimatePresence initial={false}>
+          {visible.map(({ item, time }) => {
+            const meta = ACTIVITY_META[item.kind];
+            const Icon = meta.icon;
+
+            return (
+              <motion.div
+                key={item.name}
+                layout
+                initial={{ opacity: 0, y: -18, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 18, scale: 0.98 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+              >
+                <GlassCard
+                  variant="chrome"
+                  className="flex items-center gap-3 p-3"
+                >
+                  <Avatar name={item.name} size="sm" />
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {item.name}
+                    </p>
+                    <p className="dense truncate text-xs text-muted-foreground">
+                      {item.location} · {item.action}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                        meta.badge
+                      )}
+                    >
+                      <Icon className="h-3 w-3" aria-hidden />
+                      {meta.label}
+                    </span>
+                    <span className="dense text-[10px] text-muted-foreground">
+                      {time}
+                    </span>
+                  </div>
+                </GlassCard>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 }
 
@@ -392,43 +559,21 @@ export default function Landing() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="mx-auto max-w-xs"
             >
-              <CardCanvas
-                card={HERO_CARD}
-                testId="landing-hero-card"
+              <img
+                src={HERO_CARD_IMAGE_SRC}
+                alt="DigiCon digital business card preview"
+                data-testid="landing-hero-card"
+                className="h-auto w-full rounded-2xl border border-[#d4af37]/30 shadow-[0_18px_50px_rgba(3,12,32,0.45)]"
+                onError={(event) => {
+                  const img = event.currentTarget;
+                  if (img.dataset.fallback) return;
+                  img.dataset.fallback = "true";
+                  img.src = "/digicon_dcard.png";
+                }}
               />
             </motion.div>
 
-            <div className="mt-5 space-y-2.5">
-              {NETWORK_PREVIEW.map((person, index) => (
-                <motion.div
-                  key={person.name}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{
-                    duration: 0.45,
-                    delay: 0.2 + index * 0.09,
-                  }}
-                >
-                  <GlassCard
-                    variant="chrome"
-                    className="flex items-center gap-3 p-3"
-                  >
-                    <Avatar name={person.name} size="sm" />
-
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        {person.name}
-                      </p>
-                      <p className="dense truncate text-xs text-muted-foreground">
-                        {person.role} · met {person.met}
-                      </p>
-                    </div>
-
-                    <StatusBadge status={person.status} />
-                  </GlassCard>
-                </motion.div>
-              ))}
-            </div>
+            <LiveActivityFeed />
           </div>
         </div>
       </Section>
@@ -705,6 +850,22 @@ export default function Landing() {
           <Pullquote className="mt-8 text-[#f5dd8d]">
             The card is the entry point. The relationship is the product.
           </Pullquote>
+
+          <motion.figure
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mt-8 overflow-hidden rounded-2xl border border-[#d4af37]/30 shadow-[0_20px_60px_rgba(3,12,32,0.45)]"
+            data-testid="landing-relationship-banner"
+          >
+            <img
+              src="/digicon-female-professional.png"
+              alt="Professional woman using DigiCon to turn introductions into lasting relationships"
+              loading="lazy"
+              className="h-56 w-full object-cover object-top sm:h-72 lg:h-80"
+            />
+          </motion.figure>
         </GlassCard>
       </Section>
 
