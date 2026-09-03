@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import type { UseQueryResult } from "@tanstack/react-query";
-import CardCanvas from "@/components/cards/CardCanvas";
+import CardCanvas from "@/components/card/CardCanvas";
 import {
   Avatar,
   EmptyState,
