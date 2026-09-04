@@ -1,10 +1,9 @@
 /**
  * DigiCon authentication context.
  *
- * DigiCon uses **Supabase Auth as the single identity provider**. The database
- * schema keys every table off `auth.users(id)` and every RLS policy is written
- * against `auth.uid()`, so a second identity provider cannot grant access to
- * any row. See docs/ADR-001 for the decision record.
+ * Supabase Auth is the single browser identity provider. The legacy FastAPI
+ * session is not used to decide whether a route is protected; the backend API
+ * receives the Supabase access token through src/lib/api.ts instead.
  */
 
 import {
@@ -16,24 +15,27 @@ import {
   useRef,
   useState,
   type ReactNode,
-} from 'react';
-import type { Session } from '@supabase/supabase-js';
+} from "react";
+import type { Session } from "@supabase/supabase-js";
 import {
   supabase,
   type PlanId,
   type Profile,
   type Subscription,
-} from '@/lib/supabase';
-import type { Language } from '@/lib/i18n';
+} from "@/lib/supabase";
+import type { Language } from "@/lib/i18n";
+import type { User } from "@/types";
 
 export type AuthContextType = {
   session: Session | null;
   profile: Profile | null;
+  /** Compatibility user shape for existing application pages. */
+  user: User | null;
   subscription: Subscription | null;
-  /** Effective plan. Falls back to the free `startup` tier. */
   plan: PlanId;
-  /** True only when a provider webhook has confirmed an active subscription. */
   isActiveSubscription: boolean;
+  isPaid: boolean;
+  isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (
@@ -53,15 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [hasBusinessCard, setHasBusinessCard] = useState(false);
   const [sessionResolved, setSessionResolved] = useState(false);
   const [accountResolved, setAccountResolved] = useState(false);
-
-  // Guards against a stale in-flight profile fetch overwriting a newer one.
   const requestId = useRef(0);
-
-  /* -------------------------------------------------------------- */
-  /*  Session lifecycle                                              */
-  /* -------------------------------------------------------------- */
 
   useEffect(() => {
     let active = true;
@@ -73,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(data.session);
       })
       .catch((cause) => {
-        console.error('[DigiCon] Unable to read the auth session:', cause);
+        console.error("[DigiCon] Unable to read the auth session:", cause);
       })
       .finally(() => {
         if (active) setSessionResolved(true);
@@ -90,49 +87,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  /* -------------------------------------------------------------- */
-  /*  Account data (profile + billing state)                         */
-  /* -------------------------------------------------------------- */
-
   const loadAccount = useCallback(async (userId: string | undefined) => {
     const ticket = ++requestId.current;
 
     if (!userId) {
       setProfile(null);
       setSubscription(null);
+      setHasBusinessCard(false);
       setAccountResolved(true);
       return;
     }
 
     try {
-      const [profileResult, subscriptionResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+      const [profileResult, subscriptionResult, cardResult] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
         supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('status', 'active')
-          .order('updated_at', { ascending: false })
+          .from("subscriptions")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("business_cards")
+          .select("id")
+          .eq("user_id", userId)
           .limit(1)
           .maybeSingle(),
       ]);
 
       if (ticket !== requestId.current) return;
 
-      if (profileResult.error) {
-        console.error('[DigiCon] Profile load failed:', profileResult.error);
-      }
-      if (subscriptionResult.error) {
-        console.error('[DigiCon] Subscription load failed:', subscriptionResult.error);
-      }
+      if (profileResult.error) console.error("[DigiCon] Profile load failed:", profileResult.error);
+      if (subscriptionResult.error) console.error("[DigiCon] Subscription load failed:", subscriptionResult.error);
+      if (cardResult.error) console.error("[DigiCon] Card-state load failed:", cardResult.error);
 
       setProfile((profileResult.data as Profile | null) ?? null);
       setSubscription((subscriptionResult.data as Subscription | null) ?? null);
+      setHasBusinessCard(Boolean(cardResult.data));
     } catch (cause) {
       if (ticket !== requestId.current) return;
-      console.error('[DigiCon] Account load failed:', cause);
+      console.error("[DigiCon] Account load failed:", cause);
       setProfile(null);
       setSubscription(null);
+      setHasBusinessCard(false);
     } finally {
       if (ticket === requestId.current) setAccountResolved(true);
     }
@@ -143,10 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void loadAccount(session?.user?.id);
   }, [session?.user?.id, loadAccount]);
 
-  /* -------------------------------------------------------------- */
-  /*  Actions                                                        */
-  /* -------------------------------------------------------------- */
-
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
@@ -156,25 +151,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = useCallback(
-    async (
-      email: string,
-      password: string,
-      fullName: string,
-      companyName: string,
-    ) => {
+    async (email: string, password: string, fullName: string, companyName: string) => {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          // The `handle_new_user` database trigger provisions `profiles` and
-          // `eco_stats` rows atomically. Client-side inserts are not used:
-          // they race with email confirmation and fail RLS when no session
-          // exists yet.
           data: {
             full_name: fullName.trim(),
             company_name: companyName.trim(),
           },
-          emailRedirectTo: `${window.location.origin}/auth`,
+          emailRedirectTo: `${window.location.origin}/login`,
         },
       });
 
@@ -190,16 +176,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendPasswordReset = useCallback(async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/auth?mode=reset`,
+      redirectTo: `${window.location.origin}/login?mode=reset`,
     });
     return { error: error?.message ?? null };
   }, []);
 
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) console.error('[DigiCon] Sign out failed:', error);
+    if (error) console.error("[DigiCon] Sign out failed:", error);
     setProfile(null);
     setSubscription(null);
+    setHasBusinessCard(false);
     setSession(null);
   }, []);
 
@@ -207,34 +194,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await loadAccount(session?.user?.id);
   }, [loadAccount, session?.user?.id]);
 
-  /* -------------------------------------------------------------- */
-
   const value = useMemo<AuthContextType>(() => {
-    /*
-     * Compared case-insensitively on purpose.
-     *
-     * The subscriptions table shipped with an UPPERCASE status constraint in
-     * one migration and a lowercase one in the next, and the second used
-     * CREATE TABLE IF NOT EXISTS — so projects created before the fix still
-     * hold rows like 'ACTIVE'. A strict === comparison read those as inactive
-     * and silently dropped a paying customer to the free tier, which is how a
-     * live Starter subscriber lost wallet passes.
-     *
-     * 20260830000000_normalize_subscription_status.sql repairs the data; this
-     * makes the client resilient regardless of what is already stored.
-     */
     const normalizedStatus = subscription?.status?.trim().toLowerCase();
-    const isActiveSubscription = normalizedStatus === 'active';
-    const normalizedPlan = subscription?.plan?.trim().toLowerCase() as
-      | PlanId
-      | undefined;
+    const isActiveSubscription = normalizedStatus === "active";
+    const normalizedPlan = subscription?.plan?.trim().toLowerCase() as PlanId | undefined;
+    const plan = isActiveSubscription && normalizedPlan ? normalizedPlan : "startup";
+    const user: User | null = session?.user
+      ? {
+          id: session.user.id,
+          email: session.user.email ?? profile?.email ?? "",
+          name: profile?.full_name ?? session.user.user_metadata?.full_name ?? "",
+          role: profile?.role === "admin" ? "super_admin" : "user",
+          plan: isActiveSubscription ? "pro" : "free",
+          title: "",
+          company: profile?.company_name ?? session.user.user_metadata?.company_name ?? "",
+          phone: "",
+          avatar_url: profile?.avatar_url ?? "",
+          networking_goal: "",
+          onboarded: hasBusinessCard,
+        }
+      : null;
 
     return {
       session,
       profile,
+      user,
       subscription,
-      plan: isActiveSubscription && normalizedPlan ? normalizedPlan : 'startup',
+      plan,
       isActiveSubscription,
+      isPaid: isActiveSubscription,
+      isAdmin: profile?.role === "admin",
       loading: !sessionResolved || !accountResolved,
       signIn,
       signUp,
@@ -246,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     profile,
     subscription,
+    hasBusinessCard,
     sessionResolved,
     accountResolved,
     signIn,
@@ -260,17 +250,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextType {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
 
-/**
- * Language preference. Persists to `profiles.language` when a profile exists
- * and otherwise keeps the choice in local component state.
- */
 export function useLanguage(): [Language, (next: Language) => void] {
   const { profile, refreshProfile } = useAuth();
-  const [localLang, setLocalLang] = useState<Language>('en');
+  const [localLang, setLocalLang] = useState<Language>("en");
 
   useEffect(() => {
     if (profile?.language) setLocalLang(profile.language as Language);
@@ -282,12 +268,12 @@ export function useLanguage(): [Language, (next: Language) => void] {
       if (!profile) return;
 
       void supabase
-        .from('profiles')
+        .from("profiles")
         .update({ language: next, updated_at: new Date().toISOString() })
-        .eq('id', profile.id)
+        .eq("id", profile.id)
         .then(({ error }) => {
           if (error) {
-            console.error('[DigiCon] Language preference not saved:', error);
+            console.error("[DigiCon] Language preference not saved:", error);
             return;
           }
           void refreshProfile();
