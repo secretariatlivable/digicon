@@ -12,7 +12,7 @@ import {
 } from "@/components/dashboard/DashboardSections";
 import { buttonVariants } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
-import { useAuth } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
 import type { DashboardSummary, DigitalCard, FollowUp, Relationship } from "@/types";
 
 export default function Dashboard() {
