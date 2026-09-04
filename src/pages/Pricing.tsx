@@ -1,9 +1,7 @@
-// Import the existing pricing page dependencies.
 import { Link } from "react-router-dom";
 import { Check, Minus } from "lucide-react";
 import { PublicLayout } from "@/components/layout/Layouts";
 import { SectionHeading } from "@/components/kit";
-// Import the server-backed PayPal subscription control.
 import { PayPalSubscriptionButton } from "@/components/PayPalSubscriptionButton";
 import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/lib/session";
@@ -23,7 +21,10 @@ const ROWS = [
 ];
 
 function Cell({ value }: { value: boolean | string }) {
-  if (typeof value === "string") return <span className="dense text-sm">{value}</span>;
+  if (typeof value === "string") {
+    return <span className="dense text-sm">{value}</span>;
+  }
+
   return value ? (
     <Check className="h-4 w-4 text-accent" aria-label="Included" />
   ) : (
@@ -31,8 +32,26 @@ function Cell({ value }: { value: boolean | string }) {
   );
 }
 
+const PAYPAL_PLANS = [
+  {
+    id: "starter" as const,
+    name: "Starter",
+    price: "₱199 / month",
+    description:
+      "Essential digital networking for individuals and small businesses.",
+  },
+  {
+    id: "growth" as const,
+    name: "Growth",
+    price: "₱499 / month",
+    description:
+      "Advanced networking and CRM tools for growing SMEs and teams.",
+  },
+];
+
 export default function Pricing() {
   const { user, isPaid } = useAuth();
+
   return (
     <PublicLayout>
       <div className="mx-auto max-w-5xl px-4 py-12">
@@ -42,8 +61,8 @@ export default function Pricing() {
             Free to discover. Paid when it becomes infrastructure.
           </h1>
           <p className="dense mx-auto mt-3 max-w-xl text-muted-foreground">
-            Use the core relationship workspace for free. Upgrade when DigiCon becomes the system of
-            record for your professional network.
+            Use the core relationship workspace for free. Upgrade when DigiCon
+            becomes the system of record for your professional network.
           </p>
         </div>
 
@@ -51,7 +70,9 @@ export default function Pricing() {
           <div className="glass rounded-2xl p-6" data-testid="plan-free">
             <p className="label-caps">Free</p>
             <p className="metric mt-1 text-3xl">$0</p>
-            <p className="dense mt-1 text-sm text-muted-foreground">Forever. One card, full relationship basics.</p>
+            <p className="dense mt-1 text-sm text-muted-foreground">
+              Forever. One card, full relationship basics.
+            </p>
             <Link
               to={user ? "/dashboard" : "/signup"}
               className={cn(buttonVariants({ variant: "outline" }), "mt-5 w-full")}
@@ -61,23 +82,36 @@ export default function Pricing() {
             </Link>
           </div>
 
-          <div className="metal-edge rounded-2xl p-6" data-testid="plan-pro-monthly">
+          <div
+            className="metal-edge rounded-2xl p-6"
+            data-testid="plan-pro-monthly"
+          >
             <p className="label-caps">Pro · Monthly</p>
             <p className="metric mt-1 text-3xl gold-text">$11</p>
-            <p className="dense mt-1 text-sm text-muted-foreground">per month · billed monthly</p>
+            <p className="dense mt-1 text-sm text-muted-foreground">
+              per month · billed monthly
+            </p>
             <Link
               to={isPaid ? "/billing" : "/checkout?plan=pro_monthly"}
-              className={cn(buttonVariants(), "mt-5 w-full bg-gold text-[#1a1200] hover:bg-gold-metal")}
+              className={cn(
+                buttonVariants(),
+                "mt-5 w-full bg-gold text-[#1a1200] hover:bg-gold-metal",
+              )}
               data-testid="plan-pro-monthly-cta"
             >
               {isPaid ? "Manage subscription" : "Upgrade monthly"}
             </Link>
           </div>
 
-          <div className="glass rounded-2xl p-6" data-testid="plan-pro-yearly">
+          <div
+            className="glass rounded-2xl p-6"
+            data-testid="plan-pro-yearly"
+          >
             <p className="label-caps">Pro · Yearly</p>
             <p className="metric mt-1 text-3xl">$111</p>
-            <p className="dense mt-1 text-sm text-muted-foreground">per year · two months free</p>
+            <p className="dense mt-1 text-sm text-muted-foreground">
+              per year · two months free
+            </p>
             <Link
               to={isPaid ? "/billing" : "/checkout?plan=pro_yearly"}
               className={cn(buttonVariants({ variant: "outline" }), "mt-5 w-full")}
@@ -88,74 +122,69 @@ export default function Pricing() {
           </div>
         </div>
 
-       // Add this section after the existing pricing cards and before the comparison table.
-<section
-  className="glass mt-10 rounded-2xl p-5"
-  aria-labelledby="paypal-plans-title"
->
-  <SectionHeading
-    id="paypal-plans-title"
-    eyebrow="PayPal"
-    title="Subscribe securely with PayPal"
-    lede="Choose a DigiCon PayPal subscription and complete approval on PayPal. Your paid access is activated only after DigiCon verifies the PayPal webhook."
-  />
-
-  <div className="mt-6 grid gap-4 md:grid-cols-2">
-    {(["starter", "growth"] as const).map((planId) => {
-      const plan = {
-        starter: {
-          name: "Starter",
-          price: "₱199 / month",
-          description:
-            "Essential digital networking for individuals and small businesses.",
-        },
-        growth: {
-          name: "Growth",
-          price: "₱499 / month",
-          description:
-            "Advanced networking and CRM tools for growing SMEs and teams.",
-        },
-      }[planId];
-
-      return (
-        <div key={planId} className="metal-edge rounded-2xl p-5">
-          <p className="label-caps">{plan.name}</p>
-
-          <p className="metric mt-1 text-2xl gold-text">
-            {plan.price}
-          </p>
-
-          <p className="dense mt-1 mb-4 text-sm text-muted-foreground">
-            {plan.description}
-          </p>
-
-                  <div className="text-center">
+        <section
+          className="glass mt-10 rounded-2xl p-5"
+          aria-labelledby="paypal-plans-title"
+        >
           <SectionHeading
+            id="paypal-plans-title"
             eyebrow="PayPal"
             title="Subscribe securely with PayPal"
+            lede="Choose a DigiCon PayPal subscription and complete approval on PayPal. Your paid access is activated only after DigiCon verifies the PayPal webhook."
           />
-          <p className="dense mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
-            Choose a DigiCon PayPal subscription and complete approval on PayPal. Your paid access is activated only after DigiCon verifies the PayPal webhook.
-          </p>
-        </div>
-</section>
 
-        <section className="glass mt-10 overflow-x-auto rounded-2xl p-5" aria-label="Plan comparison">
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {PAYPAL_PLANS.map((plan) => (
+              <div
+                key={plan.id}
+                className="metal-edge rounded-2xl p-5"
+                data-testid={`paypal-plan-${plan.id}`}
+              >
+                <p className="label-caps">{plan.name}</p>
+                <p className="metric mt-1 text-2xl gold-text">{plan.price}</p>
+                <p className="dense mb-4 mt-1 text-sm text-muted-foreground">
+                  {plan.description}
+                </p>
+                <PayPalSubscriptionButton planId={plan.id} />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section
+          className="glass mt-10 overflow-x-auto rounded-2xl p-5"
+          aria-label="Plan comparison"
+        >
           <SectionHeading eyebrow="Compare" title="What's in each plan" />
-          <table className="w-full min-w-[520px] text-left" data-testid="pricing-table">
+          <table
+            className="w-full min-w-[520px] text-left"
+            data-testid="pricing-table"
+          >
             <thead>
               <tr className="label-caps">
-                <th scope="col" className="pb-2">Feature</th>
-                <th scope="col" className="pb-2">Free</th>
-                <th scope="col" className="pb-2">Pro</th>
+                <th scope="col" className="pb-2">
+                  Feature
+                </th>
+                <th scope="col" className="pb-2">
+                  Free
+                </th>
+                <th scope="col" className="pb-2">
+                  Pro
+                </th>
               </tr>
             </thead>
             <tbody className="dense text-sm">
               {ROWS.map((row) => (
                 <tr key={row.feature} className="border-t border-border/60">
-                  <th scope="row" className="py-2.5 pr-4 font-normal">{row.feature}</th>
-                  <td className="py-2.5"><Cell value={row.free} /></td>
-                  <td className="py-2.5"><Cell value={row.pro} /></td>
+                  <th scope="row" className="py-2.5 pr-4 font-normal">
+                    {row.feature}
+                  </th>
+                  <td className="py-2.5">
+                    <Cell value={row.free} />
+                  </td>
+                  <td className="py-2.5">
+                    <Cell value={row.pro} />
+                  </td>
                 </tr>
               ))}
             </tbody>
