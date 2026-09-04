@@ -15,9 +15,10 @@ from lib.db import db
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 # Server-side price book — the client only ever sends a plan id.
+# These amounts intentionally match the public DigiCon pricing page.
 PLANS: dict[str, dict] = {
-    "pro_monthly": {"amount": 19.0, "label": "DigiCon Pro — Monthly", "period": "month", "plan": "pro"},
-    "pro_yearly": {"amount": 182.0, "label": "DigiCon Pro — Yearly", "period": "year", "plan": "pro"},
+    "pro_monthly": {"amount": 11.0, "label": "DigiCon Pro — Monthly", "period": "month", "plan": "pro"},
+    "pro_yearly": {"amount": 111.0, "label": "DigiCon Pro — Yearly", "period": "year", "plan": "pro"},
 }
 
 
@@ -38,9 +39,13 @@ class PaymentStatus(BaseModel):
 
 
 def checkout_client(request: Request) -> StripeCheckout:
+    api_key = os.environ.get("STRIPE_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Stripe checkout is not configured.")
+
     host_url = str(request.base_url)
     return StripeCheckout(
-        api_key=os.environ.get("STRIPE_API_KEY", "sk_test_emergent"),
+        api_key=api_key,
         webhook_url=f"{host_url}api/webhook/stripe",
     )
 
@@ -58,6 +63,7 @@ async def create_checkout(body: CheckoutRequest, request: Request, user: dict = 
     plan = PLANS.get(body.plan_id)
     if not plan:
         raise HTTPException(status_code=400, detail="Unknown plan")
+
     origin = body.origin_url.rstrip("/")
     session = await checkout_client(request).create_checkout_session(
         CheckoutSessionRequest(
@@ -110,7 +116,7 @@ async def payment_status(session_id: str, request: Request, _: Optional[dict] = 
         except Exception:  # transient Stripe error — report DB state
             pass
     return PaymentStatus(
-        session_id=record["session_id"], status=record["status"], payment_status=record["payment_status"]
+        session_id=session_id, status=record["status"], payment_status=record["payment_status"]
     )
 
 
@@ -126,6 +132,7 @@ async def stripe_webhook(request: Request):
         )
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
     if event.payment_status == "paid" and event.session_id:
         record = await db.payment_transactions.find_one({"session_id": event.session_id})
         if record:
