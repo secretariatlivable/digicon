@@ -9,10 +9,7 @@ export default function CookieConsent() {
   useEffect(() => {
     const consent = window.localStorage.getItem(COOKIE_CONSENT_KEY);
     if (!consent) {
-<<<<<<< HEAD
-=======
       // Show after a short delay so it doesn't flash immediately
->>>>>>> da54b2619b70e470b9504727e59a54d4eb34e98c
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
     }
@@ -32,11 +29,8 @@ export default function CookieConsent() {
 
   return (
     <div
-<<<<<<< HEAD
       className="fixed bottom-4 left-4 right-4 z-[80] mx-auto max-w-md sm:left-auto sm:right-6 sm:bottom-6"
-=======
       className="fixed bottom-4 left-4 right-4 z-[80] mx-auto max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 sm:left-auto sm:right-6 sm:bottom-6"
->>>>>>> da54b2619b70e470b9504727e59a54d4eb34e98c
       role="dialog"
       aria-label="Cookie consent"
       data-testid="cookie-consent"
@@ -52,11 +46,8 @@ export default function CookieConsent() {
           <button
             type="button"
             onClick={declineCookies}
-<<<<<<< HEAD
             className="rounded-lg p-1 text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
-=======
             className="rounded-lg p-1 text-muted-foreground hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
->>>>>>> da54b2619b70e470b9504727e59a54d4eb34e98c
             aria-label="Dismiss cookie notice"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -66,22 +57,16 @@ export default function CookieConsent() {
           <button
             type="button"
             onClick={acceptCookies}
-<<<<<<< HEAD
             className="dense inline-flex h-10 items-center justify-center rounded-lg bg-sky px-4 text-sm font-semibold text-white hover:bg-sky/90"
-=======
             className="dense inline-flex h-10 items-center justify-center rounded-lg bg-sky px-4 text-sm font-semibold text-white transition-colors hover:bg-sky/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
->>>>>>> da54b2619b70e470b9504727e59a54d4eb34e98c
           >
             Accept & Continue
           </button>
           <button
             type="button"
             onClick={declineCookies}
-<<<<<<< HEAD
             className="dense inline-flex h-10 items-center justify-center rounded-lg border border-border/60 bg-secondary/30 px-4 text-sm font-medium text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
-=======
             className="dense inline-flex h-10 items-center justify-center rounded-lg border border-border/60 bg-secondary/30 px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
->>>>>>> da54b2619b70e470b9504727e59a54d4eb34e98c
           >
             Essential Only
           </button>
