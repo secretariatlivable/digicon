@@ -1,41 +1,27 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost, ApiError } from "@/lib/api";
-import type { User } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { queryClient } from "@/lib/queryClient";
 
 export const meKey = ["auth", "me"] as const;
 
-export function useAuth() {
-  const query = useQuery<User | null>({
-    queryKey: meKey,
-    queryFn: async () => {
-      try {
-        return await apiGet<User>("/auth/me");
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 401) return null;
-        throw err;
-      }
-    },
-    retry: false,
-    staleTime: 30_000,
-  });
-  return {
-    user: query.data ?? null,
-    isLoading: query.isLoading,
-    isPaid: (query.data?.plan ?? "free") !== "free",
-    isAdmin: query.data?.role === "super_admin",
-  };
-}
-
-/** Call after a successful login/signup so cached data belongs to the new session. */
+/**
+ * TanStack Query session helpers.
+ *
+ * `endSession` signs the user out of Supabase and wipes the query cache so
+ * stale data does not outlive the session.
+ */
 export function useSession() {
   const qc = useQueryClient();
+
   return {
-    beginSession: async (user: User) => {
+    /** Clear any cached data that might belong to a previous user. */
+    beginSession: async () => {
       qc.clear();
-      qc.setQueryData(meKey, user);
     },
+    /** Sign out and destroy cached queries. */
     endSession: async () => {
-      await apiPost("/auth/logout");
+      const { error } = await supabase.auth.signOut();
+      if (error) console.error("[DigiCon] Sign out failed:", error);
       qc.clear();
       qc.setQueryData(meKey, null);
     },
