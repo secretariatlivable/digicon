@@ -24,13 +24,31 @@ import {
   type Subscription,
 } from "@/lib/supabase";
 import type { Language } from "@/lib/i18n";
-import type { User } from "@/types";
+import { queryClient } from "@/lib/queryClient";
+
+/**
+ * Normalized user shape consumed by the application.
+ * Kept inside the auth module so the build does not depend on a separate
+ * @/types file that may not exist in every branch.
+ */
+export type AuthUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: "super_admin" | "user";
+  plan: "free" | "pro";
+  title: string;
+  company: string;
+  phone: string;
+  avatar_url: string;
+  networking_goal: string;
+  onboarded: boolean;
+};
 
 export type AuthContextType = {
   session: Session | null;
   profile: Profile | null;
-  /** Compatibility user shape for existing application pages. */
-  user: User | null;
+  user: AuthUser | null;
   subscription: Subscription | null;
   plan: PlanId;
   isActiveSubscription: boolean;
@@ -184,6 +202,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) console.error("[DigiCon] Sign out failed:", error);
+    // Wipe cached queries so data from the previous session does not leak
+    // into the next login or into public pages.
+    queryClient.clear();
     setProfile(null);
     setSubscription(null);
     setHasBusinessCard(false);
@@ -199,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isActiveSubscription = normalizedStatus === "active";
     const normalizedPlan = subscription?.plan?.trim().toLowerCase() as PlanId | undefined;
     const plan = isActiveSubscription && normalizedPlan ? normalizedPlan : "startup";
-    const user: User | null = session?.user
+    const user: AuthUser | null = session?.user
       ? {
           id: session.user.id,
           email: session.user.email ?? profile?.email ?? "",
