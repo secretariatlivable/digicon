@@ -9,7 +9,6 @@ export default function CookieConsent() {
   useEffect(() => {
     const consent = window.localStorage.getItem(COOKIE_CONSENT_KEY);
     if (!consent) {
-      // Show after a short delay so it doesn't flash immediately
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
     }
@@ -29,7 +28,6 @@ export default function CookieConsent() {
 
   return (
     <div
-      className="fixed bottom-4 left-4 right-4 z-[80] mx-auto max-w-md sm:left-auto sm:right-6 sm:bottom-6"
       className="fixed bottom-4 left-4 right-4 z-[80] mx-auto max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 sm:left-auto sm:right-6 sm:bottom-6"
       role="dialog"
       aria-label="Cookie consent"
@@ -38,7 +36,9 @@ export default function CookieConsent() {
       <div className="rounded-2xl border border-border/60 bg-[#050b1c]/95 p-5 shadow-[0_18px_45px_rgba(0,0,0,0.35)] backdrop-blur-xl">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-2">
-            <h3 className="text-base font-semibold text-foreground">We value your privacy</h3>
+            <h3 className="text-base font-semibold text-foreground">
+              We value your privacy
+            </h3>
             <p className="dense text-sm text-muted-foreground">
               DigiCon uses essential cookies to keep you signed in and secure. We do not track you across other sites.
             </p>
@@ -46,7 +46,6 @@ export default function CookieConsent() {
           <button
             type="button"
             onClick={declineCookies}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
             className="rounded-lg p-1 text-muted-foreground hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Dismiss cookie notice"
           >
@@ -57,7 +56,6 @@ export default function CookieConsent() {
           <button
             type="button"
             onClick={acceptCookies}
-            className="dense inline-flex h-10 items-center justify-center rounded-lg bg-sky px-4 text-sm font-semibold text-white hover:bg-sky/90"
             className="dense inline-flex h-10 items-center justify-center rounded-lg bg-sky px-4 text-sm font-semibold text-white transition-colors hover:bg-sky/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Accept & Continue
@@ -65,7 +63,6 @@ export default function CookieConsent() {
           <button
             type="button"
             onClick={declineCookies}
-            className="dense inline-flex h-10 items-center justify-center rounded-lg border border-border/60 bg-secondary/30 px-4 text-sm font-medium text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
             className="dense inline-flex h-10 items-center justify-center rounded-lg border border-border/60 bg-secondary/30 px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Essential Only
