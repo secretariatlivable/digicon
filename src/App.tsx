@@ -30,6 +30,7 @@ import Settings from "@/pages/Settings";
 import Admin from "@/pages/Admin";
 import Pricing from "@/pages/Pricing";
 import InfoPage from "@/pages/InfoPage";
+import SupportPage from "@/pages/SupportPage";
 import { Blog, BlogArticle } from "@/pages/Blog";
 import {
   Billing,
