@@ -14,7 +14,7 @@ import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Onboarding from "@/pages/Onboarding";
-import Dashboard from "@/pages/Dashboard";
+import Dashboard from "@/pages/DashboardPage";
 import MyCards from "@/pages/MyCards";
 import CardBuilder from "@/pages/CardBuilder";
 import Share from "@/pages/Share";
