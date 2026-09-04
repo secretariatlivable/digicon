@@ -1,74 +1,110 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Cookie, X } from "lucide-react";
 
-const COOKIE_CONSENT_KEY = "digicon-cookie-consent";
+const COOKIE_CONSENT_STORAGE_KEY = "digicon-cookie-consent";
+
+type CookieConsentValue = "accepted" | "declined";
 
 export default function CookieConsent() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const consent = window.localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (!consent) {
-      const timer = setTimeout(() => setIsVisible(true), 1000);
-      return () => clearTimeout(timer);
+    const storedConsent = window.localStorage.getItem(
+      COOKIE_CONSENT_STORAGE_KEY,
+    ) as CookieConsentValue | null;
+
+    if (!storedConsent) {
+      setVisible(true);
     }
   }, []);
 
-  const acceptCookies = () => {
-    window.localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
-    setIsVisible(false);
+  const saveConsent = (value: CookieConsentValue) => {
+    window.localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, value);
+    setVisible(false);
   };
 
-  const declineCookies = () => {
-    window.localStorage.setItem(COOKIE_CONSENT_KEY, "declined");
-    setIsVisible(false);
-  };
-
-  if (!isVisible) return null;
+  if (!visible) {
+    return null;
+  }
 
   return (
-    <div
-      className="fixed bottom-4 left-4 right-4 z-[80] mx-auto max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 sm:left-auto sm:right-6 sm:bottom-6"
+    <aside
+      className="fixed bottom-4 left-4 right-4 z-[80] mx-auto max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300 sm:bottom-6 sm:left-auto sm:right-6"
       role="dialog"
       aria-label="Cookie consent"
+      aria-describedby="cookie-consent-description"
       data-testid="cookie-consent"
     >
-      <div className="rounded-2xl border border-border/60 bg-[#050b1c]/95 p-5 shadow-[0_18px_45px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-2">
-            <h3 className="text-base font-semibold text-foreground">
-              We value your privacy
-            </h3>
-            <p className="dense text-sm text-muted-foreground">
-              DigiCon uses essential cookies to keep you signed in and secure. We do not track you across other sites.
-            </p>
+      <div className="glass rounded-2xl border border-border/70 p-5 shadow-2xl">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 shrink-0 rounded-lg bg-sky/10 p-2 text-sky">
+            <Cookie className="h-5 w-5" aria-hidden="true" />
           </div>
-          <button
-            type="button"
-            onClick={declineCookies}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Dismiss cookie notice"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={acceptCookies}
-            className="dense inline-flex h-10 items-center justify-center rounded-lg bg-sky px-4 text-sm font-semibold text-white transition-colors hover:bg-sky/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Accept & Continue
-          </button>
-          <button
-            type="button"
-            onClick={declineCookies}
-            className="dense inline-flex h-10 items-center justify-center rounded-lg border border-border/60 bg-secondary/30 px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Essential Only
-          </button>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <h2 className="font-heading text-base font-bold text-foreground">
+                Cookies & privacy
+              </h2>
+
+              <button
+                type="button"
+                onClick={() => saveConsent("declined")}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Close cookie notice"
+                title="Close"
+                data-testid="cookie-consent-close"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            <p
+              id="cookie-consent-description"
+              className="dense mt-2 text-sm leading-6 text-muted-foreground"
+            >
+              DigiCon uses essential local storage and cookies to keep the
+              application secure, remember your preferences, and improve your
+              experience. Read our{" "}
+              <Link
+                to="/cookies"
+                className="text-sky underline underline-offset-2 hover:text-sky/80"
+              >
+                Cookie Policy
+              </Link>{" "}
+              and{" "}
+              <Link
+                to="/privacy"
+                className="text-sky underline underline-offset-2 hover:text-sky/80"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => saveConsent("accepted")}
+                className="dense inline-flex h-10 items-center justify-center rounded-lg bg-sky px-4 text-sm font-semibold text-white transition-colors hover:bg-sky/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                data-testid="cookie-consent-accept"
+              >
+                Accept
+              </button>
+
+              <button
+                type="button"
+                onClick={() => saveConsent("declined")}
+                className="dense inline-flex h-10 items-center justify-center rounded-lg border border-border/60 bg-secondary/30 px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                data-testid="cookie-consent-decline"
+              >
+                Decline
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
