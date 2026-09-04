@@ -98,6 +98,14 @@ export type TranslationKey =
   | 'auth.signUpTitle'
   | 'auth.signingIn'
   | 'auth.signingUp'
+  | 'auth.resetTitle'
+  | 'auth.resetDesc'
+  | 'auth.sendResetLink'
+  | 'auth.forgotPassword'
+  | 'auth.errorRequiredEmail'
+  | 'auth.errorPasswordLength'
+  | 'auth.errorRequiredName'
+  | 'auth.confirmEmail'
   | 'dashboard.welcome'
   | 'dashboard.cardsShared'
   | 'dashboard.contactsCaptured'
@@ -326,6 +334,14 @@ const en: Record<TranslationKey, string> = {
   'auth.signUpTitle': 'Create Your Account',
   'auth.signingIn': 'Signing in...',
   'auth.signingUp': 'Creating account...',
+  'auth.resetTitle': 'Reset your password',
+  'auth.resetDesc': 'We will email you a secure link to choose a new password.',
+  'auth.sendResetLink': 'Send reset link',
+  'auth.forgotPassword': 'Forgot your password?',
+  'auth.errorRequiredEmail': 'Enter your email address.',
+  'auth.errorPasswordLength': 'Your password must be at least {0} characters.',
+  'auth.errorRequiredName': 'Enter your full name.',
+  'auth.confirmEmail': 'Check your inbox and confirm your email address to finish creating your DigiCon account.',
 
   'dashboard.welcome': 'Welcome back',
   'dashboard.cardsShared': 'Cards Shared',
@@ -546,6 +562,27 @@ const fil: Record<TranslationKey, string> = {
   'landing.hero.subtitle': 'Ang DigiCon — Digital Connections ay tumutulong gawing relationships ang introductions.',
   'landing.hero.cta': 'Magsimula Ngayon',
   'landing.hero.secondary': 'Tingnan Kung Paano',
+
+  'auth.email': 'Email',
+  'auth.password': 'Password',
+  'auth.signIn': 'Mag Sign In',
+  'auth.signUp': 'Gumawa ng Account',
+  'auth.fullName': 'Buong Pangalan',
+  'auth.companyName': 'Pangalan ng Kumpanya',
+  'auth.haveAccount': 'May account ka na?',
+  'auth.noAccount': 'Wala pang account?',
+  'auth.signInTitle': 'Maligayang Pagbabalik',
+  'auth.signUpTitle': 'Gumawa ng Account',
+  'auth.signingIn': 'Nag si-sign in...',
+  'auth.signingUp': 'Gumagawa ng account...',
+  'auth.resetTitle': 'I-reset ang iyong password',
+  'auth.resetDesc': 'Magpapadala kami ng secure link sa iyong email para pumili ng bagong password.',
+  'auth.sendResetLink': 'Ipadala ang reset link',
+  'auth.forgotPassword': 'Nakalimutan ang password?',
+  'auth.errorRequiredEmail': 'Ilagay ang iyong email address.',
+  'auth.errorPasswordLength': 'Ang password ay dapat hindi bababa sa {0} characters.',
+  'auth.errorRequiredName': 'Ilagay ang iyong buong pangalan.',
+  'auth.confirmEmail': 'Tingnan ang iyong inbox at kumpirmahin ang email address para matapos ang pag-gawa ng account.',
 
   'dashboard.welcome': 'Maligayang pagbabalik',
   'dashboard.cardsShared': 'Naibahaging Card',
