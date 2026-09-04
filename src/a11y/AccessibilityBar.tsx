@@ -49,7 +49,11 @@ export default function AccessibilityBar() {
       const parsedPreferences = JSON.parse(
         storedPreferences,
       ) as Partial<AccessibilityPreferences>;
-      setPreferences({ ...DEFAULT_PREFERENCES, ...parsedPreferences });
+
+      setPreferences({
+        ...DEFAULT_PREFERENCES,
+        ...parsedPreferences,
+      });
     } catch {
       window.localStorage.removeItem(ACCESSIBILITY_STORAGE_KEY);
     }
@@ -59,13 +63,19 @@ export default function AccessibilityBar() {
     const rootElement = document.documentElement;
 
     rootElement.dataset.accessibilityTextSize = preferences.textSize;
+
     rootElement.dataset.accessibilityHighContrast = String(
       preferences.highContrast,
     );
-    rootElement.dataset.accessibilityGrayscale = String(preferences.grayscale);
+
+    rootElement.dataset.accessibilityGrayscale = String(
+      preferences.grayscale,
+    );
+
     rootElement.dataset.accessibilityUnderlineLinks = String(
       preferences.underlineLinks,
     );
+
     rootElement.dataset.accessibilityReduceMotion = String(
       preferences.reduceMotion,
     );
@@ -88,7 +98,9 @@ export default function AccessibilityBar() {
 
   const cycleTextSize = (direction: "increase" | "decrease") => {
     const levels: TextSizeLevel[] = ["normal", "large", "larger"];
+
     const currentIndex = levels.indexOf(preferences.textSize);
+
     const nextIndex =
       direction === "increase"
         ? Math.min(currentIndex + 1, levels.length - 1)
@@ -118,8 +130,15 @@ export default function AccessibilityBar() {
             aria-controls="digicon-accessibility-panel"
             data-testid="accessibility-toggle"
           >
-            <Sliders className="h-5 w-5 text-sky" aria-hidden="true" />
-            <span className="dense hidden sm:inline">Accessibility</span>
+            <Sliders
+              className="h-5 w-5 text-sky"
+              aria-hidden="true"
+            />
+
+            <span className="dense hidden sm:inline">
+              Accessibility
+            </span>
+
             <Settings2
               className="h-4 w-4 text-muted-foreground"
               aria-hidden="true"
@@ -135,7 +154,10 @@ export default function AccessibilityBar() {
               title="Decrease text size"
               data-testid="accessibility-text-decrease"
             >
-              <Minus className="h-4 w-4" aria-hidden="true" />
+              <Minus
+                className="h-4 w-4"
+                aria-hidden="true"
+              />
             </button>
 
             <span
@@ -157,7 +179,10 @@ export default function AccessibilityBar() {
               title="Increase text size"
               data-testid="accessibility-text-increase"
             >
-              <Plus className="h-4 w-4" aria-hidden="true" />
+              <Plus
+                className="h-4 w-4"
+                aria-hidden="true"
+              />
             </button>
           </div>
 
@@ -172,6 +197,7 @@ export default function AccessibilityBar() {
             >
               Accessibility
             </Link>
+
             <Link
               to="/privacy"
               className="dense rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -179,6 +205,7 @@ export default function AccessibilityBar() {
             >
               Privacy
             </Link>
+
             <Link
               to="/cookies"
               className="dense rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -213,14 +240,23 @@ export default function AccessibilityBar() {
                 )}
                 data-testid="accessibility-high-contrast"
               >
-                <Palette className="h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="dense">High contrast</span>
+                <Palette
+                  className="h-5 w-5 shrink-0"
+                  aria-hidden="true"
+                />
+
+                <span className="dense">
+                  High contrast
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() =>
-                  updatePreference("grayscale", !preferences.grayscale)
+                  updatePreference(
+                    "grayscale",
+                    !preferences.grayscale,
+                  )
                 }
                 aria-pressed={preferences.grayscale}
                 className={cn(
@@ -231,8 +267,14 @@ export default function AccessibilityBar() {
                 )}
                 data-testid="accessibility-grayscale"
               >
-                <EyeOff className="h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="dense">Grayscale</span>
+                <EyeOff
+                  className="h-5 w-5 shrink-0"
+                  aria-hidden="true"
+                />
+
+                <span className="dense">
+                  Grayscale
+                </span>
               </button>
 
               <button
@@ -252,8 +294,14 @@ export default function AccessibilityBar() {
                 )}
                 data-testid="accessibility-underline-links"
               >
-                <Underline className="h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="dense">Underline links</span>
+                <Underline
+                  className="h-5 w-5 shrink-0"
+                  aria-hidden="true"
+                />
+
+                <span className="dense">
+                  Underline links
+                </span>
               </button>
 
               <button
@@ -273,8 +321,14 @@ export default function AccessibilityBar() {
                 )}
                 data-testid="accessibility-reduce-motion"
               >
-                <Eye className="h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="dense">Reduce motion</span>
+                <Eye
+                  className="h-5 w-5 shrink-0"
+                  aria-hidden="true"
+                />
+
+                <span className="dense">
+                  Reduce motion
+                </span>
               </button>
 
               <button
@@ -283,28 +337,41 @@ export default function AccessibilityBar() {
                 className="flex min-h-12 items-center gap-3 rounded-lg border border-border/60 bg-secondary/30 px-3 text-left text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 data-testid="accessibility-reset"
               >
-                <RotateCcw className="h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="dense">Reset settings</span>
+                <RotateCcw
+                  className="h-5 w-5 shrink-0"
+                  aria-hidden="true"
+                />
+
+                <span className="dense">
+                  Reset settings
+                </span>
               </button>
             </div>
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
               <p className="dense text-xs text-muted-foreground">
-                Accessibility preferences are stored locally on this device and are not sent to DigiCon.
+                Accessibility preferences are stored locally on this
+                device and are not sent to DigiCon.
               </p>
-              <nav className="flex flex-wrap gap-x-3 gap-y-1" aria-label="Legal policies">
+
+              <nav
+                className="flex flex-wrap gap-x-3 gap-y-1"
+                aria-label="Legal policies"
+              >
                 <Link
                   to="/privacy"
                   className="dense inline-flex min-h-8 items-center text-xs text-sky underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   Privacy Policy
                 </Link>
+
                 <Link
                   to="/cookies"
                   className="dense inline-flex min-h-8 items-center text-xs text-sky underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   Cookie Policy
                 </Link>
+
                 <Link
                   to="/accessibility"
                   className="dense inline-flex min-h-8 items-center text-xs text-sky underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
