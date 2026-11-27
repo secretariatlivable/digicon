@@ -369,11 +369,11 @@ export function BlogArticle() {
                 .map((paragraph) => paragraph.trim())
                 .filter(Boolean)
                 .map((paragraph, index) => {
-                  const clean = paragraph.replace(/\\s+/g, " ").trim();
+                  const clean = paragraph.replace(/\s+/g, " ").trim();
                   const heading = clean.length < 105 && !/[.!?]$/.test(clean) && !clean.startsWith('"');
-                  const listItem = /^[●•*-]\\s+/.test(clean);
-                  if (heading) return <h2 key={index} className="font-heading pt-4 text-xl font-bold tracking-tight text-foreground sm:text-2xl">{clean.replace(/^#+\\s*/, "")}</h2>;
-                  if (listItem) return <p key={index} className="rounded-lg border-l-2 border-cyan-500 bg-cyan-500/5 px-4 py-2">{clean.replace(/^[●•*-]\\s+/, "")}</p>;
+                  const listItem = /^[●•*-]\s+/.test(clean);
+                  if (heading) return <h2 key={index} className="font-heading pt-4 text-xl font-bold tracking-tight text-foreground sm:text-2xl">{clean.replace(/^#+\s*/, "")}</h2>;
+                  if (listItem) return <p key={index} className="rounded-lg border-l-2 border-cyan-500 bg-cyan-500/5 px-4 py-2">{clean.replace(/^[●•*-]\s+/, "")}</p>;
                   return <p key={index}>{clean}</p>;
                 })}
             </div>
