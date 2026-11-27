@@ -25,9 +25,11 @@ async function downloadTrackerPdf() {
 
 const contacts = [1, 2, 3];
 const steps = [
-  ["01", "Review", "Reconnect with the people you met today."],
-  ["02", "Remember", "Capture where you met and what matters to them."],
-  ["03", "Act", "Choose one next step and set its deadline."],
+  ["01", "Review", "Review new connections."],
+  ["02", "Where", "Record where you met."],
+  ["03", "Needs", "Capture what they need."],
+  ["04", "Action", "Choose one next action."],
+  ["05", "Deadline", "Set a realistic date."],
 ];
 
 export default function NetworkingTracker() {
@@ -51,8 +53,8 @@ export default function NetworkingTracker() {
               </div>
               <div className="hidden rounded-2xl border border-white/15 bg-white/10 p-3 sm:block"><Timer className="h-8 w-8 text-[#55d4ce]" /></div>
             </div>
-            <div className="relative mt-6 grid grid-cols-3 gap-2">
-              {steps.map(([n,title,desc]) => <div key={n} className="rounded-xl border border-white/10 bg-white/[.07] p-3"><span className="text-[10px] font-bold text-[#55d4ce]">{n} / 5 MIN</span><p className="mt-1 text-sm font-bold">{title}</p><p className="mt-1 hidden text-[10px] leading-4 text-slate-300 sm:block">{desc}</p></div>)}
+            <div className="relative mt-6 grid grid-cols-5 gap-1.5">
+              {steps.map(([n,title,desc]) => <div key={n} className="rounded-xl border border-white/10 bg-white/[.07] p-2 sm:p-3"><span className="text-[10px] font-bold text-[#55d4ce]">{n} / 5 MIN</span><p className="mt-1 text-[10px] font-bold sm:text-sm">{title}</p><p className="mt-1 hidden text-[10px] leading-4 text-slate-300 md:block">{desc}</p></div>)}
             </div>
           </header>
 
