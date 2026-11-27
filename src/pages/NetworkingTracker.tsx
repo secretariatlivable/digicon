@@ -6,7 +6,7 @@ async function downloadTrackerPdf() {
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}five-minute-networking-tracker.pdf.base64`);
     if (!response.ok) throw new Error("PDF asset unavailable");
-    const encoded = (await response.text()).trim();
+    const encoded = (await response.text()).replace(/\\s+/g, "");
     const binary = atob(encoded);
     const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
     const blob = new Blob([bytes], { type: "application/pdf" });
