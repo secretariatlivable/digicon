@@ -45,12 +45,12 @@ function getReadingTime(body: string) {
 }
 
 function renderInlineLinks(value: string) {
-  return value.split(/(\\[[^\\]]+\\]\\([^)]+\\))/g).map((part, index) => {
-    const match = /^\\[([^\\]]+)\\]\\(([^)]+)\\)$/.exec(part);
+  return value.split(/(\[[^\]]+\]\([^)]+\))/g).map((part, index) => {
+    const match = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
     if (!match) return part;
     const [, label, href] = match;
     if (href.startsWith("/")) return <Link key={index} to={href} className="font-semibold text-sky hover:underline">{label}</Link>;
-    if (/^https?:\\/\\//i.test(href)) return <a key={index} href={href} target="_blank" rel="noreferrer" className="font-semibold text-sky hover:underline">{label}</a>;
+    if (/^https?:\/\//i.test(href)) return <a key={index} href={href} target="_blank" rel="noreferrer" className="font-semibold text-sky hover:underline">{label}</a>;
     return label;
   });
 }
