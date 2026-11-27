@@ -19,7 +19,7 @@ import {
   UpgradeGate,
 } from "@/components/kit";
 import { apiGet } from "@/lib/api";
-import { useAuth } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
 import type { Analytics as AnalyticsData } from "@/types";
 
 export default function Analytics() {

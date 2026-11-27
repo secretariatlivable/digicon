@@ -15,7 +15,7 @@ import { apiGet } from "@/lib/api";
 // Import the real Supabase wallet Edge Function integrations.
 import { addToAppleWallet, addToGoogleWallet } from "@/lib/wallet";
 // Import the DigiCon authentication state.
-import { useAuth } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
 // Import the card and export response types.
 import type { CardExport, DigitalCard } from "@/types";
 

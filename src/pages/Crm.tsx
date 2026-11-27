@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, ErrorState, LoadingState, SectionHeading, UpgradeGate } from "@/components/kit";
 import { apiGet } from "@/lib/api";
-import { useAuth } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
 import { PIPELINE_STAGES, type Relationship } from "@/types";
 
 export default function Crm() {

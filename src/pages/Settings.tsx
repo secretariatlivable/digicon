@@ -8,7 +8,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiGet, apiPatch } from "@/lib/api";
-import { meKey, useAuth, useSession } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
+import { meKey, useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import type { Entitlement, User } from "@/types";
 

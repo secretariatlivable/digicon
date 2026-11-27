@@ -4,7 +4,6 @@ import { Check, ShieldCheck, Sparkles } from "lucide-react";
 import { PublicLayout } from "@/components/layout/Layouts";
 import { SectionHeading } from "@/components/kit";
 import { StripeCheckoutButton } from "@/components/StripeCheckoutButton";
-import { PayPalSubscriptionButton } from "@/components/PayPalSubscriptionButton";
 import { UpgradeRequiredDialog } from "@/components/UpgradeRequiredDialog";
 import { buttonVariants } from "@/components/ui/button";
 // This is the Supabase-authenticated session (subscriptions table, RLS,
@@ -15,19 +14,18 @@ import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { DIGICON_PAYPAL_PLANS, type DigiConPlanId } from "@/config/paypalPlans";
-import { isStripePlanId } from "@/config/stripePlans";
+import { isStripePlanId, STRIPE_PLAN_PRICE_USD } from "@/config/stripePlans";
 
 // Ordered by DIGICON_PAYPAL_PLANS' own key order: startup, starter, growth,
-// enterprise. Feature copy, pricing labels, and provider identifiers all come
-// from that single config so this page can never drift from what checkout
-// actually charges.
+// enterprise. Feature copy comes from that config; the USD price label comes
+// from STRIPE_PLAN_PRICE_USD so this page matches what Stripe checkout charges.
 const PLANS = Object.values(DIGICON_PAYPAL_PLANS);
 
-/** Narrows to the two plan ids the PayPal Edge Function currently supports. */
-function supportsPayPalCheckout(
-  id: DigiConPlanId,
-): id is Exclude<DigiConPlanId, "startup" | "enterprise"> {
-  return id === "starter" || id === "growth";
+/** USD label for a plan; free/custom plans keep their own label. */
+function planPriceLabel(id: DigiConPlanId, fallback: string): string {
+  if (!isStripePlanId(id)) return fallback;
+  const usd = STRIPE_PLAN_PRICE_USD[id];
+  return usd === null ? fallback : `US$${usd} / month`;
 }
 
 /**
@@ -110,7 +108,7 @@ export default function Pricing() {
                     plan.highlight && "gold-text",
                   )}
                 >
-                  {plan.priceLabel}
+                  {planPriceLabel(plan.id, plan.priceLabel)}
                 </p>
                 <p className="dense mt-1 text-sm text-muted-foreground">
                   {plan.description}
@@ -151,13 +149,6 @@ export default function Pricing() {
                         />
                       )}
 
-                      {plan.selfServe && supportsPayPalCheckout(plan.id) && (
-                        <PayPalSubscriptionButton
-                          planId={plan.id}
-                          className="w-full"
-                        />
-                      )}
-
                       {!plan.selfServe && (
                         <a
                           href="mailto:sales@digicon.ph"
@@ -188,9 +179,9 @@ export default function Pricing() {
             id="pricing-security-title"
             className="dense mx-auto max-w-2xl text-sm text-muted-foreground"
           >
-            Card and wallet payments are processed by Stripe; PayPal subscriptions are processed by
-            PayPal. Either way, DigiCon only grants a paid plan after the provider's webhook is
-            verified server-side — the plan shown above updates from the same{" "}
+            All prices are in US dollars and payments are processed securely by Stripe. DigiCon only
+            grants a paid plan after Stripe's webhook is verified server-side — the plan shown above
+            updates from the same{" "}
             <code className="dense rounded bg-secondary/40 px-1 py-0.5 text-xs">subscriptions</code>{" "}
             table those webhooks write to, never from anything the browser reports on its own.
           </p>

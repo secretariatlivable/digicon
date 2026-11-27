@@ -7,7 +7,7 @@ import CardCanvas from "@/components/card/CardCanvas";
 import { EmptyState, ErrorState, LoadingState, PremiumBadge, SectionHeading } from "@/components/kit";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
-import { useAuth } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import type { DigitalCard } from "@/types";
 

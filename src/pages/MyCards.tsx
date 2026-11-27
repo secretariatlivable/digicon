@@ -7,7 +7,7 @@ import { EmptyState, ErrorState, LoadingState, SectionHeading } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { apiDelete, apiGet } from "@/lib/api";
-import { useAuth } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import type { DigitalCard } from "@/types";
 

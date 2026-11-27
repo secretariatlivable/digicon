@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { SectionHeading, UpgradeGate } from "@/components/kit";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
-import { useAuth } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
 import type { DigitalCard } from "@/types";
 
 const TEMPLATES = [

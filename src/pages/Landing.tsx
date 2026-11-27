@@ -26,7 +26,7 @@ import {
   Pullquote,
 } from "@/components/ui/Section";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { useAuth } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const GOLD_BUTTON =

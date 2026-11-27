@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiPost } from "@/lib/api";
+import { createBusinessCard } from "@/lib/cardMutations";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { CARD_TEMPLATES, type CardInput } from "@/types";
@@ -63,17 +64,22 @@ export default function Onboarding() {
 
   const finish = useMutation({
     mutationFn: async () => {
+      if (!form.name.trim()) throw new Error("Please enter your name.");
       if (!user) throw new Error("You must be signed in to finish onboarding.");
 
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
+      // upsert (not update): an update silently matches zero rows when the
+      // profile row was never provisioned, which left the account half-set-up.
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          email: user.email,
           full_name: form.name.trim(),
           company_name: form.company.trim(),
           avatar_url: form.avatar_url.trim(),
           updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
+        },
+        { onConflict: "id" },
+      );
 
       if (profileError) throw profileError;
 
@@ -87,8 +93,9 @@ export default function Onboarding() {
       if (cardLookupError) throw cardLookupError;
 
       if (!existingCard) {
-        const { error: cardError } = await supabase.from("business_cards").insert({
-          user_id: user.id,
+        // Same trusted RPC the card builder uses: it derives ownership from
+        // auth.uid(), applies defaults and enforces plan limits server-side.
+        const result = await createBusinessCard({
           full_name: form.name.trim(),
           job_title: form.title.trim(),
           company: form.company.trim(),
@@ -98,15 +105,13 @@ export default function Onboarding() {
           address: "",
           bio: "",
           card_color: "#007AFF",
-          logo_url: "",
-          photo_url: form.avatar_url.trim(),
           accent_color: "#22d3ee",
           design_template: form.template,
           font_family: "Inter",
-          is_active: true,
+          photo_url: form.avatar_url.trim(),
         });
 
-        if (cardError) throw cardError;
+        if (!result.ok) throw new Error(result.message);
       }
 
       // Keep the legacy FastAPI data mirror in sync while the remaining
@@ -122,7 +127,18 @@ export default function Onboarding() {
       await refreshProfile();
       setStep(3);
     },
-    onError: () => toast.error("We couldn't save your details. Please try again."),
+    onError: (error: unknown) => {
+      // Log the real cause (Supabase errors are plain objects, not Error
+      // instances) so a failure is diagnosable instead of a generic toast.
+      console.error("[DigiCon] Onboarding save failed:", error);
+      const detail =
+        error && typeof error === "object" && "message" in error
+          ? String((error as { message: unknown }).message)
+          : "";
+      toast.error("We couldn't save your details. Please try again.", {
+        description: detail || undefined,
+      });
+    },
   });
 
   const steps = ["Who you are", "How to reach you", "Your first card"];
