@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 async function downloadTrackerPdf() {
   try {
-    const response = await fetch("/five-minute-networking-tracker.pdf.base64");
+    const response = await fetch(`${import.meta.env.BASE_URL}five-minute-networking-tracker.pdf.base64`);
     if (!response.ok) throw new Error("PDF asset unavailable");
     const encoded = (await response.text()).trim();
     const binary = atob(encoded);
