@@ -115,7 +115,7 @@ function useArticleSeo(post?: BlogPost) {
     setPropertyTag("og:description", description);
     setPropertyTag("og:url", canonicalUrl);
     if (post.cover_url) {
-      const imageUrl = /^https?:\\/\\//i.test(post.cover_url)
+      const imageUrl = post.cover_url.startsWith("http")
         ? post.cover_url
         : new URL(post.cover_url, window.location.origin).href;
       setPropertyTag("og:image", imageUrl);
