@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { AdminBlogCms, AdminUsersTable } from "@/components/admin/AdminPanels";
 import { ErrorState, LoadingState, MetricCard, SectionHeading } from "@/components/kit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +11,10 @@ export default function Admin() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <SectionHeading eyebrow="Super admin" title="Platform administration" testId="admin-heading" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SectionHeading eyebrow="Super admin" title="Platform administration" testId="admin-heading" />
+        <Link to="/tools" className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-500/20 dark:text-cyan-300" data-testid="admin-open-tools">Open blog publishing studio ↗</Link>
+      </div>
 
       {stats.isLoading && <LoadingState testId="admin-stats-loading" />}
       {stats.isError && <ErrorState testId="admin-stats-error" />}
