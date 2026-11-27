@@ -103,6 +103,8 @@ function useArticleSeo(post?: BlogPost) {
     setPropertyTag("og:title", title);
     setPropertyTag("og:description", description);
     setPropertyTag("og:url", canonicalUrl);
+    if (post.cover_url) setPropertyTag("og:image", post.cover_url);
+    setMetaTag("twitter:card", "summary_large_image");
 
     let canonical = document.head.querySelector<HTMLLinkElement>(
       'link[rel="canonical"]',
@@ -238,9 +240,10 @@ export function Blog() {
             <li key={post.id}>
               <Link
                 to={`/blog/${post.slug}`}
-                className="glass block rounded-xl p-5 transition-transform duration-200 hover:-translate-y-0.5"
+                className="glass group block rounded-xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-950/10"
                 data-testid={`blog-post-${post.slug}`}
               >
+                {post.cover_url && <img src={post.cover_url} alt="" loading="lazy" className="mb-4 h-44 w-full rounded-lg object-cover transition-transform duration-500 group-hover:scale-[1.01]" />}
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="secondary" className="dense">
                     {post.category}
@@ -328,7 +331,18 @@ export function BlogArticle() {
               {post.data.title}
             </h1>
 
-            <p className="dense mt-3 text-lg text-muted-foreground">
+            {post.data.cover_url && (
+              <div className="relative mt-7 overflow-hidden rounded-2xl">
+                <img src={post.data.cover_url} alt={post.data.title} className="max-h-[440px] w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#06152d]/85 via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 p-5 text-white sm:p-7">
+                  <p className="text-[10px] font-bold uppercase tracking-[.22em] text-cyan-200">DigiCon · More Than a Digital Business Card</p>
+                  <p className="mt-2 max-w-lg text-xl font-bold sm:text-2xl">Your connections. Your relationships. Your growth.</p>
+                </div>
+              </div>
+            )}
+
+            <p className="dense mt-5 text-lg text-muted-foreground">
               {post.data.excerpt}
             </p>
 
@@ -354,9 +368,14 @@ export function BlogArticle() {
                 .split(/\n{2,}/)
                 .map((paragraph) => paragraph.trim())
                 .filter(Boolean)
-                .map((paragraph) => (
-                  <p key={paragraph.slice(0, 48)}>{paragraph}</p>
-                ))}
+                .map((paragraph, index) => {
+                  const clean = paragraph.replace(/\\s+/g, " ").trim();
+                  const heading = clean.length < 105 && !/[.!?]$/.test(clean) && !clean.startsWith('"');
+                  const listItem = /^[●•*-]\\s+/.test(clean);
+                  if (heading) return <h2 key={index} className="font-heading pt-4 text-xl font-bold tracking-tight text-foreground sm:text-2xl">{clean.replace(/^#+\\s*/, "")}</h2>;
+                  if (listItem) return <p key={index} className="rounded-lg border-l-2 border-cyan-500 bg-cyan-500/5 px-4 py-2">{clean.replace(/^[●•*-]\\s+/, "")}</p>;
+                  return <p key={index}>{clean}</p>;
+                })}
             </div>
 
             {post.data.tags.length > 0 && (
@@ -389,16 +408,21 @@ export function BlogArticle() {
               </section>
             )}
 
-            <div className="mt-10 flex flex-wrap gap-3 border-t border-border/60 pt-6">
+            <section className="relative mt-12 overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#071a35] p-6 text-white shadow-xl shadow-cyan-950/15 sm:p-8">
+              <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-cyan-400/15 blur-3xl" />
+              <div className="relative">
+                <p className="text-[10px] font-bold uppercase tracking-[.24em] text-cyan-200">Make every connection count</p>
+                <h2 className="mt-2 text-2xl font-extrabold sm:text-3xl">Create Your DigiCon</h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">Build your professional digital identity, share it in seconds and give every meaningful introduction a next step.</p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link to="/signup" className={buttonVariants({ size: "lg" })} data-testid="article-signup">Create Your DigiCon</Link>
+                  <Link to="/" className={buttonVariants({ size: "lg", variant: "outline" }) + " border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"}>Explore DigiCon</Link>
+                  {post.data.slug.includes("five-minute") && <Link to="/resources/five-minute-networking-tracker" className={buttonVariants({ size: "lg", variant: "outline" }) + " border-cyan-200/30 bg-cyan-300/10 text-cyan-100 hover:bg-cyan-300/20 hover:text-white"}>Download the A4 tracker</Link>}
+                </div>
+              </div>
+            </section>
+            <div className="mt-7 flex flex-wrap gap-3">
               <ShareArticle post={post.data} />
-
-              <Link
-                to="/signup"
-                className={buttonVariants({ size: "sm" })}
-                data-testid="article-signup"
-              >
-                Build your DigiCon
-              </Link>
             </div>
           </div>
         )}
