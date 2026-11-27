@@ -106,6 +106,7 @@ function PostForm({
   onCancel: () => void;
   isSaving: boolean;
 }) {
+  const [showPreview, setShowPreview] = useState(false);
   const textFields = [
     { id: "bp-tags", label: "Tags (comma separated)", value: tagsText, onChange: setTagsText, testId: "admin-post-tags" },
     { id: "bp-cover", label: "Featured image URL", value: post.cover_url, onChange: (v: string) => setPost({ ...post, cover_url: v }), testId: "admin-post-cover" },
@@ -156,7 +157,21 @@ function PostForm({
         />
         Publish immediately
       </label>
-      <div className="flex gap-2">
+      {post.cover_url.trim() && (
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-muted/20">
+          <img src={post.cover_url} alt="Featured image preview" className="h-40 w-full object-cover" />
+        </div>
+      )}
+      <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+        <p className="text-[10px] font-bold uppercase tracking-[.18em] text-muted-foreground">Search preview</p>
+        <p className="mt-2 text-base font-semibold text-sky-700 dark:text-sky-300">{post.seo_title.trim() || post.title || "Article title"}</p>
+        <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">digicon.asilvainnovations.com/blog/your-article-slug</p>
+        <p className="mt-1 text-sm text-muted-foreground">{post.seo_description.trim() || post.excerpt || "Your SEO description will appear here."}</p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" variant="outline" onClick={() => setShowPreview((value) => !value)} data-testid="admin-post-preview-toggle">
+          {showPreview ? "Hide preview" : "Preview article"}
+        </Button>
         <Button onClick={onSave} disabled={post.title.trim().length < 3 || isSaving} data-testid="admin-post-save">
           {editingId ? <Save className="mr-2 h-4 w-4" aria-hidden /> : <Plus className="mr-2 h-4 w-4" aria-hidden />}
           {editingId ? "Save article" : "Create article"}
@@ -167,6 +182,14 @@ function PostForm({
           </Button>
         )}
       </div>
+      {showPreview && (
+        <article className="rounded-xl border border-cyan-500/20 bg-background p-5" data-testid="admin-post-live-preview">
+          <Badge variant="secondary">{post.category || "Networking"}</Badge>
+          <h3 className="mt-3 text-2xl font-bold">{post.title || "Your article title"}</h3>
+          <p className="mt-2 text-muted-foreground">{post.excerpt || "Your article excerpt will appear here."}</p>
+          <div className="mt-5 whitespace-pre-wrap text-sm leading-7">{post.body || "Your article content will appear here."}</div>
+        </article>
+      )}
     </section>
   );
 }
