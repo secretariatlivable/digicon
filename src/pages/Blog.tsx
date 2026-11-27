@@ -44,6 +44,17 @@ function getReadingTime(body: string) {
   return `${Math.max(1, Math.ceil(wordCount / 220))} min read`;
 }
 
+function renderInlineLinks(value: string) {
+  return value.split(/(\\[[^\\]]+\\]\\([^)]+\\))/g).map((part, index) => {
+    const match = /^\\[([^\\]]+)\\]\\(([^)]+)\\)$/.exec(part);
+    if (!match) return part;
+    const [, label, href] = match;
+    if (href.startsWith("/")) return <Link key={index} to={href} className="font-semibold text-sky hover:underline">{label}</Link>;
+    if (/^https?:\\/\\//i.test(href)) return <a key={index} href={href} target="_blank" rel="noreferrer" className="font-semibold text-sky hover:underline">{label}</a>;
+    return label;
+  });
+}
+
 function splitArticleBody(body: string) {
   const referenceHeading = /\n{2,}(?:#{1,3}\s*)?references\s*\n/i;
   const parts = body.split(referenceHeading);
@@ -374,9 +385,16 @@ export function BlogArticle() {
                   const listItem = /^[●•*-]\s+/.test(clean);
                   if (heading) return <h2 key={index} className="font-heading pt-4 text-xl font-bold tracking-tight text-foreground sm:text-2xl">{clean.replace(/^#+\s*/, "")}</h2>;
                   if (listItem) return <p key={index} className="rounded-lg border-l-2 border-cyan-500 bg-cyan-500/5 px-4 py-2">{clean.replace(/^[●•*-]\s+/, "")}</p>;
-                  return <p key={index}>{clean}</p>;
+                  return <p key={index}>{renderInlineLinks(clean)}</p>;
                 })}
             </div>
+
+            {post.data.slug.startsWith("digicon-redefining-professional-networking") && (
+              <figure className="my-10 overflow-hidden rounded-2xl border border-border/70 bg-[#071a35] p-4 sm:p-6">
+                <img src="/digicon_dcard.svg" alt="DigiCon digital business card interface" loading="lazy" className="mx-auto max-h-[520px] w-full rounded-xl object-contain" />
+                <figcaption className="mt-3 text-center text-xs text-slate-400">DigiCon digital card — a shareable professional identity and the starting point for a connection.</figcaption>
+              </figure>
+            )}
 
             {post.data.tags.length > 0 && (
               <div className="mt-10 flex flex-wrap gap-2 border-t border-border/60 pt-6">
