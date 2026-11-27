@@ -16,7 +16,7 @@ admin_router = APIRouter(prefix="/admin", tags=["admin"])
 class PostBase(BaseModel):
     title: str = Field(min_length=3, max_length=160)
     excerpt: str = Field(default="", max_length=400)
-    body: str = Field(default="", max_length=20000)
+    body: str = Field(default="", max_length=50000)
     category: str = Field(default="Networking", max_length=60)
     tags: list[str] = Field(default_factory=list)
     cover_url: str = Field(default="", max_length=500)
