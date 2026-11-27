@@ -114,7 +114,12 @@ function useArticleSeo(post?: BlogPost) {
     setPropertyTag("og:title", title);
     setPropertyTag("og:description", description);
     setPropertyTag("og:url", canonicalUrl);
-    if (post.cover_url) setPropertyTag("og:image", post.cover_url);
+    if (post.cover_url) {
+      const imageUrl = /^https?:\\/\\//i.test(post.cover_url)
+        ? post.cover_url
+        : new URL(post.cover_url, window.location.origin).href;
+      setPropertyTag("og:image", imageUrl);
+    }
     setMetaTag("twitter:card", "summary_large_image");
 
     let canonical = document.head.querySelector<HTMLLinkElement>(
@@ -153,7 +158,9 @@ function useArticleSeo(post?: BlogPost) {
         name: "DigiCon",
       },
       keywords: post.tags.join(", "),
-      image: post.cover_url || undefined,
+      image: post.cover_url
+        ? new URL(post.cover_url, window.location.origin).href
+        : undefined,
     });
 
     document.head.appendChild(schema);
