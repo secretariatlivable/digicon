@@ -45,7 +45,6 @@ const INFO_PATHS = [
   "/faq",
   "/use-cases",
   "/resources",
-  "/support",
   "/terms",
   "/privacy",
   "/cookies",
@@ -66,6 +65,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         {/* Render public commercial content. */}
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/support" element={<SupportPage />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogArticle />} />
         <Route path="/c/:slug" element={<PublicCard />} />
