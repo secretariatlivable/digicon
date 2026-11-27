@@ -89,7 +89,7 @@ export default function NetworkingTracker() {
         @media print {
           html, body { background: #fff !important; }
           body * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-          #digicon-networking-tracker { width: 100% !important; max-width: none !important; zoom: .80; }
+          #digicon-networking-tracker { width: 100% !important; max-width: none !important; zoom: .78; }
           .print\\:hidden { display: none !important; }
           article { break-inside: avoid; }
         }
