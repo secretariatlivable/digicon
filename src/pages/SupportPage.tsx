@@ -615,7 +615,7 @@ function ContactForm() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
-  const copyTimer = useRef<number>();
+  const copyTimer = useRef<number | undefined>(undefined);
 
   // Prefill from the session when there is one, without locking the field —
   // people do write in about an account other than the one they are signed into.
@@ -830,7 +830,7 @@ function StillStuck() {
 /* ------------------------------------------------------------------ page */
 
 export function SupportPage() {
-  const landOnHash = useHashLanding();
+  useHashLanding();
 
   /* One search across the whole page, owned here so the sections it filters
      stay presentational. */
@@ -840,12 +840,11 @@ export function SupportPage() {
   // What is left here is the hash destination — /support#billing — and the
   // document title.
   useEffect(() => {
-    landOnHash();
     document.title = 'Support · DigiCon';
     return () => {
       document.title = 'DigiCon';
     };
-  }, [landOnHash]);
+  }, []);
 
   return (
     /* Art-directed dark: the banners are dark photography in both themes,
@@ -877,3 +876,5 @@ export function SupportPage() {
     </div>
   );
 }
+
+export default SupportPage;

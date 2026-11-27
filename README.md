@@ -159,40 +159,325 @@ Client-side entitlement checks exist to guide UX; they are not a security bounda
 ## 5. Repository structure
 
 ```text
-.
+digicon/
 ├── .github/
 │   └── workflows/
+│       ├── deploy-pages.yml
 │       └── verify.yml
+├── .gitignore
+├── LICENSE
+├── README.md
+├── accessibility-bar-content.txt
+├── backend/
+│   ├── lib/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── dates.py
+│   │   ├── db.py
+│   │   └── insights_rules.py
+│   ├── models/
+│   │   └── __init__.py
+│   ├── routers/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── cards.py
+│   │   ├── content.py
+│   │   ├── followups.py
+│   │   ├── insights.py
+│   │   ├── payments.py
+│   │   └── relationships.py
+│   ├── test/
+│   │   ├── __init__.py
+│   │   ├── conftest.py
+│   │   ├── test_tscheck_admin_blog.py
+│   │   ├── test_tscheck_auth_onboarding.py
+│   │   ├── test_tscheck_card_builder_gating.py
+│   │   ├── test_tscheck_dashboard_analytics_shape.py
+│   │   ├── test_tscheck_plan_gating.py
+│   │   └── test_tscheck_public_connect.py
+│   ├── pytest.ini
+│   ├── requirements.txt
+│   ├── seed.py
+│   └── server.py
+├── complete-audit.txt
+├── components.json
+├── docs/
+│   └── DEVELOPER.md
+├── eslint.config.js
+├── index.html
+├── memory/
+│   └── SPEC.md
+├── netlify.toml
+├── package-lock.json
+├── package.json
+├── postcss.config.js
 ├── public/
+│   ├── brand/
+│   │   ├── connect-sm.webp
+│   │   ├── connect.webp
+│   │   ├── grow-sm.webp
+│   │   ├── grow.webp
+│   │   ├── male-sm.webp
+│   │   ├── male.webp
+│   │   ├── remember-sm.webp
+│   │   ├── remember.webp
+│   │   ├── share-sm.webp
+│   │   └── share.webp
+│   ├── media/
+│   │   ├── banners/
+│   │   │   ├── bigidea-1200.jpg
+│   │   │   ├── bigidea-2400.jpg
+│   │   │   ├── capture-1200.jpg
+│   │   │   ├── capture-2400.jpg
+│   │   │   ├── connect-1200.jpg
+│   │   │   ├── connect-2400.jpg
+│   │   │   ├── create-1200.jpg
+│   │   │   ├── create-2400.jpg
+│   │   │   ├── cta-1200.jpg
+│   │   │   ├── cta-2400.jpg
+│   │   │   ├── digicon_portrait1.png
+│   │   │   ├── followup-1200.jpg
+│   │   │   ├── followup-2400.jpg
+│   │   │   ├── graph-1200.jpg
+│   │   │   ├── graph-2400.jpg
+│   │   │   ├── hero-1200.jpg
+│   │   │   ├── hero-2400.jpg
+│   │   │   ├── manage-1200.jpg
+│   │   │   ├── manage-2400.jpg
+│   │   │   ├── organizations-1200.jpg
+│   │   │   ├── organizations-2400.jpg
+│   │   │   ├── platform-1200.jpg
+│   │   │   ├── platform-2400.jpg
+│   │   │   ├── privacy-1200.jpg
+│   │   │   ├── privacy-2400.jpg
+│   │   │   ├── problem-1200.jpg
+│   │   │   ├── problem-2400.jpg
+│   │   │   ├── professionals-1200.jpg
+│   │   │   ├── professionals-2400.jpg
+│   │   │   ├── share-1200.jpg
+│   │   │   ├── share-2400.jpg
+│   │   │   ├── simplicity-1200.jpg
+│   │   │   ├── simplicity-2400.jpg
+│   │   │   ├── support-1200.jpg
+│   │   │   ├── support-2400.jpg
+│   │   │   ├── teams-1200.jpg
+│   │   │   └── teams-2400.jpg
+│   │   ├── digicon-contact-exchange.png
+│   │   ├── digicon-female-professional.png
+│   │   ├── digicon_beginning.png
+│   │   ├── digicon_female_portrait_banner.png
+│   │   ├── digicon_lasts.png
+│   │   ├── digicon_male_portrait_banner.png
+│   │   ├── digicon_male_wide_banner.png
+│   │   ├── digicon_portrait1.png
+│   │   ├── digicon_wide_banner copy.png
+│   │   ├── digicon_wide_banner.png
+│   │   ├── hero-loop-poster.jpg
+│   │   ├── hero-loop.mp4
+│   │   ├── hero-loop.webm
+│   │   ├── og-image.jpg
+│   │   └── what-is-digicon.png
+│   ├── Background.png
+│   ├── Cover_2.png
+│   ├── DigiCon.png
+│   ├── DigiCon_Banner.png
+│   ├── DigiCon_banner.svg
+│   ├── DigiCon_logo_transparent.jpg
+│   ├── Digicon_logo.jpg
+│   ├── apple-touch-icon.png
+│   ├── digicon-contact-exchange.png
+│   ├── digicon-female-professional.png
+│   ├── digicon_beginning.png
+│   ├── digicon_dcard.png
+│   ├── digicon_dcard.svg
+│   ├── digicon_female_portrait_banner.png
+│   ├── digicon_lasts.png
+│   ├── digicon_male_portrait_banner.png
+│   ├── digicon_male_wide_banner.png
+│   ├── digicon_portrait1.png
+│   ├── digicon_wide_banner.png
+│   ├── favicon.ico
+│   ├── favicon.svg
+│   ├── favicon.webp
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   ├── icon-maskable-192.png
+│   ├── icon-maskable-512.png
+│   ├── icons.svg
 │   ├── manifest.json
+│   ├── manifest.webmanifest
+│   ├── networking.png
 │   ├── sw.js
-│   └── media/...
+│   └── what-is-digicon.png
 ├── scripts/
+│   ├── check-repo-complete.sh
 │   └── preflight.mjs
 ├── src/
 │   ├── a11y/
+│   │   ├── AccessibilityBar.tsx
+│   │   ├── AccessibilityTools.tsx
+│   │   ├── CookieConsent.tsx
+│   │   ├── a11y.ts
+│   │   └── index.ts
 │   ├── components/
+│   │   ├── admin/
+│   │   │   └── AdminPanels.tsx
 │   │   ├── brand/
+│   │   │   ├── BrandImage.tsx
+│   │   │   └── DigiConLogo.tsx
 │   │   ├── card/
+│   │   │   ├── BuilderTabs.tsx
+│   │   │   ├── CardCanvas.tsx
+│   │   │   ├── CardParts.tsx
+│   │   │   └── DigiConCard.tsx
+│   │   ├── contacts/
+│   │   │   └── ContactDetailPanels.tsx
+│   │   ├── dashboard/
+│   │   │   └── DashboardSections.tsx
+│   │   ├── kit/
+│   │   │   └── index.tsx
 │   │   ├── layout/
-│   │   ├── pwa/
-│   │   └── ui/
+│   │   │   ├── AppLayout.tsx
+│   │   │   ├── AppShell.tsx
+│   │   │   ├── LandingNav.tsx
+│   │   │   ├── Layouts.tsx
+│   │   │   ├── MobileAppNav.tsx
+│   │   │   └── SiteFooter.tsx
+│   │   ├── ui/
+│   │   │   ├── AmbientVideo.tsx
+│   │   │   ├── Collapsible.tsx
+│   │   │   ├── ConnectionGraph.tsx
+│   │   │   ├── FlowStrip.tsx
+│   │   │   ├── GlassCard.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Reveal.tsx
+│   │   │   ├── Section.tsx
+│   │   │   ├── SectionBanner.tsx
+│   │   │   ├── Tiles.tsx
+│   │   │   ├── Tooltip.tsx
+│   │   │   ├── badge.tsx
+│   │   │   ├── button.tsx
+│   │   │   ├── calendar.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── checkbox.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── dropdown-menu.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── popover.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── sheet.tsx
+│   │   │   ├── sonner.tsx
+│   │   │   ├── table.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   └── textarea.tsx
+│   │   ├── DigiConPayPalProvider.tsx
+│   │   ├── PayPalSubscriptionButton.tsx
+│   │   ├── StripeCheckoutButton.tsx
+│   │   ├── UpgradeRequiredDialog.tsx
+│   │   └── theme-provider.tsx
 │   ├── config/
+│   │   ├── paypalPlans.ts
+│   │   └── stripePlans.ts
 │   ├── content/
+│   │   ├── landing.ts
+│   │   └── support.ts
+│   ├── hooks/
+│   │   ├── useCardBuilder.ts
+│   │   └── useContactDetail.ts
 │   ├── lib/
+│   │   ├── a11y.tsx
+│   │   ├── api.ts
+│   │   ├── auth.tsx
+│   │   ├── cardMutations.ts
+│   │   ├── entitlements.ts
+│   │   ├── i18n.ts
+│   │   ├── motion.ts
+│   │   ├── navigation.ts
+│   │   ├── pwa.ts
+│   │   ├── queryClient.ts
+│   │   ├── session.ts
+│   │   ├── supabase.ts
+│   │   ├── utils.ts
+│   │   └── wallet.ts
 │   ├── pages/
+│   │   ├── Admin.tsx
+│   │   ├── Analytics.tsx
+│   │   ├── AnalyticsPage.tsx
+│   │   ├── AuthPage.tsx
+│   │   ├── Billing.tsx
+│   │   ├── Blog.tsx
+│   │   ├── CardBuilder.tsx
+│   │   ├── CardsPage.tsx
+│   │   ├── ContactDetail.tsx
+│   │   ├── Contacts.tsx
+│   │   ├── ContactsPage.tsx
+│   │   ├── Crm.tsx
+│   │   ├── DashboardPage.tsx
+│   │   ├── EcoPage.tsx
+│   │   ├── FollowUps.tsx
+│   │   ├── Home.tsx
+│   │   ├── InfoPage.tsx
+│   │   ├── Landing.tsx
+│   │   ├── LandingPwa.tsx
+│   │   ├── Login.tsx
+│   │   ├── MyCards.tsx
+│   │   ├── Onboarding.tsx
+│   │   ├── Pricing.tsx
+│   │   ├── PublicCard.tsx
+│   │   ├── Settings.tsx
+│   │   ├── SettingsPage.tsx
+│   │   ├── Share.tsx
+│   │   ├── Signup.tsx
+│   │   ├── SupportPage.tsx
+│   │   └── WalletExport.tsx
+│   ├── pwa/
+│   │   ├── InstallBar.tsx
+│   │   └── InstallPrompt.tsx
+│   ├── types/
+│   │   └── index.ts
 │   ├── App.tsx
 │   ├── index.css
-│   └── main.tsx
+│   ├── main.tsx
+│   └── vite-env.d.ts
 ├── supabase/
-│   ├── migrations/
 │   ├── functions/
-│   └── tests/
-├── .env.example
-├── netlify.toml
+│   │   ├── apple-wallet-pass/
+│   │   │   └── index.ts
+│   │   ├── google-wallet-pass/
+│   │   │   └── index.ts
+│   │   ├── paypal-create-subscription/
+│   │   │   └── index.ts
+│   │   └── paypal-webhook/
+│   │       └── index.ts
+│   ├── migrations/
+│   │   ├── 20260822144224_create_digicon_schema.sql
+│   │   ├── 20260826155006_add_card_builder_fields.sql
+│   │   ├── 20260828000000_production_security_subscriptions.sql
+│   │   ├── 20260828000001_public_cards_wallet_security.sql
+│   │   ├── 20260828120000_fix_rls_billing_and_counters.sql
+│   │   ├── 20260830000000_normalize_subscription_status.sql
+│   │   ├── 20260830010000_server_authoritative_capabilities.sql
+│   │   └── 20260830020000_trusted_card_mutations.sql
+│   ├── tests/
+│   │   ├── 00_supabase_stubs.sql
+│   │   ├── 01_rls_and_entitlements.sql
+│   │   ├── 02_trusted_card_mutations.sql
+│   │   ├── README.md
+│   │   └── run.sh
+│   ├── config.toml
+│   ├── reconcile-subscription.sql
+│   └── verify-deployment.sql
+├── tailwind.config.js
+├── tools/
+│   ├── gen_banners.py
+│   └── gen_brand.py
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+├── typecheck-errors.txt
 ├── vercel.json
-├── package.json
-└── README.md
+└── vite.config.ts
 ```
 
 ### Where to put new code

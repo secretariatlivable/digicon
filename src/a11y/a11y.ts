@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, createElement, useContext, useMemo, useState, type ReactNode } from 'react';
 
 type A11ySettings = {
   largeText: boolean;
@@ -28,18 +28,20 @@ export function A11yProvider({ children }: { children: ReactNode }) {
     [largeText, reducedMotion, highContrast],
   );
 
-  return (
-    <A11yContext.Provider value={value}>
-      <div
-        className={[
+  return createElement(
+    A11yContext.Provider,
+    { value },
+    createElement(
+      'div',
+      {
+        className: [
           largeText ? 'a11y-large-text' : '',
           reducedMotion ? 'a11y-reduced-motion' : '',
           highContrast ? 'a11y-high-contrast' : '',
-        ].filter(Boolean).join(' ')}
-      >
-        {children}
-      </div>
-    </A11yContext.Provider>
+        ].filter(Boolean).join(' '),
+      },
+      children,
+    ),
   );
 }
 

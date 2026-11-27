@@ -1,14 +1,4 @@
-/**
- * DigiCon sign-in / sign-up.
- *
- * Uses Supabase Auth exclusively. The previous Auth0 implementation could
- * never grant access: `ProtectedRoute` reads the Supabase session, and every
- * RLS policy is written against `auth.uid()`, so an Auth0 identity resolved
- * to no rows. It also rendered a permanent spinner because `useAuth0()` was
- * called without an `<Auth0Provider>` in the tree.
- */
-
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
@@ -20,7 +10,10 @@ import {
   ShieldCheck,
   UserPlus,
 } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
+import { useAuth, useLanguage } from '@/lib/auth';
+import { useA11y } from '@/lib/a11y';
+import { usePrefersReducedMotion } from '@/lib/motion';
+import { translate, type TranslationKey } from '@/lib/i18n';
 import { DigiConLogo } from '@/components/brand/DigiConLogo';
 import {
   GlassButton,
@@ -41,15 +34,23 @@ function safeReturnTo(value: string | null): string {
   return value;
 }
 
-export function AuthPage() {
+export function AuthPage({ defaultMode = 'signin' }: { defaultMode?: Mode }) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { session, loading, signIn, signUp, sendPasswordReset } = useAuth();
+  const [lang] = useLanguage();
+  const { settings } = useA11y();
+  const reducedMotion = usePrefersReducedMotion();
+  const calm = settings.calm || reducedMotion;
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  const t = (key: TranslationKey) => translate(key, lang);
 
   const initialMode = useMemo<Mode>(() => {
     const raw = params.get('mode');
-    return raw === 'signup' || raw === 'reset' ? raw : 'signin';
-  }, [params]);
+    if (raw === 'signup' || raw === 'reset' || raw === 'signin') return raw;
+    return defaultMode;
+  }, [params, defaultMode]);
 
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState('');
@@ -69,6 +70,14 @@ export function AuthPage() {
     if (!loading && session) navigate(returnTo, { replace: true });
   }, [loading, session, navigate, returnTo]);
 
+  // Move focus to the heading on mode switch so screen-reader users are
+  // informed they are looking at a different form.
+  useEffect(() => {
+    if (headingRef.current) {
+      headingRef.current.focus({ preventScroll: true });
+    }
+  }, [mode]);
+
   const switchMode = (next: Mode) => {
     setMode(next);
     setError(null);
@@ -82,17 +91,22 @@ export function AuthPage() {
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setError('Enter your email address.');
+      setError(t('auth.errorRequiredEmail'));
       return;
     }
 
     if (mode !== 'reset' && password.length < MIN_PASSWORD_LENGTH) {
-      setError(`Your password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      setError(
+        t('auth.errorPasswordLength').replace(
+          '{0}',
+          String(MIN_PASSWORD_LENGTH),
+        ),
+      );
       return;
     }
 
     if (mode === 'signup' && !fullName.trim()) {
-      setError('Enter your full name.');
+      setError(t('auth.errorRequiredName'));
       return;
     }
 
@@ -102,16 +116,13 @@ export function AuthPage() {
       if (mode === 'reset') {
         const { error: resetError } = await sendPasswordReset(trimmedEmail);
         if (resetError) throw new Error(resetError);
-        setNotice(
-          'If that email is registered, a password reset link is on its way.',
-        );
+        setNotice(t('auth.resetSent'));
         return;
       }
 
       if (mode === 'signin') {
         const { error: signInError } = await signIn(trimmedEmail, password);
         if (signInError) throw new Error(signInError);
-        // Navigation is handled by the session effect above.
         return;
       }
 
@@ -124,9 +135,7 @@ export function AuthPage() {
       if (signUpError) throw new Error(signUpError);
 
       if (needsEmailConfirmation) {
-        setNotice(
-          'Check your inbox and confirm your email address to finish creating your DigiCon account.',
-        );
+        setNotice(t('auth.confirmEmail'));
         setPassword('');
       }
     } catch (cause) {
@@ -148,24 +157,27 @@ export function AuthPage() {
         aria-live="polite"
       >
         <Spinner className="h-8 w-8" />
-        <span className="sr-only">Checking your DigiCon session…</span>
+        <span className="sr-only">{t('common.loading')}</span>
       </main>
     );
   }
 
   const heading =
     mode === 'signup'
-      ? 'Create your DigiCon account'
+      ? t('auth.signUpTitle')
       : mode === 'reset'
-        ? 'Reset your password'
-        : 'Welcome back';
+        ? t('auth.resetTitle')
+        : t('auth.signInTitle');
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8">
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-digicon-primary/15 blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-digicon-secondary/15 blur-[120px]" />
-      </div>
+      {/* Ambient background — suppressed when visitor prefers reduced motion */}
+      {!calm && (
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-digicon-primary/15 blur-[120px]" />
+          <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-digicon-secondary/15 blur-[120px]" />
+        </div>
+      )}
 
       <div className="relative w-full max-w-md">
         <div className="mb-8 text-center">
@@ -177,20 +189,33 @@ export function AuthPage() {
           >
             <DigiConLogo size="lg" showText={false} />
           </button>
-          <h1 className="text-2xl font-bold text-white">{heading}</h1>
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-2xl font-bold text-white outline-none"
+          >
+            {heading}
+          </h1>
           <p className="mt-2 text-sm text-white/50">
             {mode === 'reset'
-              ? 'We will email you a secure link to choose a new password.'
+              ? t('auth.resetDesc')
               : 'Digital business cards and CRM for SMEs and startups.'}
           </p>
         </div>
 
         <GlassCard variant="thick" className="p-8">
-          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5"
+            noValidate
+            aria-describedby={error ? 'auth-error' : undefined}
+          >
             {mode === 'signup' && (
               <>
                 <div>
-                  <GlassLabel htmlFor="auth-full-name">Full name *</GlassLabel>
+                  <GlassLabel htmlFor="auth-full-name">
+                    {t('auth.fullName')} *
+                  </GlassLabel>
                   <GlassInput
                     id="auth-full-name"
                     autoComplete="name"
@@ -200,7 +225,9 @@ export function AuthPage() {
                   />
                 </div>
                 <div>
-                  <GlassLabel htmlFor="auth-company">Company</GlassLabel>
+                  <GlassLabel htmlFor="auth-company">
+                    {t('auth.companyName')}
+                  </GlassLabel>
                   <GlassInput
                     id="auth-company"
                     autoComplete="organization"
@@ -213,7 +240,9 @@ export function AuthPage() {
             )}
 
             <div>
-              <GlassLabel htmlFor="auth-email">Email *</GlassLabel>
+              <GlassLabel htmlFor="auth-email">
+                {t('auth.email')} *
+              </GlassLabel>
               <GlassInput
                 id="auth-email"
                 type="email"
@@ -226,7 +255,9 @@ export function AuthPage() {
 
             {mode !== 'reset' && (
               <div>
-                <GlassLabel htmlFor="auth-password">Password *</GlassLabel>
+                <GlassLabel htmlFor="auth-password">
+                  {t('auth.password')} *
+                </GlassLabel>
                 <div className="relative">
                   <GlassInput
                     id="auth-password"
@@ -236,7 +267,7 @@ export function AuthPage() {
                     }
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 8 characters"
+                    placeholder={t('auth.password')}
                     className="pr-12"
                   />
                   <button
@@ -257,8 +288,10 @@ export function AuthPage() {
 
             {error && (
               <div
+                id="auth-error"
                 className="flex gap-2 rounded-glass-sm bg-digicon-error/10 p-3 text-sm text-digicon-error"
                 role="alert"
+                aria-live="assertive"
               >
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 <span>{error}</span>
@@ -269,6 +302,7 @@ export function AuthPage() {
               <div
                 className="flex gap-2 rounded-glass-sm bg-emerald-500/10 p-3 text-sm text-emerald-300"
                 role="status"
+                aria-live="polite"
               >
                 <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
                 <span>{notice}</span>
@@ -286,10 +320,10 @@ export function AuthPage() {
                 <LogIn className="mr-2 h-4 w-4" />
               )}
               {mode === 'signup'
-                ? 'Create account'
+                ? t('auth.signUp')
                 : mode === 'reset'
-                  ? 'Send reset link'
-                  : 'Sign in'}
+                  ? t('auth.sendResetLink')
+                  : t('auth.signIn')}
             </GlassButton>
           </form>
 
@@ -300,7 +334,7 @@ export function AuthPage() {
                 onClick={() => switchMode('signin')}
                 className="text-white/60 underline underline-offset-4 hover:text-white"
               >
-                Already have an account? Sign in
+                {t('auth.haveAccount')} Sign in
               </button>
             )}
             {mode !== 'signup' && (
@@ -309,7 +343,7 @@ export function AuthPage() {
                 onClick={() => switchMode('signup')}
                 className="block w-full text-white/60 underline underline-offset-4 hover:text-white"
               >
-                New to DigiCon? Create an account
+                {t('auth.noAccount')} Create an account
               </button>
             )}
             {mode === 'signin' && (
@@ -318,15 +352,11 @@ export function AuthPage() {
                 onClick={() => switchMode('reset')}
                 className="block w-full text-white/40 underline underline-offset-4 hover:text-white"
               >
-                Forgot your password?
+                {t('auth.forgotPassword')}
               </button>
             )}
           </div>
 
-          {/* Reassurance a person actually benefits from. The previous copy
-              named our auth vendor and the transport protocol — implementation
-              detail that tells a visitor nothing about their own position, and
-              quietly invites the question "why are you telling me this?". */}
           <div className="mt-6 flex items-start gap-3 rounded-glass-sm border border-line/40 bg-surface-2/50 p-4">
             <ShieldCheck className="h-5 w-5 flex-shrink-0 text-digicon-eco" aria-hidden="true" />
             <p className="text-xs leading-relaxed text-ink-3">

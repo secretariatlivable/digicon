@@ -1,0 +1,337 @@
+]633;E;echo "=== ENVIRONMENT ===";93218c5e-3273-425f-9b12-80b255abd8b3]633;C=== ENVIRONMENT ===
+v24.14.0
+11.9.0
+
+=== TYPESCRIPT CHECK ===
+
+> frontend@0.0.0 typecheck
+> tsc -b --noEmit
+
+src/a11y/AccessibilityBar.tsx(42,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(48,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(61,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(70,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(76,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(91,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(98,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(100,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(105,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(124,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(125,6): error TS17008: JSX element 'aside' has no corresponding closing tag.
+src/a11y/AccessibilityBar.tsx(130,8): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/a11y/AccessibilityBar.tsx(131,10): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/a11y/AccessibilityBar.tsx(371,1): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,2): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,3): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,4): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,5): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,6): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,7): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(400,9): error TS17002: Expected corresponding JSX closing tag for 'aside'.
+src/a11y/AccessibilityBar.tsx(401,7): error TS17015: Expected corresponding closing tag for JSX fragment.
+src/a11y/AccessibilityBar.tsx(401,12): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(403,1): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/a11y/AccessibilityBar.tsx(404,1): error TS1005: '</' expected.
+src/a11y/CookieConsent.tsx(12,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(13,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(15,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(35,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(37,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(39,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(55,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(57,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(59,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(69,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(71,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(73,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(80,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(82,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(84,1): error TS1185: Merge conflict marker encountered.
+src/pages/Login.tsx(4,1): error TS1185: Merge conflict marker encountered.
+src/pages/Login.tsx(7,1): error TS1185: Merge conflict marker encountered.
+src/pages/Login.tsx(10,1): error TS1185: Merge conflict marker encountered.
+src/pages/Pricing.tsx(37,6): error TS17008: JSX element 'PublicLayout' has no corresponding closing tag.
+src/pages/Pricing.tsx(38,8): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/pages/Pricing.tsx(121,9): error TS2657: JSX expressions must have one parent element.
+src/pages/Pricing.tsx(141,3): error TS17002: Expected corresponding JSX closing tag for 'div'.
+src/pages/Pricing.tsx(164,7): error TS1005: ')' expected.
+src/pages/Pricing.tsx(165,7): error TS17002: Expected corresponding JSX closing tag for 'section'.
+src/pages/Pricing.tsx(167,1): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/pages/Pricing.tsx(168,1): error TS1005: '</' expected.
+
+=== ESLINT CHECK ===
+
+> frontend@0.0.0 lint
+> oxlint
+
+
+  x Encountered diff marker
+    ,-[src/a11y/CookieConsent.tsx:12:1]
+ 11 |     if (!consent) {
+ 12 | <<<<<<< HEAD
+    : ^^^|^^^
+    :    `-- between this marker and `=======` is the code that we're merging into
+ 13 | =======
+    : ^^^|^^^
+    :    `-- between this marker and `>>>>>>>` is the incoming code
+ 14 |       // Show after a short delay so it doesn't flash immediately
+ 15 | >>>>>>> da54b2619b70e470b9504727e59a54d4eb34e98c
+    : ^^^|^^^
+    :    `-- this marker concludes the conflict region
+ 16 |       const timer = setTimeout(() => setIsVisible(true), 1000);
+    `----
+  help: Conflict markers indicate that a merge was started but could not be completed due to merge conflicts.
+        To resolve a conflict, keep only the code you want and then delete the lines containing conflict markers.
+        If you're having merge conflicts after pulling new code, the top section is the code you already had and the bottom section is the remote code.
+        If you're in the middle of a rebase, the top section is the code being rebased onto and the bottom section is the code coming from the current commit being rebased.
+        If you have nested conflicts, resolve the outermost conflict first.
+
+  x Encountered diff marker
+    ,-[src/a11y/AccessibilityBar.tsx:42:1]
+ 41 |   useEffect(() => {
+ 42 | <<<<<<< HEAD
+    : ^^^|^^^
+    :    `-- between this marker and `=======` is the code that we're merging into
+ 43 |     const storedPreferences = window.localStorage.getItem(ACCESSIBILITY_STORAGE_KEY);
+ 44 |     if (!storedPreferences) return;
+ 45 |     try {
+ 46 |       const parsedPreferences = JSON.parse(storedPreferences) as Partial<AccessibilityPreferences>;
+ 47 |       setPreferences({ ...DEFAULT_PREFERENCES, ...parsedPreferences });
+ 48 | =======
+    : ^^^|^^^
+    :    `-- between this marker and `>>>>>>>` is the incoming code
+ 49 |     const storedPreferences = window.localStorage.getItem(
+ 50 |       ACCESSIBILITY_STORAGE_KEY,
+ 51 |     );
+ 52 |     if (!storedPreferences) return;
+ 53 |     try {
+ 54 |       const parsedPreferences = JSON.parse(
+ 55 |         storedPreferences,
+ 56 |       ) as Partial<AccessibilityPreferences>;
+ 57 |       setPreferences({
+ 58 |         ...DEFAULT_PREFERENCES,
+ 59 |         ...parsedPreferences,
+ 60 |       });
+ 61 | >>>>>>> da54b2619b70e470b9504727e59a54d4eb34e98c
+    : ^^^|^^^
+    :    `-- this marker concludes the conflict region
+ 62 |     } catch {
+    `----
+  help: Conflict markers indicate that a merge was started but could not be completed due to merge conflicts.
+        To resolve a conflict, keep only the code you want and then delete the lines containing conflict markers.
+        If you're having merge conflicts after pulling new code, the top section is the code you already had and the bottom section is the remote code.
+        If you're in the middle of a rebase, the top section is the code being rebased onto and the bottom section is the code coming from the current commit being rebased.
+        If you have nested conflicts, resolve the outermost conflict first.
+
+  ! eslint(no-unused-vars): Identifier 'extname' is imported but never used.
+    ,-[scripts/preflight.mjs:40:3]
+ 39 |   dirname,
+ 40 |   extname,
+    :   ^^^|^^^
+    :      `-- 'extname' is imported here
+ 41 |   join,
+    `----
+  help: Consider removing this import.
+
+  x Encountered diff marker
+    ,-[src/pages/Login.tsx:4:1]
+  3 | export default function Login() {
+  4 | <<<<<<< HEAD
+    : ^^^|^^^
+    :    `-- between this marker and `=======` is the code that we're merging into
+  5 |   return <AuthPage defaultMode="signin" />;
+  6 | }
+  7 | =======
+    : ^^^|^^^
+    :    `-- between this marker and `>>>>>>>` is the incoming code
+  8 |   return <AuthPage mode="login" />;
+  9 |  };
+ 10 | >>>>>>> 54b2bd8 (Fix all experted expressions)
+    : ^^^|^^^
+    :    `-- this marker concludes the conflict region
+    `----
+  help: Conflict markers indicate that a merge was started but could not be completed due to merge conflicts.
+        To resolve a conflict, keep only the code you want and then delete the lines containing conflict markers.
+        If you're having merge conflicts after pulling new code, the top section is the code you already had and the bottom section is the remote code.
+        If you're in the middle of a rebase, the top section is the code being rebased onto and the bottom section is the code coming from the current commit being rebased.
+        If you have nested conflicts, resolve the outermost conflict first.
+
+  x Expected corresponding JSX closing tag for 'div'.
+     ,-[src/pages/Pricing.tsx:141:3]
+ 120 |       return (
+ 121 |         <div key={planId} className="metal-edge rounded-2xl p-5">
+     :          ^|^
+     :           `-- Opened here
+ 122 |           <p className="label-caps">{plan.name}</p>
+ 123 | 
+ 124 |           <p className="metric mt-1 text-2xl gold-text">
+ 125 |             {plan.price}
+ 126 |           </p>
+ 127 | 
+ 128 |           <p className="dense mt-1 mb-4 text-sm text-muted-foreground">
+ 129 |             {plan.description}
+ 130 |           </p>
+ 131 | 
+ 132 |                   <div className="text-center">
+ 133 |           <SectionHeading
+ 134 |             eyebrow="PayPal"
+ 135 |             title="Subscribe securely with PayPal"
+ 136 |           />
+ 137 |           <p className="dense mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
+ 138 |             Choose a DigiCon PayPal subscription and complete approval on PayPal. Your paid access is activated only after DigiCon verifies the PayPal webhook.
+ 139 |           </p>
+ 140 |         </div>
+ 141 | </section>
+     :   ^^^|^^^
+     :      `-- Expected `</div>`
+ 142 | 
+     `----
+
+  x Adjacent JSX elements must be wrapped in an enclosing tag.
+     ,-[src/pages/Pricing.tsx:143:9]
+ 142 | 
+ 143 |         <section className="glass mt-10 overflow-x-auto rounded-2xl p-5" aria-label="Plan comparison">
+     :         ^
+ 144 |           <SectionHeading eyebrow="Compare" title="What's in each plan" />
+     `----
+  help: Did you want a JSX fragment `<>...</>`?
+
+Found 1 warning and 5 errors.
+Finished in 20ms on 119 files with 96 rules using 4 threads.
+
+=== SECURITY AUDIT ===
+npm warn audit 503 Service Unavailable - POST https://registry.npmjs.org/-/npm/v1/security/advisories/bulk - Service Unavailable
+{ error: 'Service Unavailable' }
+npm error audit endpoint returned an error
+npm error A complete log of this run can be found in: /home/codespace/.npm/_logs/2026-09-04T02_34_45_813Z-debug-0.log
+
+=== BUILD TEST ===
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/a11y/AccessibilityBar.tsx(42,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(48,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(61,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(70,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(76,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(91,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(98,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(100,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(105,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(124,1): error TS1185: Merge conflict marker encountered.
+src/a11y/AccessibilityBar.tsx(125,6): error TS17008: JSX element 'aside' has no corresponding closing tag.
+src/a11y/AccessibilityBar.tsx(130,8): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/a11y/AccessibilityBar.tsx(131,10): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/a11y/AccessibilityBar.tsx(371,1): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,2): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,3): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,4): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,5): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,6): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(371,7): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(400,9): error TS17002: Expected corresponding JSX closing tag for 'aside'.
+src/a11y/AccessibilityBar.tsx(401,7): error TS17015: Expected corresponding closing tag for JSX fragment.
+src/a11y/AccessibilityBar.tsx(401,12): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/a11y/AccessibilityBar.tsx(403,1): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/a11y/AccessibilityBar.tsx(404,1): error TS1005: '</' expected.
+src/a11y/CookieConsent.tsx(12,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(13,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(15,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(35,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(37,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(39,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(55,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(57,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(59,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(69,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(71,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(73,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(80,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(82,1): error TS1185: Merge conflict marker encountered.
+src/a11y/CookieConsent.tsx(84,1): error TS1185: Merge conflict marker encountered.
+src/pages/Login.tsx(4,1): error TS1185: Merge conflict marker encountered.
+src/pages/Login.tsx(7,1): error TS1185: Merge conflict marker encountered.
+src/pages/Login.tsx(10,1): error TS1185: Merge conflict marker encountered.
+src/pages/Pricing.tsx(37,6): error TS17008: JSX element 'PublicLayout' has no corresponding closing tag.
+src/pages/Pricing.tsx(38,8): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/pages/Pricing.tsx(121,9): error TS2657: JSX expressions must have one parent element.
+src/pages/Pricing.tsx(141,3): error TS17002: Expected corresponding JSX closing tag for 'div'.
+src/pages/Pricing.tsx(164,7): error TS1005: ')' expected.
+src/pages/Pricing.tsx(165,7): error TS17002: Expected corresponding JSX closing tag for 'section'.
+src/pages/Pricing.tsx(167,1): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/pages/Pricing.tsx(168,1): error TS1005: '</' expected.
+
+=== PACKAGE.JSON ===
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.6.0",
+    "@fontsource-variable/dm-sans": "5.3.0",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "@fontsource-variable/instrument-sans": "5.3.0",
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource-variable/lora": "5.3.0",
+    "@fontsource-variable/manrope": "5.3.0",
+    "@fontsource-variable/outfit": "5.3.0",
+    "@fontsource-variable/playfair-display": "5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "5.3.0",
+    "@fontsource-variable/sora": "5.3.0",
+    "@fontsource-variable/space-grotesk": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "@fontsource/montserrat": "^5.3.0",
+    "@fontsource/poppins": "5.3.0",
+    "@fontsource/roboto-condensed": "^5.3.0",
+    "@paypal/react-paypal-js": "9.0.0",
+    "@supabase/supabase-js": "2.57.4",
+    "@tanstack/react-query": "5.101.4",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "date-fns": "4.4.0",
+    "lucide-react": "1.27.0",
+    "motion": "12.42.2",
+    "next-themes": "0.4.6",
+    "qrcode.react": "4.2.0",
+    "react": "19.2.8",
+    "react-day-picker": "10.0.1",
+    "react-dom": "19.2.8",
+    "react-is": "19.2.8",
+    "react-router-dom": "7.18.1",
+    "recharts": "3.10.1",
+    "shadcn": "4.16.0",
+    "sonner": "2.0.7",
+    "tailwind-merge": "3.6.0",
+    "tw-animate-css": "1.4.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.29.7",
+    "@babel/generator": "7.29.7",
+    "@babel/parser": "7.29.7",
+    "@babel/traverse": "7.29.7",
+    "@babel/types": "7.29.7",
+    "@emergentbase/visual-edits": "https://assets.emergent.sh/npm/emergentbase-visual-edits-1.0.14.tgz",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.4",
+    "oxlint": "1.76.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.1.5",
+    "vitest": "4.1.10"
+  }
+}
