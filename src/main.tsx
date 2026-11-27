@@ -1,11 +1,12 @@
-import { StrictMode, Component, type ReactNode } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
+import { StrictMode, Component, type ReactNode } from "react";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import { AuthProvider } from "@/lib/auth";
+import "./index.css";
 
-/* ------------------------------------------------------------------ */
-/*  Root Error Boundary                                               */
-/* ------------------------------------------------------------------ */
+const queryClient = new QueryClient();
 
 class RootErrorBoundary extends Component<
   { children: ReactNode },
@@ -21,8 +22,7 @@ class RootErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // In production, send to Sentry or similar
-    console.error('[DigiCon Fatal]', error, info);
+    console.error("[DigiCon Fatal]", error, info);
   }
 
   render() {
@@ -32,7 +32,7 @@ class RootErrorBoundary extends Component<
           <div className="text-center max-w-md">
             <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
             <p className="text-white/60 mb-6">
-              {this.state.error?.message || 'An unexpected error occurred.'}
+              {this.state.error?.message || "An unexpected error occurred."}
             </p>
             <button
               onClick={() => window.location.reload()}
@@ -44,21 +44,24 @@ class RootErrorBoundary extends Component<
         </div>
       );
     }
+
     return this.props.children;
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  Mount                                                             */
-/* ------------------------------------------------------------------ */
+const rootEl = document.getElementById("root");
+if (!rootEl) throw new Error("Root element #root not found");
 
-const rootEl = document.getElementById('root');
-if (!rootEl) throw new Error('Root element #root not found');
-
-createRoot(rootEl).render(
+createRoot(rootEl!).render(
   <StrictMode>
     <RootErrorBoundary>
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <AuthProvider> {/* WRAPPED APP */}
+            <App />
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
     </RootErrorBoundary>
-  </StrictMode>
+  </StrictMode>,
 );
