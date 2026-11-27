@@ -19,7 +19,8 @@ import { DigiConLogo } from "@/components/brand/DigiConLogo";
 import { Avatar, PremiumBadge } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useAuth, useSession } from "@/lib/session";
+import { useAuth } from "@/lib/auth";
+import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const PRIMARY = [
