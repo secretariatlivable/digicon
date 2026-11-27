@@ -53,6 +53,17 @@ export const DIGICON_STRIPE_PLANS: Readonly<
   },
 } as const;
 
+/**
+ * Monthly USD list price shown on /pricing. Must match the Stripe Price that
+ * carries the plan's lookup key. `null` falls back to the plan's own label
+ * (e.g. "Custom"), so nothing is shown that Stripe does not actually charge.
+ */
+export const STRIPE_PLAN_PRICE_USD: Readonly<Record<StripePlanId, number | null>> = {
+  starter: null, // TODO: set to the USD amount of `digicon_starter_monthly`
+  growth: null, // TODO: set to the USD amount of `digicon_growth_monthly`
+  enterprise: null, // Custom pricing
+} as const;
+
 export function isStripePlanId(value: string): value is StripePlanId {
   return value === 'starter' || value === 'growth' || value === 'enterprise';
 }

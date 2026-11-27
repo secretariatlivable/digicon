@@ -38,7 +38,7 @@ export const DIGICON_PAYPAL_PLANS: Readonly<
   starter: {
     id: "starter",
     name: "Starter",
-    priceLabel: "₱199 / month",
+    priceLabel: "Billed monthly in USD",
     paypalPlanId: "P-6MP428311N661121LNKIFXAA",
     description:
       "Essential digital networking for individuals and small businesses.",
@@ -56,7 +56,7 @@ export const DIGICON_PAYPAL_PLANS: Readonly<
   growth: {
     id: "growth",
     name: "Growth",
-    priceLabel: "₱499 / month",
+    priceLabel: "Billed monthly in USD",
     paypalPlanId: "P-8BE95305CD2758215NKIF2ZI",
     description:
       "Advanced networking and CRM tools for growing SMEs and teams.",
