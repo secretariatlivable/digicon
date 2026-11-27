@@ -32,6 +32,8 @@ import Pricing from "@/pages/Pricing";
 import InfoPage from "@/pages/InfoPage";
 import SupportPage from "@/pages/SupportPage";
 import { Blog, BlogArticle } from "@/pages/Blog";
+import Tools from "@/pages/Tools";
+import NetworkingTracker from "@/pages/NetworkingTracker";
 import {
   Billing,
   Checkout,
@@ -68,6 +70,8 @@ export default function App() {
         <Route path="/support" element={<SupportPage />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogArticle />} />
+        <Route path="/resources/five-minute-networking-tracker" element={<NetworkingTracker />} />
+        <Route path="/tools" element={<Protected adminOnly><Tools /></Protected>} />
         <Route path="/c/:slug" element={<PublicCard />} />
 
         {/* Render shared public informational pages. */}
