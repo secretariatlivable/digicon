@@ -101,6 +101,7 @@ export type TranslationKey =
   | 'auth.resetTitle'
   | 'auth.resetDesc'
   | 'auth.sendResetLink'
+  | 'auth.resetSent'
   | 'auth.forgotPassword'
   | 'auth.errorRequiredEmail'
   | 'auth.errorPasswordLength'
@@ -337,6 +338,7 @@ const en: Record<TranslationKey, string> = {
   'auth.resetTitle': 'Reset your password',
   'auth.resetDesc': 'We will email you a secure link to choose a new password.',
   'auth.sendResetLink': 'Send reset link',
+  'auth.resetSent': 'Check your email for a link to reset your password.',
   'auth.forgotPassword': 'Forgot your password?',
   'auth.errorRequiredEmail': 'Enter your email address.',
   'auth.errorPasswordLength': 'Your password must be at least {0} characters.',
@@ -578,6 +580,7 @@ const fil: Record<TranslationKey, string> = {
   'auth.resetTitle': 'I-reset ang iyong password',
   'auth.resetDesc': 'Magpapadala kami ng secure link sa iyong email para pumili ng bagong password.',
   'auth.sendResetLink': 'Ipadala ang reset link',
+  'auth.resetSent': 'Tingnan ang iyong email para sa link sa pag-reset ng password.',
   'auth.forgotPassword': 'Nakalimutan ang password?',
   'auth.errorRequiredEmail': 'Ilagay ang iyong email address.',
   'auth.errorPasswordLength': 'Ang password ay dapat hindi bababa sa {0} characters.',

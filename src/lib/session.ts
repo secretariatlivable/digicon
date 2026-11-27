@@ -1,6 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { queryClient } from "@/lib/queryClient";
 
 export const meKey = ["auth", "me"] as const;
 
