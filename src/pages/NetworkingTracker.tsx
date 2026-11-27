@@ -2,6 +2,27 @@ import { ArrowLeft, Download, Printer, Timer, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
+async function downloadTrackerPdf() {
+  try {
+    const response = await fetch("/five-minute-networking-tracker.pdf.base64");
+    if (!response.ok) throw new Error("PDF asset unavailable");
+    const encoded = (await response.text()).trim();
+    const binary = atob(encoded);
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const blob = new Blob([bytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "DigiCon-Five-Minute-Networking-Tracker.pdf";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  } catch {
+    window.print();
+  }
+}
+
 const contacts = [1, 2, 3];
 const steps = [
   ["01", "Review", "Reconnect with the people you met today."],
@@ -15,7 +36,7 @@ export default function NetworkingTracker() {
       <div className="mx-auto max-w-[900px]">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
           <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-950"><ArrowLeft className="h-4 w-4" /> Back to DigiCon Blog</Link>
-          <Button onClick={() => window.print()} className="bg-[#087f91] text-white hover:bg-[#066b79]"><Download className="mr-2 h-4 w-4" /> Download / Print PDF</Button>
+          <div className="flex flex-wrap gap-2"><Button onClick={() => void downloadTrackerPdf()} className="bg-[#087f91] text-white hover:bg-[#066b79]"><Download className="mr-2 h-4 w-4" /> Download PDF</Button><Button variant="outline" onClick={() => window.print()} className="border-slate-300 bg-white text-slate-800 hover:bg-slate-100"><Printer className="mr-2 h-4 w-4" /> Print page</Button></div>
         </div>
 
         <article id="digicon-networking-tracker" className="overflow-hidden rounded-[24px] bg-white shadow-xl shadow-slate-900/10 print:rounded-none print:shadow-none">
@@ -68,7 +89,7 @@ export default function NetworkingTracker() {
         @media print {
           html, body { background: #fff !important; }
           body * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-          #digicon-networking-tracker { width: 100% !important; max-width: none !important; }
+          #digicon-networking-tracker { width: 100% !important; max-width: none !important; zoom: .80; }
           .print\\:hidden { display: none !important; }
           article { break-inside: avoid; }
         }
